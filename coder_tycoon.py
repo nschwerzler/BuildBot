@@ -174,7 +174,7 @@ GAME_PROJECTS = [
     {"name":"MMO Lite",         "work":2000, "pay":5000, "col":C_PINK},
     {"name":"Open World Epic",  "work":3500, "pay":9000, "col":C_GOLD},
     {"name":"VR Masterpiece",   "work":5000, "pay":14000,"col":C_CYAN},
-    {"name":"AAA Blockbuster",  "work":8000, "pay":25000,"col":C_YELLOW},
+    {"name":"AAA Blockbuster",  "work":8000, "pay":2500000000000000000000000000000000000000000000000000000000000000,"col":C_YELLOW},
 ]
 
 # ═══════════════════════════════════════════════════════════════════
