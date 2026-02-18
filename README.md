@@ -1,0 +1,312 @@
+# BuildBot 🎮 - Minecraft-Style 3D Voxel Game
+
+A fully-featured Minecraft-inspired 3D voxel game built with Three.js, TypeScript, and Vite. Features procedural terrain generation, 567+ unique metals/ores, crafting system, quests, achievements, and much more!
+
+## 🎮 Features
+
+### Core Gameplay
+- **3D Voxel World**: Minecraft-style block-based world with chunk loading
+- **Procedural Generation**: Infinite terrain using Perlin noise
+- **Mining & Building**: Break and place blocks to shape your world
+- **Inventory System**: 9-slot hotbar for quick item access
+- **Crafting System**: Craft tools, building materials, and more
+- **Physics System**: Realistic gravity and collision detection
+
+### Advanced Systems
+
+#### 🏔️ Biome System (10 Unique Biomes)
+- Plains, Forest, Desert, Mountains, Tundra
+- Swamp, Volcanic, Crystal Caves, Jungle, Mushroom Fields
+- Each biome has unique characteristics, blocks, and ore distributions
+
+#### ⛏️ Metal & Ore System (567+ Unique Metals)
+- Procedurally generated metal types with unique colors
+- Rarity system (1-10 scale)
+- 15 ore veins per chunk
+- Biome-specific metal distributions
+
+#### 🎨 Particle System
+- Block breaking effects, Explosion particles, Sparkle effects
+- Trail particles, Smoke effects
+
+#### 🌤️ Weather System
+- Clear, Rain, Snow, Storm, Fog, Sandstorm
+- Dynamic transitions with particle effects
+
+#### 🌞 Day/Night Cycle
+- 20-minute day cycle with dynamic lighting
+- Time-based sky colors (dawn, day, dusk, night)
+
+#### 💚 Health & Hunger System
+- Health regeneration, Hunger/Starvation mechanics
+- Exhaustion system (mining, jumping, sprinting)
+
+#### 🔧 Tool Durability System
+- 6 tool materials with unique properties
+- Durability tracking and repair system
+
+#### 🏗️ Building System
+- 7+ pre-designed structures (houses, towers, farms, etc.)
+- Structure blueprints with rotation and cost calculation
+
+#### 👾 Mob Spawner System (11 Mob Types)
+- Passive (sheep, cow, chicken)
+- Neutral (wolf, bear, enderman)
+- Hostile (zombie, skeleton, spider, slime)
+
+#### 🏆 Achievement System (14+ Achievements)
+- Mining, Building, Exploration, Collection, Crafting categories
+- Progress tracking and notifications
+
+#### 📜 Quest System (10+ Quests)
+- Tutorial, Mining, Exploration, Building, Crafting quests
+- Quest chains with prerequisites and rewards
+
+#### 🎵 Sound System
+- SFX and Music with volume controls
+- Sound variations and mute toggle
+
+#### 🎨 Animation System (9 Animation Types)
+- Idle, walk, run, jump, fall, attack, mine, hurt, death
+- Smooth frame interpolation and blending
+
+#### 💬 Notification System
+- 6 notification types with queue management
+- Event-based notifications for all game events
+
+#### ⚙️ Settings System
+- Graphics, Audio, Gameplay, and Control settings
+- Import/export with local storage persistence
+
+#### 💾 Save/Load System
+- Multiple save slots, Auto-save support
+- Complete world state and player data persistence
+
+#### ⌨️ Command System (15+ Commands)
+- Debug/admin commands with history and auto-completion
+
+#### 📊 UI Manager
+- Multiple screens (inventory, crafting, settings, achievements, quests)
+- Health/hunger bars, Time display, FPS counter, Debug info
+
+## 🎯 Controls
+
+### Movement
+- `W/A/S/D` - Move  | `Space` - Jump  | `Shift` - Sprint
+- `Mouse` - Look around  | `ESC` - Unlock mouse/Pause
+
+### Actions
+- `Left Click` - Mine/Attack  | `Right Click` - Place block
+- `E` - Inventory  | `C` - Crafting  | `Q` - Drop item
+- `A` - Achievements  | `Q` - Quests  | `1-9` - Hotbar
+
+### Commands (15+)
+- `/help` - Show commands | `/tp <x> <y> <z>` - Teleport
+- `/give <item> [count]` - Give items | `/time [set]` - Change time
+- `/weather <type>` - Change weather | `/heal` - Restore health
+- `/spawn <mob>` - Spawn mobs | `/fps` - Toggle FPS
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 16+, npm or yarn
+
+### Installation
+```bash
+npm install      # Install dependencies
+npm run dev      # Start development server
+npm run build    # Build for production
+```
+
+Game available at `http://localhost:5173`
+
+## 🛠️ Technical Details
+
+### Project Structure
+```
+src/
+├── engine/          # Core game engine
+│   ├── Game.ts      # Main game loop
+│   └── Renderer.ts  # Three.js renderer setup
+├── entities/        # Player and mob entities
+│   └── Player.ts    # Player controller
+├── world/           # World generation
+│   ├── World.ts     # World manager
+│   ├── Chunk.ts     # Chunk generation
+│   └── WorldGenerator.ts  # Terrain generation
+├── graphics/        # Rendering systems
+│   ├── PixelTexture.ts    # Texture management
+│   └── VoxelModel.ts      # 3D models
+├── systems/         # 20+ Game systems
+│   ├── InputManager.ts          # Input handling
+│   ├── PhysicsSystem.ts         # Physics
+│   ├── Inventory.ts             # Inventory
+│   ├── MetalRegistry.ts         # Metal system
+│   ├── CraftingSystem.ts        # Crafting
+│   ├── ParticleSystem.ts        # Particles
+│   ├── AchievementSystem.ts     # Achievements
+│   ├── SoundManager.ts          # Audio
+│   ├── QuestSystem.ts           # Quests
+│   ├── BiomeSystem.ts           # Biomes
+│   ├── WeatherSystem.ts         # Weather
+│   ├── DayNightCycle.ts         # Time
+│   ├── ToolDurabilitySystem.ts  # Tools
+│   ├── HealthHungerSystem.ts    # Survival
+│   ├── BuildingSystem.ts        # Structures
+│   ├── MobSpawnerSystem.ts      # Mobs
+│   ├── UIManager.ts             # UI
+│   ├── SettingsSystem.ts        # Settings
+│   ├── SaveLoadSystem.ts        # Saves
+│   ├── CommandSystem.ts         # Commands
+│   ├── AnimationSystem.ts       # Animations
+│   └── NotificationSystem.ts    # Notifications
+└── main.ts          # Entry point
+```
+
+### Technology Stack
+- **Three.js** v0.160.0 - 3D graphics engine
+- **TypeScript** 5.3.3 - Type-safe development
+- **Vite** 5.0.11 - Fast build tool & dev server
+- **Perlin Noise** - Procedural terrain generation
+
+### Performance Optimizations
+- Chunk-based world (16x16x256 blocks)
+- 2-chunk render distance (32 blocks visible)
+- Shadows completely disabled
+- 8x8 pixel textures
+- Particle limits (500 max)
+- Simplified physics
+- Texture caching
+- 60 FPS frame cap
+
+## 📈 Statistics & Metrics
+
+### Code Statistics
+- **Total Systems**: 20+
+- **Lines of Code**: 10,000+
+- **Achievements**: 14
+- **Quests**: 10
+- **Biomes**: 10
+- **Metals**: 567+
+- **Mob Types**: 11
+- **Structures**: 7
+- **Commands**: 15+
+- **Animation Types**: 9
+
+### World Generation
+- **Chunk Size**: 16x16x256 blocks
+- **Ore Veins per Chunk**: 15
+- **Flat Spawn Radius**: 256 blocks
+- **World Height**: 256 blocks
+
+## 🎯 Game Progression
+
+### Early Game
+1. Mine blocks with your starting pickaxe
+2. Collect wood and stone
+3. Craft better tools
+4. Complete tutorial quests
+
+### Mid Game
+1. Explore different biomes
+2. Mine rare metals
+3. Build structures
+4. Unlock achievements
+
+### Late Game
+1. Collect all 567 metals
+2. Complete all achievements
+3. Build massive structures
+4. Explore far lands
+
+## 🔮 Future Features
+- Multiplayer support
+- More biomes and dimensions
+- Boss mobs and magic system
+- Redstone-like logic
+- Villages and NPCs
+- Advanced crafting
+- Armor and weapons
+- Food cooking system
+
+## 📝 License
+MIT License - Feel free to use and modify!
+
+## 🙏 Acknowledgments
+- Minecraft for inspiration
+- Three.js community
+- TypeScript team
+- Vite developers
+
+Happy Mining! ⛏️
+
+## 🌟 What Makes BuildBot Special
+
+### Not Just Cubes
+Traditional Minecraft clones render everything as simple 1x1x1 cubes. BuildBot takes a different approach:
+
+- **Trees**: Multi-voxel organic shapes with tapered trunks and natural foliage
+- **Rocks**: Irregular formations with varied voxel sizes and rotations  
+- **Flowers**: Detailed multi-voxel models with petals and stems
+- **Grass**: Individual blades with natural variation
+
+### Pixel Art Aesthetic
+- All textures use nearest-neighbor filtering
+- 16x16 or 32x32 pixel textures
+- Procedurally generated textures with noise variation
+- No anti-aliasing for crisp pixel-perfect rendering
+
+## 🔧 Development
+
+### Running Tests
+```bash
+npm test
+```
+
+### Type Checking
+```bash
+npm run build
+```
+
+### Code Style
+- Use TypeScript strict mode
+- Follow existing patterns
+- Document complex algorithms
+- Keep performance in mind
+
+## 🗺️ Roadmap
+
+- [ ] Inventory system
+- [ ] Crafting mechanics
+- [ ] More biomes (snow, jungle, etc.)
+- [ ] Day/night cycle
+- [ ] Save/Load worlds
+- [ ] Multiplayer support
+- [ ] More block types
+- [ ] Advanced building tools
+- [ ] Sound effects and music
+- [ ] Mobile controls
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- Inspired by Minecraft
+- Built with Three.js
+- Procedural generation techniques from various resources
+- Thanks to the open-source community
+
+## 📧 Contact
+
+- Create an issue for bug reports or feature requests
+- Follow development updates on [Twitter](https://twitter.com/yourusername)
+
+---
+
+**Happy Building! 🎮**

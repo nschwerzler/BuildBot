@@ -1,0 +1,113 @@
+# BuildBot - Minecraft-Style Pixel Art 3D Game
+
+## Project Overview
+BuildBot is a Minecraft-inspired 3D voxel game with beautiful pixel art rendering. Unlike traditional Minecraft clones with simple cube blocks, this game uses detailed voxel models with pixel art textures to create visually appealing objects that look like real-world items while maintaining the voxel aesthetic.
+
+## Technology Stack
+- **Engine**: Three.js for 3D rendering
+- **Language**: TypeScript for type-safe game logic
+- **Build Tool**: Vite for fast development and building
+- **Graphics**: WebGL with custom shaders for pixel art rendering
+
+## Key Features
+1. **Voxel World**: Infinite procedurally generated terrain
+2. **Pixel Art Models**: Instead of simple cubes, objects use detailed voxel models with pixel art textures
+3. **Building System**: Place and remove blocks with various tools
+4. **Inventory System**: Manage items and resources
+5. **Crafting**: Combine materials to create new items
+6. **Day/Night Cycle**: Dynamic lighting and time system
+
+## Architecture
+
+### Core Systems
+- **Renderer**: Handles all 3D rendering using Three.js
+- **World Generator**: Procedural terrain generation with noise algorithms
+- **Chunk Manager**: Efficiently manages world chunks (16x16x256 blocks)
+- **Physics**: Collision detection and player movement
+- **Input Handler**: Keyboard, mouse, and touch controls
+- **Asset Loader**: Loads and caches pixel art textures and voxel models
+
+### Pixel Art Rendering
+- Use nearest-neighbor filtering for crisp pixel art
+- Custom shaders to maintain pixel aesthetic at any distance
+- Voxel models stored as JSON with texture coordinates
+- 16x16 or 32x32 pixel textures for blocks and items
+
+### File Structure
+```
+src/
+├── engine/
+│   ├── Renderer.ts          # Three.js renderer setup
+│   ├── Camera.ts             # Camera controller
+│   └── Scene.ts              # Scene management
+├── world/
+│   ├── Chunk.ts              # Chunk data structure
+│   ├── WorldGenerator.ts     # Terrain generation
+│   ├── ChunkManager.ts       # Chunk loading/unloading
+│   └── Block.ts              # Block types and properties
+├── entities/
+│   ├── Player.ts             # Player controller
+│   └── Entity.ts             # Base entity class
+├── graphics/
+│   ├── VoxelModel.ts         # Voxel model loader and renderer
+│   ├── PixelTexture.ts       # Pixel art texture management
+│   └── shaders/              # Custom GLSL shaders
+├── systems/
+│   ├── Physics.ts            # Collision and physics
+│   ├── Input.ts              # Input handling
+│   ├── Inventory.ts          # Inventory management
+│   └── Crafting.ts           # Crafting system
+├── ui/
+│   ├── HUD.ts                # Heads-up display
+│   ├── Inventory.UI.ts       # Inventory interface
+│   └── Menu.ts               # Game menus
+├── utils/
+│   ├── noise.ts              # Perlin/Simplex noise
+│   └── math.ts               # Math utilities
+└── main.ts                   # Entry point
+```
+
+## Development Guidelines
+
+### When Adding New Features
+1. Keep performance in mind - optimize mesh generation
+2. Use object pooling for frequently created/destroyed objects
+3. Implement frustum culling for chunks
+4. Use worker threads for heavy computations (terrain generation)
+5. Maintain the pixel art aesthetic in all visual elements
+
+### Coding Standards
+- Use TypeScript strict mode
+- Document complex algorithms
+- Keep functions focused and small
+- Use descriptive variable names
+- Follow the existing architecture patterns
+
+### Pixel Art Model Creation
+- Models are defined as arrays of voxels with texture coordinates
+- Each voxel specifies position, texture, and facing direction
+- Textures use palette-based coloring for easy recoloring
+- Keep models optimized - merge faces where possible
+- Example: A tree is not a simple log + leaves, but a detailed voxel model that looks like a real tree
+
+### Performance Targets
+- 60 FPS on mid-range hardware
+- Render distance: 8-16 chunks
+- Chunk generation: <16ms per chunk
+- Memory usage: <2GB for typical play session
+
+## Current Focus
+Building core systems and implementing beautiful pixel art rendering that makes the game visually distinct from typical Minecraft clones.
+
+## Testing
+- Test on multiple browsers (Chrome, Firefox, Safari)
+- Test with different render distances
+- Performance profiling for optimization
+- Test inventory and crafting systems thoroughly
+
+## Notes for AI Assistant
+- When implementing features, prioritize visual quality and performance
+- Always consider the pixel art aesthetic in design decisions
+- Use TypeScript types strictly for better code quality
+- Think about scalability - the game should handle large worlds
+- Remember: this is not just Minecraft with cubes - we want detailed, beautiful voxel models

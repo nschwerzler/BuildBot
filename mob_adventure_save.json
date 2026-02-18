@@ -1,0 +1,21 @@
+{
+  "mob_type": null,
+  "name": "",
+  "hp": 100,
+  "max_hp": 100,
+  "atk": 10,
+  "defense": 5,
+  "level": 1,
+  "xp": 0,
+  "xp_next": 50,
+  "inventory": [],
+  "quests_active": [],
+  "quests_done": [],
+  "current_scene": "start",
+  "is_human": false,
+  "emeralds": 0,
+  "combat_skill": 0,
+  "scenes_visited": [],
+  "wood_count": 0,
+  "chapter": 0
+}

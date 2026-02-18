@@ -1,0 +1,49 @@
+{
+  "slots": {
+    "1": {
+      "hp": 90.5113418599998,
+      "max_hp": 103,
+      "hunger": 85.33581770999989,
+      "max_hunger": 150,
+      "attack_damage": 6.100000000000005,
+      "attack_range": 3.5,
+      "attack_cooldown": 0,
+      "speed": 10.5,
+      "level": 5,
+      "xp": 41,
+      "next_xp": 58,
+      "dna": 12,
+      "meat_strength": 14,
+      "nuclear_level": 72,
+      "nuclear_dot_damage": 150,
+      "exposure_meter": 0.5798608199999762,
+      "wood": 7,
+      "mutations_owned": [
+        "Amphib Lungs",
+        "Nuclear Gland",
+        "Scavenger Gut",
+        "Swift Legs",
+        "Regen Tissue",
+        "Thick Hide"
+      ],
+      "current_slot": 1,
+      "carrying": null,
+      "body_color_idx": 5,
+      "px": -860.8346557617188,
+      "pz": 1152.066650390625,
+      "dens": [
+        [
+          -466.74456787109375,
+          166.0547332763672
+        ]
+      ]
+    },
+    "2": null,
+    "3": null,
+    "4": null,
+    "5": null,
+    "6": null,
+    "7": null,
+    "8": null
+  }
+}
