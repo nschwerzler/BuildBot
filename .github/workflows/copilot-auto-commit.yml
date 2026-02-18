@@ -1,0 +1,131 @@
+name: Copilot Auto Commit
+
+# Triggers after Copilot or AI-assisted changes on any push
+# Checks for uncommitted artifacts (build output, generated files) and commits them
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'copilot/**' ]
+  pull_request:
+    types: [ synchronize, opened ]
+
+permissions:
+  contents: write
+
+jobs:
+  auto-commit-artifacts:
+    runs-on: ubuntu-latest
+    # Don't run on commits made by this workflow (prevent loops)
+    if: github.actor != 'github-actions[bot]'
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 2
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+        continue-on-error: true
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Analyze recent commit and auto-format
+        id: analyze
+        run: |
+          # Get the last commit message and changed files
+          LAST_MSG=$(git log -1 --pretty=%B)
+          CHANGED=$(git log -1 --name-only --pretty=format:'')
+          
+          echo "Last commit: $LAST_MSG"
+          echo "Changed files:"
+          echo "$CHANGED"
+          
+          # Check if there are any post-build artifacts or formatting changes
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_artifacts=true" >> $GITHUB_OUTPUT
+            
+            # Generate a descriptive message about what was auto-fixed
+            ARTIFACT_FILES=$(git status --porcelain | awk '{print $2}')
+            echo "files<<EOF" >> $GITHUB_OUTPUT
+            echo "$ARTIFACT_FILES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "has_artifacts=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit build artifacts
+        if: steps.analyze.outputs.has_artifacts == 'true'
+        run: |
+          git add -A
+          
+          # Count and categorize the auto-generated changes
+          ADDED=$(git diff --cached --numstat | wc -l)
+          
+          git commit -m "build: auto-commit build artifacts and generated files
+
+          Files updated:
+          ${{ steps.analyze.outputs.files }}
+          
+          Triggered by: ${{ github.event.head_commit.message || github.event.pull_request.title || 'push event' }}"
+          
+          git push
+
+  # Lint-fix and auto-commit formatting changes
+  auto-format:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    needs: auto-commit-artifacts
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check for formatting changes
+        id: format_check
+        run: |
+          # Run TypeScript compiler check (non-blocking)
+          npx tsc --noEmit 2>&1 || true
+          
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "needs_format=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_format=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit formatting fixes
+        if: steps.format_check.outputs.needs_format == 'true'
+        run: |
+          git add -A
+          git commit -m "style: auto-format code changes"
+          git push

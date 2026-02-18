@@ -1,0 +1,154 @@
+name: Auto Commit Changes
+
+# Automatically commits changes made by Copilot or other automated tools
+# with descriptive commit messages based on what files changed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: 'Custom commit message (optional - auto-generates if empty)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected."
+          fi
+
+      - name: Generate commit message
+        if: steps.changes.outputs.has_changes == 'true'
+        id: message
+        run: |
+          if [ -n "${{ github.event.inputs.commit_message }}" ]; then
+            echo "msg=${{ github.event.inputs.commit_message }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Analyze changed files to generate a descriptive commit message
+          CHANGED_FILES=$(git diff --name-only HEAD 2>/dev/null || git status --porcelain | awk '{print $2}')
+          
+          # Categorize changes
+          HAS_SRC=false
+          HAS_SYSTEMS=false
+          HAS_ENTITIES=false
+          HAS_WORLD=false
+          HAS_ENGINE=false
+          HAS_GRAPHICS=false
+          HAS_CONFIG=false
+          HAS_DOCS=false
+          HAS_WORKFLOW=false
+          HAS_PYTHON=false
+          HAS_STYLES=false
+          SYSTEM_NAMES=""
+          
+          for file in $CHANGED_FILES; do
+            case "$file" in
+              src/systems/*)
+                HAS_SYSTEMS=true
+                SYSTEM_NAME=$(basename "$file" .ts | sed 's/\([A-Z]\)/ \1/g' | sed 's/^ //')
+                SYSTEM_NAMES="$SYSTEM_NAMES, $SYSTEM_NAME"
+                ;;
+              src/entities/*) HAS_ENTITIES=true ;;
+              src/world/*) HAS_WORLD=true ;;
+              src/engine/*) HAS_ENGINE=true ;;
+              src/graphics/*) HAS_GRAPHICS=true ;;
+              src/*.ts) HAS_SRC=true ;;
+              src/*.css) HAS_STYLES=true ;;
+              *.md) HAS_DOCS=true ;;
+              .github/*) HAS_WORKFLOW=true ;;
+              *.json) HAS_CONFIG=true ;;
+              *.py) HAS_PYTHON=true ;;
+            esac
+          done
+          
+          # Build descriptive message
+          MSG_PARTS=""
+          
+          if [ "$HAS_SYSTEMS" = true ]; then
+            CLEAN_NAMES=$(echo "$SYSTEM_NAMES" | sed 's/^, //')
+            MSG_PARTS="update game systems: $CLEAN_NAMES"
+          fi
+          
+          if [ "$HAS_ENTITIES" = true ]; then
+            [ -n "$MSG_PARTS" ] && MSG_PARTS="$MSG_PARTS; " 
+            MSG_PARTS="${MSG_PARTS}update entities"
+          fi
+          
+          if [ "$HAS_WORLD" = true ]; then
+            [ -n "$MSG_PARTS" ] && MSG_PARTS="$MSG_PARTS; "
+            MSG_PARTS="${MSG_PARTS}update world generation"
+          fi
+          
+          if [ "$HAS_ENGINE" = true ]; then
+            [ -n "$MSG_PARTS" ] && MSG_PARTS="$MSG_PARTS; "
+            MSG_PARTS="${MSG_PARTS}update game engine"
+          fi
+          
+          if [ "$HAS_GRAPHICS" = true ]; then
+            [ -n "$MSG_PARTS" ] && MSG_PARTS="$MSG_PARTS; "
+            MSG_PARTS="${MSG_PARTS}update graphics/rendering"
+          fi
+          
+          if [ "$HAS_STYLES" = true ]; then
+            [ -n "$MSG_PARTS" ] && MSG_PARTS="$MSG_PARTS; "
+            MSG_PARTS="${MSG_PARTS}update styles"
+          fi
+          
+          if [ "$HAS_PYTHON" = true ]; then
+            [ -n "$MSG_PARTS" ] && MSG_PARTS="$MSG_PARTS; "
+            MSG_PARTS="${MSG_PARTS}update Python scripts"
+          fi
+          
+          if [ "$HAS_CONFIG" = true ]; then
+            [ -n "$MSG_PARTS" ] && MSG_PARTS="$MSG_PARTS; "
+            MSG_PARTS="${MSG_PARTS}update configuration"
+          fi
+          
+          if [ "$HAS_DOCS" = true ]; then
+            [ -n "$MSG_PARTS" ] && MSG_PARTS="$MSG_PARTS; "
+            MSG_PARTS="${MSG_PARTS}update documentation"
+          fi
+          
+          if [ "$HAS_WORKFLOW" = true ]; then
+            [ -n "$MSG_PARTS" ] && MSG_PARTS="$MSG_PARTS; "
+            MSG_PARTS="${MSG_PARTS}update CI/CD workflows"
+          fi
+          
+          if [ -z "$MSG_PARTS" ]; then
+            FILE_COUNT=$(echo "$CHANGED_FILES" | wc -l)
+            MSG_PARTS="update $FILE_COUNT file(s)"
+          fi
+          
+          COMMIT_MSG="chore: $MSG_PARTS"
+          echo "msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "Generated commit message: $COMMIT_MSG"
+
+      - name: Commit and push
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git add -A
+          git commit -m "${{ steps.message.outputs.msg }}"
+          git push
