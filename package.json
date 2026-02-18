@@ -1,6 +1,6 @@
 {
   "name": "buildbot-game",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Minecraft-style 3D voxel game with beautiful pixel art",
   "type": "module",
   "scripts": {
