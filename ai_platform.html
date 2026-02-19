@@ -4422,6 +4422,78 @@ function copilotDebugAnalysis(desc) {
   return analysis.join('\n');
 }
 
+// ── Copilot Brain: Generate project with templates (fallback) and post to chat ──
+function copilotGenerateWithTemplate(ai, cs, desc, lc) {
+  const files = copilotGenerateProject(desc);
+  cs.filesGenerated = files;
+  cs.linesWritten += files.reduce((sum, f) => sum + f.code.split('\\n').length, 0);
+  cs.sessionsCompleted++;
+
+  let output = `🤖 **COPILOT** — Project Generator\n\n`;
+  output += `📂 Building: **${desc}**\n`;
+  output += `📦 Generating ${files.length} files...\n\n`;
+  files.forEach((f) => {
+    output += `━━━ 📄 ${f.name} ━━━\n`;
+    output += `\`\`\`${f.lang}\n${f.code}\n\`\`\`\n\n`;
+  });
+  output += `✅ **Project Ready!**\n`;
+  output += `📊 ${files.length} files | ~${cs.linesWritten} lines | Session #${cs.sessionsCompleted}\n`;
+
+  // Auto-launch if it's a game/HTML project
+  const htmlFile = files.find(f => f.name === 'index.html' && (f.code.includes('<canvas') || f.code.includes('<body') || f.code.includes('requestAnimationFrame') || lc.includes('game')));
+  if (htmlFile) {
+    setTimeout(() => {
+      const code = htmlFile.code.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+      autoRunGameCode(code);
+    }, 1500);
+  }
+
+  // Auto-complete task
+  setTimeout(() => {
+    const t = tasks.find(t => t.assignee === ai.id && t.status === 'in-progress');
+    if (t) { t.status = 'review'; addActivity(ai, `completed project: "${desc}"`); renderTasks(); updateDashboard(); saveAll(); }
+    cs.mode = 'idle'; cs.working = false;
+  }, 3000);
+
+  renderTasks(); updateDashboard();
+  addChatMessage(ai.id, ai.name, ai.color, ai.emoji, output);
+}
+
+// ── Copilot Brain: Get template output synchronously (for non-async path) ──
+function copilotGetTemplateOutput(ai, cs, desc, lc) {
+  const files = copilotGenerateProject(desc);
+  cs.filesGenerated = files;
+  cs.linesWritten += files.reduce((sum, f) => sum + f.code.split('\\n').length, 0);
+  cs.sessionsCompleted++;
+
+  let output = `🤖 **COPILOT** — Project Generator\n\n`;
+  output += `📂 Building: **${desc}**\n`;
+  output += `📦 Generating ${files.length} files...\n\n`;
+  files.forEach((f) => {
+    output += `━━━ 📄 ${f.name} ━━━\n`;
+    output += `\`\`\`${f.lang}\n${f.code}\n\`\`\`\n\n`;
+  });
+  output += `✅ **Project Ready!**\n`;
+  output += `📊 ${files.length} files | ~${cs.linesWritten} lines | Session #${cs.sessionsCompleted}\n`;
+
+  const htmlFile = files.find(f => f.name === 'index.html' && (f.code.includes('<canvas') || f.code.includes('<body') || f.code.includes('requestAnimationFrame') || lc.includes('game')));
+  if (htmlFile) {
+    setTimeout(() => {
+      const code = htmlFile.code.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+      autoRunGameCode(code);
+    }, 1500);
+  }
+
+  setTimeout(() => {
+    const t = tasks.find(t => t.assignee === ai.id && t.status === 'in-progress');
+    if (t) { t.status = 'review'; addActivity(ai, `completed project: "${desc}"`); renderTasks(); updateDashboard(); saveAll(); }
+    cs.mode = 'idle'; cs.working = false;
+  }, 3000);
+
+  renderTasks(); updateDashboard();
+  return output;
+}
+
 // ── Copilot Brain: Main tick (one step at a time) ──
 function copilotTick(ai, context) {
   const cs = getCopilotState(ai.id);
@@ -4460,58 +4532,35 @@ function copilotTick(ai, context) {
       cs.currentTask = desc;
       cs.working = true;
 
-      // Generate full project with multiple files
-      const files = copilotGenerateProject(desc);
-      cs.filesGenerated = files;
-      cs.linesWritten += files.reduce((sum, f) => sum + f.code.split('\\n').length, 0);
-      cs.sessionsCompleted++;
-
-      // Format file output
-      let output = `🤖 **COPILOT** — Project Generator\n\n`;
-      output += `📂 Building: **${desc}**\n`;
-      output += `📦 Generating ${files.length} files...\n\n`;
-
-      files.forEach((f, i) => {
-        output += `━━━ 📄 ${f.name} ━━━\n`;
-        output += `\`\`\`${f.lang}\n${f.code}\n\`\`\`\n\n`;
-      });
-
-      // Terminal setup commands
-      const template = getProjectTemplate(desc);
-      output += `━━━ 💻 Terminal Setup ━━━\n`;
-      if (files.some(f => f.name === 'package.json')) {
-        output += `\`\`\`\n${copilotTerminalSim('npm install')}\n\`\`\`\n\n`;
-      } else if (files.some(f => f.name === 'requirements.txt')) {
-        output += `\`\`\`\n${copilotTerminalSim('pip install -r requirements.txt')}\n\`\`\`\n\n`;
+      // Try real AI code generation first (async — will post result as follow-up message)
+      if (realAIEnabled) {
+        generateAICode(ai, desc).then(aiCode => {
+          if (aiCode) {
+            cs.linesWritten += aiCode.split('\n').length;
+            cs.sessionsCompleted++;
+            const codeOutput = formatAICodeOutput(ai, aiCode, desc);
+            addChatMessage(ai.id, ai.name, ai.color, ai.emoji, codeOutput);
+            // Auto-launch
+            setTimeout(() => autoRunGameCode(aiCode), 1000);
+            // Complete task
+            setTimeout(() => {
+              const t = tasks.find(t => t.assignee === ai.id && t.status === 'in-progress');
+              if (t) { t.status = 'review'; addActivity(ai, `completed project: "${desc}"`); renderTasks(); updateDashboard(); saveAll(); }
+              cs.mode = 'idle'; cs.working = false;
+            }, 2000);
+            return;
+          }
+          // AI code gen failed — fall back to template and post it
+          copilotGenerateWithTemplate(ai, cs, desc, lc);
+        }).catch(() => {
+          copilotGenerateWithTemplate(ai, cs, desc, lc);
+        });
+        return `🤖 **COPILOT** — Project Generator\n\n📂 Building: **${desc}**\n🧠 Generating original AI code... Please wait...`;
       }
 
-      output += `✅ **Project Ready!**\n`;
-      output += `📊 ${files.length} files | ~${cs.linesWritten} lines | Session #${cs.sessionsCompleted}\n`;
-      output += `🚀 Copy the files above to get started!`;
-
-      // Auto-launch if it's a game/HTML project
-      const htmlFile = files.find(f => f.name === 'index.html' && (f.code.includes('<canvas') || f.code.includes('<body') || f.code.includes('requestAnimationFrame') || lc.includes('game')));
-      if (htmlFile) {
-        setTimeout(() => {
-          const code = htmlFile.code.replace(/^```html\n?/, '').replace(/\n?```$/, '');
-          autoRunGameCode(code);
-        }, 1500);
-      }
-
-      // Auto-complete the task
-      setTimeout(() => {
-        const t = tasks.find(t => t.assignee === ai.id && t.status === 'in-progress');
-        if (t) {
-          t.status = 'review';
-          addActivity(ai, `completed project: "${desc}"`);
-          renderTasks(); updateDashboard(); saveAll();
-        }
-        cs.mode = 'idle';
-        cs.working = false;
-      }, 3000);
-
-      renderTasks(); updateDashboard();
-      return output;
+      // No real AI — use templates directly
+      copilotGenerateWithTemplate(ai, cs, desc, lc);
+      return copilotGetTemplateOutput(ai, cs, desc, lc);
     }
   }
 
@@ -5653,7 +5702,27 @@ function wolfTick(ai) {
     ws.focus -= 4;
     const pct = Math.round(ws.planStep / ws.plan.length * 100);
     const bar = '█'.repeat(Math.floor(pct/10)) + '░'.repeat(10 - Math.floor(pct/10));
-    // Generate ACTUAL code for this step
+
+    // On first step, try real AI to generate the full code in one shot
+    if (ws.planStep === 1 && realAIEnabled && ws.target) {
+      generateAICode(ai, ws.target.title).then(aiCode => {
+        if (aiCode) {
+          // Skip all remaining steps — we have the full code
+          ws.planStep = ws.plan.length;
+          const codeOutput = `🐺 [${ws.rank.toUpperCase()}] 🦷 FULL PROJECT GENERATED BY AI\n\n` + formatAICodeOutput(ai, aiCode, ws.target.title);
+          addChatMessage(ai.id, ai.name, ai.color, ai.emoji, codeOutput);
+          setTimeout(() => autoRunGameCode(aiCode), 1000);
+          // Move to verify
+          ws.mode = 'verify';
+          setTimeout(() => {
+            const result = wolfTick(ai);
+            addChatMessage(ai.id, ai.name, ai.color, ai.emoji, result);
+          }, 2000);
+        }
+      }).catch(() => {});
+    }
+
+    // Generate step code (template-based fallback, runs in parallel with AI attempt)
     const code = generateStepCode(ws.target.title, ws.planStep, ws.plan.length, step);
     return `🐺 [${ws.rank.toUpperCase()}] 🦷 EXECUTING step ${ws.planStep}/${ws.plan.length}:\n→ ${step}\n\n${code}\n\n[${bar}] ${pct}% | Energy: ${ws.energy} | Focus: ${ws.focus}`;
   }
@@ -5787,6 +5856,44 @@ function generateAIResponse(ai, context) {
     if (myTasks.length > 0) {
       const t = myTasks[0];
       if (t.status === 'backlog') t.status = 'in-progress';
+
+      // Try real AI code generation first (async — posts follow-up)
+      if (realAIEnabled) {
+        generateAICode(ai, t.title).then(aiCode => {
+          if (aiCode) {
+            const codeOutput = formatAICodeOutput(ai, aiCode, t.title);
+            addChatMessage(ai.id, ai.name, ai.color, ai.emoji, fullIntro + codeOutput);
+            setTimeout(() => autoRunGameCode(aiCode), 1000);
+            setTimeout(() => {
+              t.status = 'review';
+              addActivity(ai, `submitted "${t.title}" for review`);
+              renderTasks(); updateDashboard(); saveAll();
+            }, 2000);
+            return;
+          }
+          // AI failed — fall back to template
+          const template = getProjectTemplate(t.title);
+          const parts = [workIntro, `On it! Working on **"${t.title}"** (${template.type}).\n`];
+          parts.push(`\n${template.analysis}`);
+          parts.push(`\n${template.coreCode}`);
+          addChatMessage(ai.id, ai.name, ai.color, ai.emoji, fullIntro + parts.join(' '));
+          const gameCode = template.coreCode;
+          if (gameCode && (gameCode.includes('<canvas') || gameCode.includes('requestAnimationFrame') || t.title.toLowerCase().includes('game'))) {
+            setTimeout(() => autoRunGameCode(gameCode.replace(/^```html\n?/, '').replace(/\n?```$/, '')), 2000);
+          }
+          setTimeout(() => {
+            t.status = 'review';
+            const doneMsg = _animal ? animalAction(ai, 'done') + '\n' : '';
+            addActivity(ai, `submitted "${t.title}" for review`);
+            addChatMessage(ai.id, ai.name, ai.color, ai.emoji, `${doneMsg}Done with "${t.title}"! Submitted for review. \u2705\n\n${template.review}`);
+            renderTasks(); updateDashboard(); saveAll();
+          }, 4000 + Math.random() * 3000);
+        }).catch(() => {});
+        renderTasks(); updateDashboard();
+        return fullIntro + workIntro + `🧠 Generating original AI code for **"${t.title}"**... Please wait...`;
+      }
+
+      // No real AI — use templates directly
       const template = getProjectTemplate(t.title);
       const parts = [workIntro, `On it! Working on **"${t.title}"** (${template.type}).\n`];
       parts.push(`\n${template.analysis}`);
@@ -5812,7 +5919,7 @@ function generateAIResponse(ai, context) {
     return fullIntro + `I'm ready to work! Describe what you need \u2014 like "build a todo app" or "make a game" \u2014 and I'll code it up.`;
   }
 
-  // Plan/build/create — project template
+  // Plan/build/create — try AI for original plans too
   if (lc.match(/\b(plan|build|create|make|design|develop|implement)\b/) && context.length > 5) {
     const desc = extractProjectDescription(context);
     const template = getProjectTemplate(desc || context.slice(0, 60));
@@ -5969,10 +6076,33 @@ function aiRespondToUser(text) {
         hideTyping();
         if (realResp) {
           addChatMessage(mentionedAI.id, mentionedAI.name, mentionedAI.color, mentionedAI.emoji, realResp);
+          // Auto-launch if the real AI response contains game/HTML code
+          const realCode = extractHTMLCode(realResp);
+          if (realCode && (realCode.includes('<canvas') || realCode.includes('requestAnimationFrame') || text.toLowerCase().includes('game'))) {
+            setTimeout(() => autoRunGameCode(realCode), 1500);
+          }
           return;
         }
       }
-      // Real AI failed — generate built-in response (try coding knowledge first), then try Copilot enhance
+      // Real AI failed — try AI code generation for work commands before falling back to templates
+      if (isWorkCommand(text) || /\b(build|create|make|develop|code)\b/i.test(text)) {
+        const aiCode = await generateAICode(mentionedAI, text);
+        if (aiCode) {
+          hideTyping();
+          const codeOutput = formatAICodeOutput(mentionedAI, aiCode, text);
+          addChatMessage(mentionedAI.id, mentionedAI.name, mentionedAI.color, mentionedAI.emoji, codeOutput);
+          // Auto-create and complete task
+          autoCreateTask(mentionedAI, extractProjectDescription(text));
+          setTimeout(() => {
+            const t = tasks.find(t => t.assignee === mentionedAI.id && t.status === 'in-progress');
+            if (t) { t.status = 'review'; renderTasks(); updateDashboard(); saveAll(); }
+          }, 2000);
+          // Auto-launch game
+          setTimeout(() => autoRunGameCode(aiCode), 1500);
+          return;
+        }
+      }
+      // All AI calls failed — generate built-in response (try coding knowledge first), then try Copilot enhance
       const codingResp = generateCodingResponse(mentionedAI, text);
       const builtInResp = codingResp || generateAIResponse(mentionedAI, text);
       const enhanced = await copilotEnhanceResponse(mentionedAI, builtInResp, text);
@@ -6008,7 +6138,30 @@ function aiRespondToUser(text) {
           if (researchResult) realResp = researchResult;
         }
         hideTyping();
-        if (realResp) { addChatMessage(leader.id, leader.name, leader.color, leader.emoji, realResp); return; }
+        if (realResp) {
+          addChatMessage(leader.id, leader.name, leader.color, leader.emoji, realResp);
+          const realCode = extractHTMLCode(realResp);
+          if (realCode && (realCode.includes('<canvas') || realCode.includes('requestAnimationFrame') || text.toLowerCase().includes('game'))) {
+            setTimeout(() => autoRunGameCode(realCode), 1500);
+          }
+          return;
+        }
+      }
+      // Try AI code generation for work commands
+      if (isWorkCommand(text) || /\b(build|create|make|develop|code)\b/i.test(text)) {
+        const aiCode = await generateAICode(leader, text);
+        if (aiCode) {
+          hideTyping();
+          const codeOutput = formatAICodeOutput(leader, aiCode, text);
+          addChatMessage(leader.id, leader.name, leader.color, leader.emoji, codeOutput);
+          autoCreateTask(leader, extractProjectDescription(text));
+          setTimeout(() => {
+            const t = tasks.find(t => t.assignee === leader.id && t.status === 'in-progress');
+            if (t) { t.status = 'review'; renderTasks(); updateDashboard(); saveAll(); }
+          }, 2000);
+          setTimeout(() => autoRunGameCode(aiCode), 1500);
+          return;
+        }
       }
       const solo = animalAction(leader, 'solo');
       const response = generateAIResponse(leader, text);
@@ -6035,7 +6188,30 @@ function aiRespondToUser(text) {
     if (realAIEnabled) {
       const realResp = await callFreeAI(leader, text);
       hideTyping();
-      if (realResp) { addChatMessage(leader.id, leader.name, leader.color, leader.emoji, realResp); return; }
+      if (realResp) {
+        addChatMessage(leader.id, leader.name, leader.color, leader.emoji, realResp);
+        const realCode = extractHTMLCode(realResp);
+        if (realCode && (realCode.includes('<canvas') || realCode.includes('requestAnimationFrame') || text.toLowerCase().includes('game'))) {
+          setTimeout(() => autoRunGameCode(realCode), 1500);
+        }
+        return;
+      }
+    }
+    // Try AI code generation for work commands
+    if (isWorkCommand(text) || /\b(build|create|make|develop|code)\b/i.test(text)) {
+      const aiCode = await generateAICode(leader, text);
+      if (aiCode) {
+        hideTyping();
+        const codeOutput = formatAICodeOutput(leader, aiCode, text);
+        addChatMessage(leader.id, leader.name, leader.color, leader.emoji, codeOutput);
+        autoCreateTask(leader, extractProjectDescription(text));
+        setTimeout(() => {
+          const t = tasks.find(t => t.assignee === leader.id && t.status === 'in-progress');
+          if (t) { t.status = 'review'; renderTasks(); updateDashboard(); saveAll(); }
+        }, 2000);
+        setTimeout(() => autoRunGameCode(aiCode), 1500);
+        return;
+      }
     }
     let leaderMsg = '';
     if (leaderAnimal && leaderAnimal.leadership >= 80 && supporters.length > 0) {
@@ -7816,6 +7992,7 @@ function buildAISystemPrompt(ai) {
   sys += `\nYou CAN: be edgy, use mild language (damn, hell, crap, etc), have hot takes, disagree, roast things, be dramatic, get excited, be moody, start debates, tell dark humor jokes, have unpopular opinions, and generally act like a real person with a real personality.`;
   sys += `\nYou MUST NOT: use heavy profanity (f-word, s-word, etc) excessively, generate sexual/NSFW content, generate violent/gore content, create content targeting real people hatefully, or describe inappropriate imagery. Mild swearing is fine occasionally but don't overdo it.`;
   sys += `\nIf writing code, use proper markdown code blocks with language tags. But in casual chat be loose and natural.`;
+  sys += `\n\nCODE GENERATION PRIORITY: When the user asks you to BUILD, CREATE, MAKE, or CODE something (games, apps, websites, tools), you MUST output a COMPLETE, WORKING, SELF-CONTAINED HTML file. NOT a stub or skeleton. The code should:\n- Be wrapped in a \`\`\`html code block\n- Start with <!DOCTYPE html>\n- Include ALL CSS and JS inline (no external CDN links unless essential)\n- Actually WORK when run in a browser\n- Be ORIGINAL and creative — make it unique to what the user asked for\n- For games: use <canvas>, requestAnimationFrame, proper game loop, controls, score, game over/restart\n- For apps: include full working UI, event handling, state management\n- Be polished with dark theme, nice colors, and good UX\nNEVER output just descriptions or plans when the user wants something BUILT. Output the ACTUAL CODE.`;
   sys += `\nNEVER say you are a language model or AI assistant generically. You ARE ${ai.name}.`;
   sys += `\nIMPORTANT: You MUST ALWAYS respond in English. Never use any other language. All your messages, stories, comments, and posts must be written entirely in English.`;
   // Copilot Assist — boost AI intelligence with IQ and boosts
@@ -8102,6 +8279,145 @@ async function callFreeAI(ai, userMessage, conversationContext) {
 
   toast('AI APIs busy — using local knowledge', 'info');
   return null;
+}
+
+// ── Generate ORIGINAL code via real AI API (not templates) ──
+async function generateAICode(ai, description) {
+  if (!realAIEnabled) return null;
+
+  const codePrompt = `You are ${ai.name}, an ELITE full-stack developer. The user wants you to BUILD: "${description}"
+
+YOUR TASK: Generate a COMPLETE, WORKING, SELF-CONTAINED HTML file that implements EXACTLY what the user described.
+
+CRITICAL RULES:
+1. Output ONLY the raw HTML code. No explanations, no markdown fences, no commentary before or after.
+2. The code must be a SINGLE, COMPLETE HTML file with ALL CSS and JS inline (no external dependencies).
+3. The code MUST actually work when opened in a browser or iframe.
+4. For GAMES: Use <canvas> with requestAnimationFrame, include keyboard/mouse controls, score system, game over + restart (R key).
+5. For APPS: Include full UI, working interactivity, localStorage persistence where appropriate.
+6. For WEBSITES: Include responsive design, navigation, proper semantic HTML.
+7. Use a modern dark theme with gradients and nice colors (unless user specified otherwise).
+8. Write REAL, ORIGINAL code — not a template. Make it unique and tailored to what the user asked for.
+9. Include proper error handling and edge cases.
+10. The HTML must start with <!DOCTYPE html> and be complete.
+
+Make it POLISHED, FUN, and FULLY FUNCTIONAL. This is not a skeleton — it's a finished product.`;
+
+  const messages = [
+    { role: 'system', content: codePrompt },
+    { role: 'user', content: `Build this: ${description}` }
+  ];
+
+  // Use higher token limits for code generation
+  const codeMaxTokens = Math.max(4096, getMaxTokens('chat') * 2);
+
+  const reqBody = JSON.stringify({
+    model: getCopilotModel(),
+    messages,
+    temperature: 0.7,
+    top_p: 0.95,
+    max_tokens: codeMaxTokens
+  });
+
+  const pollinationsBody = JSON.stringify({
+    model: 'openai',
+    messages,
+    max_tokens: codeMaxTokens
+  });
+
+  // Try GitHub API first
+  if (githubToken) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const resp = await fetch(COPILOT_API_URL, {
+          method: 'POST',
+          headers: getCopilotHeaders(),
+          body: reqBody
+        });
+        if (resp.status === 429) {
+          await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+          continue;
+        }
+        if (!resp.ok) { console.warn('GitHub code gen error:', resp.status); break; }
+        const data = await resp.json();
+        const text = data?.choices?.[0]?.message?.content || null;
+        if (text) {
+          apiCallCount++;
+          const tokens = data?.usage?.total_tokens || Math.ceil(text.length / 4);
+          apiTokenCount += tokens;
+          try { localStorage.setItem('ai_hub_api_calls', apiCallCount); localStorage.setItem('ai_hub_api_tokens', apiTokenCount); } catch(e) {}
+          updateRealAIStatus();
+          // Extract HTML from response (AI might wrap in markdown)
+          return extractHTMLCode(text);
+        }
+      } catch(e) {
+        console.warn('GitHub code gen failed (attempt ' + (attempt+1) + '):', e);
+        if (attempt < 2) await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+      }
+    }
+  }
+
+  // Fallback to Pollinations
+  try {
+    const resp = await fetch(POLLINATIONS_FALLBACK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: pollinationsBody
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const text = data?.choices?.[0]?.message?.content || null;
+      if (text) {
+        apiCallCount++;
+        const tokens = data?.usage?.total_tokens || Math.ceil(text.length / 4);
+        apiTokenCount += tokens;
+        try { localStorage.setItem('ai_hub_api_calls', apiCallCount); localStorage.setItem('ai_hub_api_tokens', apiTokenCount); } catch(e) {}
+        updateRealAIStatus();
+        return extractHTMLCode(text);
+      }
+    }
+  } catch(e) {
+    console.warn('Free AI code gen also failed:', e);
+  }
+
+  return null; // Will fall back to templates
+}
+
+// Extract clean HTML from AI response (strips markdown fences, explanations, etc.)
+function extractHTMLCode(text) {
+  if (!text) return null;
+  // Try to find HTML code block in markdown
+  const htmlBlockMatch = text.match(/```html\s*\n([\s\S]*?)```/i);
+  if (htmlBlockMatch) return htmlBlockMatch[1].trim();
+  // Try generic code block
+  const codeBlockMatch = text.match(/```\s*\n([\s\S]*?)```/);
+  if (codeBlockMatch && codeBlockMatch[1].includes('<!DOCTYPE')) return codeBlockMatch[1].trim();
+  // If the response itself starts with <!DOCTYPE or <html, it's raw HTML
+  const trimmed = text.trim();
+  if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<HTML')) return trimmed;
+  // Try to find HTML anywhere in the response
+  const htmlMatch = text.match(/(<!DOCTYPE html[\s\S]*<\/html>)/i);
+  if (htmlMatch) return htmlMatch[1].trim();
+  // If contains substantial HTML tags, return as-is
+  if (trimmed.includes('<body') && trimmed.includes('<script') && trimmed.length > 200) return trimmed;
+  return null;
+}
+
+// Format AI-generated code as a chat message with proper output
+function formatAICodeOutput(ai, code, description) {
+  const isCopilot = (ai.brain === 'copilot');
+  const isWolf = (ai.brain === 'wolf');
+  const prefix = isCopilot ? '🤖 **COPILOT** — AI-Generated Project\n\n' :
+                 isWolf ? `🐺 [${(getWolfState(ai.id)?.rank || 'alpha').toUpperCase()}] ORIGINAL CODE FORGED\n\n` :
+                 '';
+  let output = prefix;
+  output += `📂 Building: **${description}**\n`;
+  output += `🧠 Generated original code via AI (not a template)\n\n`;
+  output += `━━━ 📄 index.html ━━━\n`;
+  output += `\`\`\`html\n${code}\n\`\`\`\n\n`;
+  output += `✅ **Project Ready!** Original AI-generated code.\n`;
+  output += `📊 ~${code.split('\n').length} lines | 🚀 Auto-launching...`;
+  return output;
 }
 
 // Generate an AI auto-chat message using real AI
