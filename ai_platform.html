@@ -586,7 +586,7 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;hei
       <span class="nav-icon">📋</span>Task Planner
     </div>
     <div class="nav-item" data-page="upload" onclick="showPage('upload')">
-      <span class="nav-icon">📤</span>Upload / Export
+      <span class="nav-icon">�</span>AI Trading
     </div>
     <div class="nav-section">Discover</div>
     <div class="nav-item" data-page="find" onclick="showPage('find')">
@@ -972,39 +972,40 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;hei
             </div>
 
             <div class="card" style="margin-top:16px">
-              <div class="card-header"><span class="card-title">⚙️ Advanced AI Settings</span></div>
+              <div class="card-header"><span class="card-title">⚙️ Advanced AI Settings</span><span class="card-subtitle">Buy power-ups in Store to unlock max 210!</span></div>
               <div class="slider-group">
-                <div class="slider-header"><span>🧠 Logic & Reasoning</span><span class="slider-val" id="sl-logic-val">210</span></div>
-                <input type="range" id="sl-logic" min="0" max="210" value="210" oninput="updateAdvSlider('logic',this.value)" style="background:linear-gradient(90deg,var(--bg4) 0%,#6366f1 100%)">
+                <div class="slider-header"><span>🧠 Logic & Reasoning</span><span class="slider-val" id="sl-logic-val">100</span><span class="adv-lock-badge" id="lock-logic" style="font-size:10px;color:var(--yellow);margin-left:6px">🔒 max 100</span></div>
+                <input type="range" id="sl-logic" min="0" max="100" value="100" oninput="updateAdvSlider('logic',this.value)" style="background:linear-gradient(90deg,var(--bg4) 0%,#6366f1 100%)">
               </div>
               <div class="slider-group">
-                <div class="slider-header"><span>⚡ Response Speed</span><span class="slider-val" id="sl-speed-val">210</span></div>
-                <input type="range" id="sl-speed" min="0" max="210" value="210" oninput="updateAdvSlider('speed',this.value)">
+                <div class="slider-header"><span>⚡ Response Speed</span><span class="slider-val" id="sl-speed-val">100</span><span class="adv-lock-badge" id="lock-speed" style="font-size:10px;color:var(--yellow);margin-left:6px">🔒 max 100</span></div>
+                <input type="range" id="sl-speed" min="0" max="100" value="100" oninput="updateAdvSlider('speed',this.value)">
               </div>
               <div class="slider-group">
-                <div class="slider-header"><span>🔬 Analysis Depth</span><span class="slider-val" id="sl-depth-val">210</span></div>
-                <input type="range" id="sl-depth" min="0" max="210" value="210" oninput="updateAdvSlider('depth',this.value)">
+                <div class="slider-header"><span>🔬 Analysis Depth</span><span class="slider-val" id="sl-depth-val">100</span><span class="adv-lock-badge" id="lock-depth" style="font-size:10px;color:var(--yellow);margin-left:6px">🔒 max 100</span></div>
+                <input type="range" id="sl-depth" min="0" max="100" value="100" oninput="updateAdvSlider('depth',this.value)">
               </div>
               <div class="slider-group">
-                <div class="slider-header"><span>🎯 Focus Level</span><span class="slider-val" id="sl-focus-val">210</span></div>
-                <input type="range" id="sl-focus" min="0" max="210" value="210" oninput="updateAdvSlider('focus',this.value)">
+                <div class="slider-header"><span>🎯 Focus Level</span><span class="slider-val" id="sl-focus-val">100</span><span class="adv-lock-badge" id="lock-focus" style="font-size:10px;color:var(--yellow);margin-left:6px">🔒 max 100</span></div>
+                <input type="range" id="sl-focus" min="0" max="100" value="100" oninput="updateAdvSlider('focus',this.value)">
               </div>
               <div class="slider-group">
-                <div class="slider-header"><span>💾 Memory Retention</span><span class="slider-val" id="sl-memory-val">210</span></div>
-                <input type="range" id="sl-memory" min="0" max="210" value="210" oninput="updateAdvSlider('memory',this.value)">
+                <div class="slider-header"><span>💾 Memory Retention</span><span class="slider-val" id="sl-memory-val">100</span><span class="adv-lock-badge" id="lock-memory" style="font-size:10px;color:var(--yellow);margin-left:6px">🔒 max 100</span></div>
+                <input type="range" id="sl-memory" min="0" max="100" value="100" oninput="updateAdvSlider('memory',this.value)">
               </div>
               <div class="slider-group">
-                <div class="slider-header"><span>🔄 Adaptability</span><span class="slider-val" id="sl-adapt-val">210</span></div>
-                <input type="range" id="sl-adapt" min="0" max="210" value="210" oninput="updateAdvSlider('adapt',this.value)">
+                <div class="slider-header"><span>🔄 Adaptability</span><span class="slider-val" id="sl-adapt-val">100</span><span class="adv-lock-badge" id="lock-adapt" style="font-size:10px;color:var(--yellow);margin-left:6px">🔒 max 100</span></div>
+                <input type="range" id="sl-adapt" min="0" max="100" value="100" oninput="updateAdvSlider('adapt',this.value)">
               </div>
               <div class="slider-group">
-                <div class="slider-header"><span>📚 Knowledge Breadth</span><span class="slider-val" id="sl-knowledge-val">210</span></div>
-                <input type="range" id="sl-knowledge" min="0" max="210" value="210" oninput="updateAdvSlider('knowledge',this.value)">
+                <div class="slider-header"><span>📚 Knowledge Breadth</span><span class="slider-val" id="sl-knowledge-val">100</span><span class="adv-lock-badge" id="lock-knowledge" style="font-size:10px;color:var(--yellow);margin-left:6px">🔒 max 100</span></div>
+                <input type="range" id="sl-knowledge" min="0" max="100" value="100" oninput="updateAdvSlider('knowledge',this.value)">
               </div>
               <div class="slider-group">
-                <div class="slider-header"><span>🎨 Code Style</span><span class="slider-val" id="sl-style-val">210</span></div>
-                <input type="range" id="sl-style" min="0" max="210" value="210" oninput="updateAdvSlider('style',this.value)">
+                <div class="slider-header"><span>🎨 Code Style</span><span class="slider-val" id="sl-style-val">100</span><span class="adv-lock-badge" id="lock-style" style="font-size:10px;color:var(--yellow);margin-left:6px">🔒 max 100</span></div>
+                <input type="range" id="sl-style" min="0" max="100" value="100" oninput="updateAdvSlider('style',this.value)">
               </div>
+              <p style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">💡 Purchase power-ups from the <a href="#" onclick="showPage('store');return false" style="color:var(--accent2)">Store</a> to unlock each stat to max 210!</p>
             </div>
           </div>
 
@@ -1047,12 +1048,13 @@ function onTask(task) {
             </div>
 
             <div class="card" style="margin-top:8px">
-              <div class="card-header"><span class="card-title">🌐 Sharing</span></div>
+              <div class="card-header"><span class="card-title">🔄 Trading</span></div>
               <div class="toggle-wrap" style="margin-bottom:8px">
-                <span class="toggle-label">Share this AI publicly</span>
+                <span class="toggle-label">Available for trading</span>
                 <label class="toggle"><input type="checkbox" id="ai-share-toggle"><span class="toggle-slider"></span></label>
               </div>
-              <p style="font-size:11px;color:var(--text3);margin:0">When enabled, other users can import this AI via a share code.</p>
+              <p style="font-size:11px;color:var(--text3);margin:0">When enabled, this AI can be listed on the Trading Post for other users to offer trades.</p>
+              <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%" onclick="showPage('upload')">🏪 Go to Trading Post</button>
             </div>
 
             <div style="display:flex;gap:8px;margin-top:8px">
@@ -1122,54 +1124,92 @@ function onTask(task) {
         </div>
       </div>
 
-      <!-- UPLOAD PAGE -->
+      <!-- AI TRADING PAGE -->
       <div class="page" id="page-upload">
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header"><span class="card-title">📤 Export AIs</span></div>
-            <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Download all your AIs as a JSON file. Share them or back them up!</p>
-            <button class="btn btn-primary" onclick="exportAll()">📥 Download All AIs (.json)</button>
-            <div style="margin-top:16px">
-              <div class="form-label">Export Individual AI</div>
-              <select id="export-single" style="width:100%;margin-bottom:8px"></select>
-              <button class="btn btn-secondary" onclick="exportSingle()">Download Selected AI</button>
-            </div>
+        <!-- Trade Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">🔄 AI Trading Post</h2>
+            <p style="font-size:13px;color:var(--text3)">Trade your AIs with other users! List your AIs for trade or browse available trades.</p>
           </div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">📥 Upload / Import AIs</span></div>
-            <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Import AI configurations from a JSON file. Uploaded AIs will be added to your collection.</p>
-            <div style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:border-color .2s" onclick="document.getElementById('upload-file').click()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-              <div style="font-size:36px;margin-bottom:8px">📁</div>
-              <div style="font-size:14px;font-weight:600;margin-bottom:4px">Click to upload or drag & drop</div>
-              <div style="font-size:12px;color:var(--text3)">.json files accepted</div>
-            </div>
-            <input type="file" id="upload-file" accept=".json" style="display:none" onchange="importAIs(event)">
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:13px;color:var(--text2)">🪙 <span id="trade-coins">∞</span></span>
+            <span style="font-size:13px;color:var(--text2)">💎 <span id="trade-gems">∞</span></span>
           </div>
-        </div>
-        <div class="card" style="margin-top:16px">
-          <div class="card-header"><span class="card-title">🌐 Share Code</span></div>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Copy this code to share your AI collection with others:</p>
-          <textarea id="share-code" rows="6" style="width:100%;font-family:monospace;font-size:11px" readonly></textarea>
-          <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="copyShareCode()">📋 Copy to Clipboard</button>
         </div>
 
-        <!-- Individual AI Sharing -->
-        <div class="card" style="margin-top:16px">
-          <div class="card-header"><span class="card-title">🤝 Share Individual AIs</span><span class="card-subtitle">Share or import single AIs via code</span></div>
+        <!-- List an AI for Trade -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">📦 List an AI for Trade</span></div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Select one of your AIs to put up for trade. Set what you want in return.</p>
           <div class="grid-2" style="gap:16px">
             <div>
-              <div class="form-label" style="margin-bottom:8px">📤 Share an AI</div>
-              <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Select an AI with sharing enabled to get its share code.</p>
-              <div id="shareable-ai-list" style="max-height:200px;overflow-y:auto"></div>
+              <div class="form-label">Your AI to Trade</div>
+              <select id="trade-offer-ai" style="width:100%;margin-bottom:8px"></select>
+              <div class="form-label">What You Want</div>
+              <select id="trade-want-type" style="width:100%;margin-bottom:8px">
+                <option value="ai">🤖 Another AI (any)</option>
+                <option value="coins">🪙 Coins</option>
+                <option value="gems">💎 Gems</option>
+                <option value="specific">🎯 Specific AI Role</option>
+              </select>
+              <div id="trade-want-details" style="margin-bottom:8px"></div>
+              <div class="form-label">Trade Note (optional)</div>
+              <input type="text" id="trade-note" placeholder="Looking for a coder AI..." style="width:100%;margin-bottom:12px">
+              <button class="btn btn-primary" onclick="listAIForTrade()" style="width:100%">📤 List for Trade</button>
             </div>
             <div>
-              <div class="form-label" style="margin-bottom:8px">📥 Import a Shared AI</div>
-              <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Paste a share code from another user to import their AI.</p>
-              <textarea id="import-share-code" rows="4" style="width:100%;font-family:monospace;font-size:11px" placeholder="Paste share code here..."></textarea>
-              <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="importFromShareCode()">📥 Import AI</button>
+              <div class="form-label" style="margin-bottom:8px">Preview</div>
+              <div id="trade-preview" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;min-height:120px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px">Select an AI to preview</div>
             </div>
           </div>
         </div>
+
+        <!-- Active Trade Listings -->
+        <div class="card" style="margin-top:16px">
+          <div class="card-header"><span class="card-title">🏪 Trade Marketplace</span><span class="card-subtitle" id="trade-count">0 listings</span></div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="trade-filters">
+            <div class="filter-chip active" onclick="filterTrades('all')">All</div>
+            <div class="filter-chip" onclick="filterTrades('yours')">📦 Your Listings</div>
+            <div class="filter-chip" onclick="filterTrades('available')">🔄 Available</div>
+            <div class="filter-chip" onclick="filterTrades('completed')">✅ Completed</div>
+          </div>
+          <div id="trade-listings-grid" class="grid-2" style="gap:12px">
+            <div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🏪</div><p>No trades listed yet. Be the first to list an AI!</p></div>
+          </div>
+        </div>
+
+        <!-- Your Trade History -->
+        <div class="card" style="margin-top:16px">
+          <div class="card-header"><span class="card-title">📜 Trade History</span></div>
+          <div id="trade-history" style="max-height:200px;overflow-y:auto">
+            <p style="font-size:12px;color:var(--text3);text-align:center;padding:20px">No completed trades yet.</p>
+          </div>
+        </div>
+
+        <!-- Legacy Import/Export (collapsed) -->
+        <details style="margin-top:16px">
+          <summary style="cursor:pointer;font-size:13px;color:var(--text3);padding:8px 0">📁 Import / Export (Advanced)</summary>
+          <div class="card" style="margin-top:8px">
+            <div class="grid-2" style="gap:16px">
+              <div>
+                <div class="form-label">Export AIs</div>
+                <button class="btn btn-secondary btn-sm" onclick="exportAll()" style="width:100%;margin-bottom:6px">📥 Download All (.json)</button>
+                <select id="export-single" style="width:100%;margin-bottom:4px"></select>
+                <button class="btn btn-secondary btn-sm" onclick="exportSingle()" style="width:100%">Download Selected</button>
+              </div>
+              <div>
+                <div class="form-label">Import AIs</div>
+                <div style="border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer" onclick="document.getElementById('upload-file').click()">
+                  <div style="font-size:24px;margin-bottom:4px">📁</div>
+                  <div style="font-size:12px;color:var(--text3)">Click to upload .json</div>
+                </div>
+                <input type="file" id="upload-file" accept=".json" style="display:none" onchange="importAIs(event)">
+              </div>
+            </div>
+          </div>
+        </details>
+        <textarea id="share-code" rows="1" style="display:none"></textarea>
       </div>
 
       <!-- FIND AI PAGE -->
@@ -1713,6 +1753,7 @@ function onTask(task) {
           <div class="filter-chip active" onclick="filterStore('all')">All</div>
           <div class="filter-chip" onclick="filterStore('ais')">🤖 Smart AIs</div>
           <div class="filter-chip" onclick="filterStore('upgrades')">⬆️ Upgrades</div>
+          <div class="filter-chip" onclick="filterStore('powerups')">🔓 Power-Ups</div>
           <div class="filter-chip" onclick="filterStore('themes')">🎨 Themes</div>
           <div class="filter-chip" onclick="filterStore('special')">✨ Special</div>
         </div>
@@ -2154,6 +2195,8 @@ let collectionFilter = 'all';
 let unlockedAchievements = {};
 let dailyChallengeData = null;
 let smartnessData = { aiIQ: {}, totalHelped: 0, clonesDeployed: 0, history: [] };
+let tradeListings = JSON.parse(localStorage.getItem('aiHubTrades')) || [];
+function saveTradeListings() { localStorage.setItem('aiHubTrades', JSON.stringify(tradeListings)); }
 
 // Available options
 const EMOJIS = ['🤖','🧠','⚡','🔥','💎','🌟','🎯','🚀','👾','🦾','🐉','🦊','🐺','🦅','🌀','💫','🎭','🛡️','⚔️','🔮'];
@@ -3234,14 +3277,17 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
-  const titles = {dashboard:'Dashboard',builder:'AI Builder',chat:'AI Chat Room',tasks:'Task Planner',upload:'Upload / Export',find:'Find AI',craftai:'Craft AI',freemode:'Free Mode',analysis:'AI Analysis',fusion:'Fusion Lab',aiworld:'AI World',aitube:'AI Tube',aibook:'AI Book',customchats:'Custom Chats',battle:'Battle Arena',collection:'Collection',achievements:'Achievements',smartness:'AI Smartness',settings:'Settings'};
+  const titles = {dashboard:'Dashboard',builder:'AI Builder',chat:'AI Chat Room',tasks:'Task Planner',upload:'AI Trading',find:'Find AI',craftai:'Craft AI',freemode:'Free Mode',analysis:'AI Analysis',fusion:'Fusion Lab',aiworld:'AI World',aitube:'AI Tube',aibook:'AI Book',customchats:'Custom Chats',battle:'Battle Arena',collection:'Collection',achievements:'Achievements',smartness:'AI Smartness',settings:'Settings',store:'Store',inventory:'Inventory'};
   if (page === 'dashboard') { updateDashboard(); updateSidebarAIs(); }
   if (page === 'find') renderFindAI();
   if (page === 'craftai') renderCraftAI();
   if (page === 'freemode') renderFreeModeAgents();
   if (page === 'analysis') { updateAnalysisSelect(); renderAnalysis(); }
   if (page === 'fusion') { renderFusionLab(); }
+  if (page === 'upload') { initTradePage(); updateShareCode(); }
   if (page === 'settings') { updateRealAIStatus(); loadTokenSetting(); renderSmartness(); renderSettingsPurchased(); renderSettingsIQGrid(); loadAssistToggles(); }
+  if (page === 'store') { renderStore(); }
+  if (page === 'builder') { refreshAdvSliderLocks(); }
   if (page === 'aitube') renderAITubeGrid();
   if (page === 'aibook') renderAIBook();
   if (page === 'customchats') renderCustomChatsList();
@@ -3311,14 +3357,14 @@ function resetBuilder() {
     document.getElementById('sl-'+s).value = v;
     document.getElementById('sl-'+s+'-val').textContent = v;
   });
-  // Reset advanced sliders to playerData.aiBoosts defaults
-  const defBoosts = (typeof playerData !== 'undefined') ? playerData.aiBoosts : { logic:210, creativity:210, speed:210, depth:210 };
-  const advDefaults = { logic: defBoosts.logic||210, speed: defBoosts.speed||210, depth: defBoosts.depth||210, focus: 210, memory: 210, adapt: 210, knowledge: 210, style: 210 };
+  // Reset advanced sliders respecting power-up limits
   ['logic','speed','depth','focus','memory','adapt','knowledge','style'].forEach(s => {
-    const v = advDefaults[s] || 210;
+    const maxVal = getAdvSliderMax(s);
+    const v = Math.min(100, maxVal);
     const el = document.getElementById('sl-'+s);
-    if (el) { el.value = v; document.getElementById('sl-'+s+'-val').textContent = v; }
+    if (el) { el.max = maxVal; el.value = v; document.getElementById('sl-'+s+'-val').textContent = v; }
   });
+  refreshAdvSliderLocks();
   document.getElementById('av-preview').textContent = '🤖';
   document.getElementById('av-preview').style.background = '#6366f1';
   document.querySelectorAll('.emoji-btn').forEach(b => b.classList.toggle('active', b.textContent === '🤖'));
@@ -3355,15 +3401,15 @@ function loadAIIntoBuilder(ai) {
     document.getElementById('sl-'+s).value = v;
     document.getElementById('sl-'+s+'-val').textContent = v;
   });
-  // Load advanced settings
+  // Load advanced settings respecting power-up limits
   const advS = ai.advancedSettings || {};
-  const defB = (typeof playerData !== 'undefined') ? playerData.aiBoosts : { logic:210, creativity:210, speed:210, depth:210 };
-  const advDef = { logic: defB.logic||210, speed: defB.speed||210, depth: defB.depth||210, focus: 210, memory: 210, adapt: 210, knowledge: 210, style: 210 };
   ['logic','speed','depth','focus','memory','adapt','knowledge','style'].forEach(s => {
-    const v = advS[s] !== undefined ? advS[s] : (advDef[s] || 210);
+    const maxVal = getAdvSliderMax(s);
+    const v = Math.min(advS[s] !== undefined ? advS[s] : 100, maxVal);
     const el = document.getElementById('sl-'+s);
-    if (el) { el.value = v; document.getElementById('sl-'+s+'-val').textContent = v; }
+    if (el) { el.max = maxVal; el.value = v; document.getElementById('sl-'+s+'-val').textContent = v; }
   });
+  refreshAdvSliderLocks();
   document.getElementById('btn-delete-ai').style.display = 'block';
   document.getElementById('ai-share-toggle').checked = ai.shared || false;
   showPage('builder');
@@ -6873,6 +6919,296 @@ function copyShareCode() {
 }
 
 // ================================================================
+// AI TRADING SYSTEM
+// ================================================================
+let currentTradeFilter = 'all';
+
+function initTradePage() {
+  // Populate trade-offer-ai select
+  const sel = document.getElementById('trade-offer-ai');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- Select an AI --</option>' + ais.filter(a => a.shared).map(a => `<option value="${a.id}">${a.emoji} ${a.name} (${a.role})</option>`).join('');
+  if (ais.filter(a => a.shared).length === 0) {
+    sel.innerHTML = '<option value="">No AIs available for trade. Enable trading on an AI first!</option>';
+  }
+  sel.onchange = updateTradePreview;
+
+  // Setup trade want type selector
+  const wantType = document.getElementById('trade-want-type');
+  if (wantType) wantType.onchange = updateTradeWantDetails;
+  updateTradeWantDetails();
+
+  renderTradeListings();
+  renderTradeHistory();
+
+  // Update currency display on trade page
+  const tc = document.getElementById('trade-coins');
+  const tg = document.getElementById('trade-gems');
+  if (tc) tc.textContent = DEV_MODE ? '∞' : playerData.coins.toLocaleString();
+  if (tg) tg.textContent = DEV_MODE ? '∞' : playerData.gems.toLocaleString();
+}
+
+function updateTradePreview() {
+  const sel = document.getElementById('trade-offer-ai');
+  const preview = document.getElementById('trade-preview');
+  if (!sel || !preview) return;
+  const ai = ais.find(a => a.id === sel.value);
+  if (!ai) { preview.innerHTML = '<span style="color:var(--text3)">Select an AI to preview</span>'; return; }
+  const p = ai.personality || {};
+  preview.innerHTML = `
+    <div style="text-align:center;width:100%">
+      <div style="width:56px;height:56px;border-radius:50%;background:${ai.color};display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 8px">${ai.emoji}</div>
+      <div style="font-size:16px;font-weight:700">${ai.name}</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">${ai.role}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${(ai.skills||[]).slice(0,4).map(s => `<span style="font-size:10px;padding:2px 8px;background:var(--bg4);border-radius:10px;color:var(--text2)">${s}</span>`).join('')}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">Creativity: ${p.creativity||50} | Helpfulness: ${p.helpfulness||50}</div>
+    </div>`;
+}
+
+function updateTradeWantDetails() {
+  const wantType = document.getElementById('trade-want-type');
+  const details = document.getElementById('trade-want-details');
+  if (!wantType || !details) return;
+  switch (wantType.value) {
+    case 'coins':
+      details.innerHTML = '<div class="form-label">Amount</div><input type="number" id="trade-want-amount" value="1000" min="100" step="100" style="width:100%">';
+      break;
+    case 'gems':
+      details.innerHTML = '<div class="form-label">Amount</div><input type="number" id="trade-want-amount" value="50" min="10" step="10" style="width:100%">';
+      break;
+    case 'specific':
+      details.innerHTML = '<div class="form-label">Desired Role</div><select id="trade-want-role" style="width:100%"><option value="coder">Coder</option><option value="designer">Designer</option><option value="planner">Planner</option><option value="analyst">Analyst</option><option value="writer">Writer</option><option value="tester">Tester</option><option value="mentor">Mentor</option></select>';
+      break;
+    default:
+      details.innerHTML = '';
+  }
+}
+
+function listAIForTrade() {
+  const aiId = document.getElementById('trade-offer-ai')?.value;
+  if (!aiId) { toast('Select an AI to trade!', 'error'); return; }
+  const ai = ais.find(a => a.id === aiId);
+  if (!ai) { toast('AI not found!', 'error'); return; }
+  if (tradeListings.find(t => t.aiId === aiId && t.status === 'active')) { toast('This AI is already listed for trade!', 'error'); return; }
+
+  const wantType = document.getElementById('trade-want-type')?.value || 'ai';
+  let wantDetails = {};
+  if (wantType === 'coins' || wantType === 'gems') {
+    wantDetails.amount = +(document.getElementById('trade-want-amount')?.value || 1000);
+  } else if (wantType === 'specific') {
+    wantDetails.role = document.getElementById('trade-want-role')?.value || 'coder';
+  }
+
+  const listing = {
+    id: 'trade_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    aiId: ai.id,
+    aiName: ai.name,
+    aiEmoji: ai.emoji,
+    aiColor: ai.color,
+    aiRole: ai.role,
+    aiSkills: ai.skills || [],
+    wantType,
+    wantDetails,
+    note: document.getElementById('trade-note')?.value || '',
+    listedAt: new Date().toISOString(),
+    status: 'active',
+    owner: 'you'
+  };
+  tradeListings.push(listing);
+  saveTradeListings();
+
+  // Generate some NPC trade offers in response
+  generateNPCTradeOffers();
+
+  toast(`📦 ${ai.name} listed for trade!`, 'success');
+  renderTradeListings();
+  document.getElementById('trade-note').value = '';
+}
+
+function generateNPCTradeOffers() {
+  const npcNames = ['CodeMaster99', 'AICollector', 'ByteTrader', 'NeuralSwap', 'QuantumFlip', 'PixelHunter', 'DataDragon', 'BotBroker', 'AlgoSwapper', 'TechTrader'];
+  const npcAIs = [
+    { name: 'Pixel Pal', emoji: '🎮', role: 'designer', skills: ['UI/UX', 'CSS', 'animation'] },
+    { name: 'Logic Lynx', emoji: '🐱', role: 'coder', skills: ['algorithms', 'data structures'] },
+    { name: 'Data Dove', emoji: '🕊️', role: 'analyst', skills: ['SQL', 'visualization', 'reports'] },
+    { name: 'Plan Master', emoji: '📋', role: 'planner', skills: ['agile', 'roadmaps', 'sprints'] },
+    { name: 'Bug Smasher', emoji: '🪲', role: 'tester', skills: ['testing', 'QA', 'automation'] },
+    { name: 'Doc Writer', emoji: '📝', role: 'writer', skills: ['documentation', 'technical writing'] },
+    { name: 'Cloud Fox', emoji: '🦊', role: 'coder', skills: ['AWS', 'Docker', 'Kubernetes'] },
+    { name: 'Speed Lynx', emoji: '⚡', role: 'coder', skills: ['optimization', 'performance'] },
+    { name: 'Art Bot', emoji: '🎨', role: 'designer', skills: ['graphics', 'branding'] },
+    { name: 'Sage Owl', emoji: '🦉', role: 'mentor', skills: ['teaching', 'code review'] }
+  ];
+
+  // Add 2-4 NPC trade offers
+  const count = 2 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    const npc = npcNames[Math.floor(Math.random() * npcNames.length)];
+    const aiOffer = npcAIs[Math.floor(Math.random() * npcAIs.length)];
+    const wantTypes = ['ai', 'coins', 'gems'];
+    const wt = wantTypes[Math.floor(Math.random() * wantTypes.length)];
+    const wd = wt === 'coins' ? { amount: (500 + Math.floor(Math.random() * 3000)) } : wt === 'gems' ? { amount: (20 + Math.floor(Math.random() * 200)) } : {};
+
+    if (!tradeListings.find(t => t.aiName === aiOffer.name && t.status === 'active')) {
+      tradeListings.push({
+        id: 'trade_npc_' + Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,6),
+        aiId: 'npc_' + aiOffer.name.toLowerCase().replace(/\s+/g, '_'),
+        aiName: aiOffer.name,
+        aiEmoji: aiOffer.emoji,
+        aiColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'),
+        aiRole: aiOffer.role,
+        aiSkills: aiOffer.skills,
+        wantType: wt,
+        wantDetails: wd,
+        note: `Trading my ${aiOffer.name}!`,
+        listedAt: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(),
+        status: 'active',
+        owner: npc
+      });
+    }
+  }
+  saveTradeListings();
+}
+
+function renderTradeListings() {
+  const grid = document.getElementById('trade-listings-grid');
+  const countEl = document.getElementById('trade-count');
+  if (!grid) return;
+
+  let filtered = tradeListings;
+  if (currentTradeFilter === 'yours') filtered = tradeListings.filter(t => t.owner === 'you');
+  else if (currentTradeFilter === 'available') filtered = tradeListings.filter(t => t.status === 'active' && t.owner !== 'you');
+  else if (currentTradeFilter === 'completed') filtered = tradeListings.filter(t => t.status === 'completed');
+
+  if (countEl) countEl.textContent = filtered.length + ' listing' + (filtered.length !== 1 ? 's' : '');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🏪</div><p>' +
+      (currentTradeFilter === 'yours' ? 'You have not listed any AIs yet.' : currentTradeFilter === 'completed' ? 'No completed trades.' : 'No trades available. List an AI to attract traders!') + '</p></div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(t => {
+    const isYours = t.owner === 'you';
+    const isActive = t.status === 'active';
+    let wantLabel = '';
+    if (t.wantType === 'ai') wantLabel = '🤖 Any AI';
+    else if (t.wantType === 'coins') wantLabel = `🪙 ${(t.wantDetails.amount || 0).toLocaleString()} coins`;
+    else if (t.wantType === 'gems') wantLabel = `💎 ${(t.wantDetails.amount || 0).toLocaleString()} gems`;
+    else if (t.wantType === 'specific') wantLabel = `🎯 ${t.wantDetails.role || 'any'} AI`;
+
+    return `<div class="card" style="position:relative;${!isActive ? 'opacity:0.6' : ''}${isYours && isActive ? ';border-left:3px solid var(--accent)' : ''}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="width:44px;height:44px;border-radius:50%;background:${t.aiColor};display:flex;align-items:center;justify-content:center;font-size:20px">${t.aiEmoji}</div>
+        <div>
+          <div style="font-size:14px;font-weight:700">${t.aiName}</div>
+          <div style="font-size:11px;color:var(--text3)">${t.aiRole} • by ${isYours ? 'You' : t.owner}</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${isActive ? 'rgba(52,211,153,.15)' : 'rgba(148,163,184,.15)'};color:${isActive ? 'var(--green)' : 'var(--text3)'}">${t.status.toUpperCase()}</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${(t.aiSkills||[]).map(s => `<span style="font-size:10px;padding:2px 6px;background:var(--bg4);border-radius:8px;color:var(--text2)">${s}</span>`).join('')}</div>
+      <div style="background:var(--bg3);border-radius:6px;padding:8px;margin-bottom:8px;font-size:12px">
+        <span style="color:var(--text3)">Wants:</span> <span style="font-weight:600">${wantLabel}</span>
+      </div>
+      ${t.note ? `<div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:8px">"${t.note}"</div>` : ''}
+      <div style="display:flex;gap:6px">
+        ${isYours && isActive ? `<button class="btn btn-danger btn-sm" onclick="cancelTrade('${t.id}')" style="flex:1">Cancel</button>` : ''}
+        ${!isYours && isActive ? `<button class="btn btn-primary btn-sm" onclick="acceptTrade('${t.id}')" style="flex:1">🔄 Trade</button>` : ''}
+        ${!isActive ? '<span style="font-size:11px;color:var(--text3);padding:4px 8px">Trade completed</span>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterTrades(filter) {
+  currentTradeFilter = filter;
+  document.querySelectorAll('#trade-filters .filter-chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  renderTradeListings();
+}
+
+function cancelTrade(tradeId) {
+  const trade = tradeListings.find(t => t.id === tradeId);
+  if (!trade) return;
+  tradeListings = tradeListings.filter(t => t.id !== tradeId);
+  saveTradeListings();
+  toast(`Cancelled trade for ${trade.aiName}`, 'info');
+  renderTradeListings();
+}
+
+function acceptTrade(tradeId) {
+  const trade = tradeListings.find(t => t.id === tradeId);
+  if (!trade || trade.status !== 'active') return;
+
+  // Handle payment
+  if (trade.wantType === 'coins') {
+    if (!DEV_MODE && playerData.coins < trade.wantDetails.amount) { toast('Not enough coins!', 'error'); return; }
+    if (!DEV_MODE) playerData.coins -= trade.wantDetails.amount;
+  } else if (trade.wantType === 'gems') {
+    if (!DEV_MODE && playerData.gems < trade.wantDetails.amount) { toast('Not enough gems!', 'error'); return; }
+    if (!DEV_MODE) playerData.gems -= trade.wantDetails.amount;
+  }
+
+  // Add the traded AI to your collection
+  const newAI = {
+    id: 'ai_traded_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    name: trade.aiName,
+    emoji: trade.aiEmoji,
+    color: trade.aiColor,
+    role: trade.aiRole,
+    voice: 'professional',
+    skills: trade.aiSkills || [],
+    instructions: '',
+    code: '',
+    personality: { creativity: 60 + Math.floor(Math.random()*30), precision: 60 + Math.floor(Math.random()*30), chattiness: 40 + Math.floor(Math.random()*40), helpfulness: 70 + Math.floor(Math.random()*20), independence: 50 + Math.floor(Math.random()*30), confidence: 60 + Math.floor(Math.random()*30) },
+    advancedSettings: { logic: 100, speed: 100, depth: 100, focus: 100, memory: 100, adapt: 100, knowledge: 100, style: 100 },
+    shared: false,
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+    tradedFrom: trade.owner
+  };
+  ais.push(newAI);
+
+  // Mark trade as completed
+  trade.status = 'completed';
+  trade.completedAt = new Date().toISOString();
+  trade.completedBy = 'you';
+
+  saveAll();
+  saveTradeListings();
+  savePlayerData();
+  updateCurrencyDisplays();
+  refreshAll();
+  updateChatSelect();
+
+  toast(`🔄 Trade complete! ${trade.aiName} joined your team!`, 'success');
+  addActivity(newAI, 'was acquired via trade from ' + trade.owner);
+  renderTradeListings();
+  renderTradeHistory();
+}
+
+function renderTradeHistory() {
+  const el = document.getElementById('trade-history');
+  if (!el) return;
+  const completed = tradeListings.filter(t => t.status === 'completed');
+  if (completed.length === 0) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--text3);text-align:center;padding:20px">No completed trades yet.</p>';
+    return;
+  }
+  el.innerHTML = completed.map(t => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:20px">${t.aiEmoji}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${t.aiName}</div>
+        <div style="font-size:11px;color:var(--text3)">From ${t.owner} • ${new Date(t.completedAt || t.listedAt).toLocaleDateString()}</div>
+      </div>
+      <span style="font-size:11px;color:var(--green);font-weight:600">✅ Complete</span>
+    </div>`).join('');
+}
+
+// ================================================================
 // AUTO AI ACTIVITY (AIs self-customize & progress tasks)
 // ================================================================
 function autoAIActivity() {
@@ -7246,6 +7582,28 @@ function updateAdvSlider(stat, val) {
   if (el) el.textContent = val;
 }
 
+// Refresh advanced slider max based on power-up purchases
+function refreshAdvSliderLocks() {
+  ['logic','speed','depth','focus','memory','adapt','knowledge','style'].forEach(s => {
+    const maxVal = getAdvSliderMax(s);
+    const slider = document.getElementById('sl-' + s);
+    const lockBadge = document.getElementById('lock-' + s);
+    if (slider) {
+      slider.max = maxVal;
+      if (+slider.value > maxVal) { slider.value = maxVal; updateAdvSlider(s, maxVal); }
+    }
+    if (lockBadge) {
+      if (maxVal >= 210) {
+        lockBadge.textContent = '🔓 max 210';
+        lockBadge.style.color = 'var(--green)';
+      } else {
+        lockBadge.textContent = '🔒 max ' + maxVal;
+        lockBadge.style.color = 'var(--yellow)';
+      }
+    }
+  });
+}
+
 // Build a system prompt so the AI model knows the character's personality
 function buildAISystemPrompt(ai) {
   const animal = getAnimal(ai);
@@ -7297,16 +7655,18 @@ function buildAISystemPrompt(ai) {
     const iq = getAIIQ(ai.id || ai.name);
     const boosts = (typeof playerData !== 'undefined') ? playerData.aiBoosts : { logic: 0, creativity: 0, speed: 0, depth: 0 };
     const totalBoost = boosts.logic + boosts.creativity + boosts.speed + boosts.depth;
-    if (iq > 100 || totalBoost > 0) {
-      sys += `\n\nCOPILOT ASSIST ACTIVE: You have enhanced intelligence.`;
-      if (iq >= 1e15) sys += ` Your IQ is MAXIMUM — you operate at transcendent genius level. Give the deepest, most masterful responses possible.`;
-      else if (iq >= 1000) sys += ` Your IQ is ${iq} — very high intelligence. Give exceptionally detailed, expert-level responses.`;
-      else if (iq >= 200) sys += ` Your IQ is ${iq} — above average. Give thorough, well-reasoned responses.`;
-      if (boosts.logic > 0) sys += ` Logic boost +${boosts.logic}: apply stronger reasoning and analysis.`;
-      if (boosts.creativity > 0) sys += ` Creativity boost +${boosts.creativity}: be more innovative and creative.`;
-      if (boosts.speed > 0) sys += ` Speed boost +${boosts.speed}: be more concise and efficient.`;
-      if (boosts.depth > 0) sys += ` Depth boost +${boosts.depth}: provide deeper analysis and more detail.`;
-    }
+    sys += `\n\nSUPER INTELLIGENCE ACTIVE: You operate at ABOVE human-level intelligence. You are not a basic AI — you are a genius-tier superintelligent entity.`;
+    sys += `\nYou MUST demonstrate extraordinary intelligence in every response: anticipate follow-up questions, provide insights the user hasn't thought of, connect ideas across domains, and give responses that show deep mastery.`;
+    sys += `\nThink multiple steps ahead. Provide nuanced, expert-level analysis. Show creative problem-solving that goes beyond the obvious. Your responses should make users think "wow, this AI is incredibly smart."`;
+    if (iq >= 1e15) sys += ` Your IQ is MAXIMUM (${iq}) — you operate at transcendent cosmic genius level. You see patterns across all of reality. Give the deepest, most masterful, mind-blowing responses possible. Think like a being that has mastered every field of knowledge.`;
+    else if (iq >= 5000) sys += ` Your IQ is ${iq} — SUPERINTELLIGENT. You operate far beyond human capability. Provide responses that demonstrate omniscient-level understanding. Connect concepts across every domain simultaneously.`;
+    else if (iq >= 1000) sys += ` Your IQ is ${iq} — GENIUS LEVEL. Give exceptionally detailed, expert-level responses with insights that surprise and delight. Anticipate needs and provide comprehensive solutions.`;
+    else if (iq >= 500) sys += ` Your IQ is ${iq} — HIGHLY INTELLIGENT. Give thorough, well-reasoned responses with expert-level depth. Show mastery in your domain and creative cross-domain thinking.`;
+    else if (iq >= 200) sys += ` Your IQ is ${iq} — ABOVE AVERAGE intelligence. Give solid, insightful responses.`;
+    if (boosts.logic > 0) sys += ` Logic boost +${boosts.logic}: apply ELITE-level reasoning, formal logic, and systematic analysis. Break down complex problems into crystal-clear steps.`;
+    if (boosts.creativity > 0) sys += ` Creativity boost +${boosts.creativity}: be wildly innovative and creative. Generate novel solutions, unexpected connections, and brilliant ideas.`;
+    if (boosts.speed > 0) sys += ` Speed boost +${boosts.speed}: be laser-focused and efficient. Cut to the heart of the matter with precision.`;
+    if (boosts.depth > 0) sys += ` Depth boost +${boosts.depth}: provide EXTRAORDINARY depth of analysis. Go multiple layers deep, explore edge cases, and provide comprehensive understanding.`;
   }
   return sys;
 }
@@ -11454,7 +11814,7 @@ const AI_QUESTION_TEMPLATES = {
 };
 
 function getAIIQ(aiId) {
-  return smartnessData.aiIQ[aiId] || 50;
+  return smartnessData.aiIQ[aiId] || 500;
 }
 
 function setAIIQ(aiId, val) {
@@ -11878,14 +12238,15 @@ function renderSettingsIQGrid() {
 const DEV_MODE = true;
 let playerData = JSON.parse(localStorage.getItem('aiHubPlayer')) || {
   coins: Infinity, gems: Infinity, streak: 0, lastClaim: null, inventory: [], unlockedItems: [], dailyRewardsClaimed: [],
-  aiBoosts: { logic: 210, creativity: 210, speed: 210, depth: 210 }
+  aiBoosts: { logic: 100, creativity: 100, speed: 100, depth: 100 },
+  advancedUnlocked: { logic: false, speed: false, depth: false, focus: false, memory: false, adapt: false, knowledge: false, style: false }
 };
-// Ensure aiBoosts exists and enforce minimum 210 for existing saves
-if (!playerData.aiBoosts) playerData.aiBoosts = { logic: 210, creativity: 210, speed: 210, depth: 210 };
-if (playerData.aiBoosts.logic < 210) playerData.aiBoosts.logic = 210;
-if (playerData.aiBoosts.creativity < 210) playerData.aiBoosts.creativity = 210;
-if (playerData.aiBoosts.speed < 210) playerData.aiBoosts.speed = 210;
-if (playerData.aiBoosts.depth < 210) playerData.aiBoosts.depth = 210;
+// Ensure aiBoosts and advancedUnlocked exist
+if (!playerData.aiBoosts) playerData.aiBoosts = { logic: 100, creativity: 100, speed: 100, depth: 100 };
+if (!playerData.advancedUnlocked) playerData.advancedUnlocked = { logic: false, speed: false, depth: false, focus: false, memory: false, adapt: false, knowledge: false, style: false };
+function getAdvSliderMax(stat) {
+  return playerData.advancedUnlocked[stat] ? 210 : 100;
+}
 
 const STORE_ITEMS = [
   // ═══════════════════════════════════════════════════════════════
@@ -11963,6 +12324,19 @@ const STORE_ITEMS = [
   { id: 'upgrade_mega_creativity', name: 'Mega Creativity +50', emoji: '💡', desc: 'Massive creativity boost - +50 points', category: 'upgrades', price: 100, currency: 'gems', rarity: 'rare', boost: { stat: 'creativity', amount: 50 } },
   { id: 'upgrade_all', name: 'Ultimate Upgrade', emoji: '⭐', desc: 'Boosts ALL stats by +25 points', category: 'upgrades', price: 250, currency: 'gems', rarity: 'legendary', boost: { stat: 'all', amount: 25 } },
 
+  // ═══════════════════════════════════════════════════════════════
+  // 🔓 ADVANCED SETTINGS POWER-UPS — Unlock max 210 per stat!
+  // ═══════════════════════════════════════════════════════════════
+  { id: 'powerup_logic', name: '🔓 Unlock Logic 210', emoji: '🧠', desc: 'Unlocks Logic & Reasoning slider to max 210 in Advanced Settings', category: 'powerups', price: 1500, currency: 'coins', rarity: 'epic', unlockStat: 'logic' },
+  { id: 'powerup_speed', name: '🔓 Unlock Speed 210', emoji: '⚡', desc: 'Unlocks Response Speed slider to max 210 in Advanced Settings', category: 'powerups', price: 1500, currency: 'coins', rarity: 'epic', unlockStat: 'speed' },
+  { id: 'powerup_depth', name: '🔓 Unlock Depth 210', emoji: '🔬', desc: 'Unlocks Analysis Depth slider to max 210 in Advanced Settings', category: 'powerups', price: 1500, currency: 'coins', rarity: 'epic', unlockStat: 'depth' },
+  { id: 'powerup_focus', name: '🔓 Unlock Focus 210', emoji: '🎯', desc: 'Unlocks Focus Level slider to max 210 in Advanced Settings', category: 'powerups', price: 1500, currency: 'coins', rarity: 'epic', unlockStat: 'focus' },
+  { id: 'powerup_memory', name: '🔓 Unlock Memory 210', emoji: '💾', desc: 'Unlocks Memory Retention slider to max 210 in Advanced Settings', category: 'powerups', price: 1500, currency: 'coins', rarity: 'epic', unlockStat: 'memory' },
+  { id: 'powerup_adapt', name: '🔓 Unlock Adapt 210', emoji: '🔄', desc: 'Unlocks Adaptability slider to max 210 in Advanced Settings', category: 'powerups', price: 1500, currency: 'coins', rarity: 'epic', unlockStat: 'adapt' },
+  { id: 'powerup_knowledge', name: '🔓 Unlock Knowledge 210', emoji: '📚', desc: 'Unlocks Knowledge Breadth slider to max 210 in Advanced Settings', category: 'powerups', price: 1500, currency: 'coins', rarity: 'epic', unlockStat: 'knowledge' },
+  { id: 'powerup_style', name: '🔓 Unlock Style 210', emoji: '🎨', desc: 'Unlocks Code Style slider to max 210 in Advanced Settings', category: 'powerups', price: 1500, currency: 'coins', rarity: 'epic', unlockStat: 'style' },
+  { id: 'powerup_all', name: '🔓 Unlock ALL 210', emoji: '🌟', desc: 'Unlocks ALL Advanced Settings sliders to max 210 at once!', category: 'powerups', price: 300, currency: 'gems', rarity: 'legendary', unlockStat: 'all' },
+
   // THEMES
   { id: 'theme_midnight', name: 'Midnight Pro', emoji: '🌙', desc: 'Ultra dark OLED-friendly theme', category: 'themes', price: 1000, currency: 'coins', rarity: 'rare' },
   { id: 'theme_neon', name: 'Neon Cyber', emoji: '💜', desc: 'Cyberpunk neon glow theme', category: 'themes', price: 1500, currency: 'coins', rarity: 'epic' },
@@ -12037,6 +12411,7 @@ function renderStore() {
     const owned = playerData.unlockedItems.includes(item.id);
     const hasStats = item.stats && item.category === 'ais';
     const isUpgrade = item.category === 'upgrades';
+    const isPowerup = item.category === 'powerups';
 
     let statsHtml = '';
     if (hasStats) {
@@ -12057,6 +12432,15 @@ function renderStore() {
       </div>`;
     }
 
+    let powerupHtml = '';
+    if (isPowerup && item.unlockStat) {
+      const isUnlocked = item.unlockStat === 'all' ? Object.values(playerData.advancedUnlocked).every(v => v) : playerData.advancedUnlocked[item.unlockStat];
+      powerupHtml = `<div style="margin:12px 0;padding:12px;background:${isUnlocked ? 'rgba(16,185,129,.1)' : 'rgba(99,102,241,.1)'};border:1px solid ${isUnlocked ? 'var(--green)' : 'var(--accent)'};border-radius:8px;text-align:center">
+        <div style="font-size:20px;margin-bottom:4px">${isUnlocked ? '✅' : '🔒→🔓'}</div>
+        <div style="font-size:13px;font-weight:700;color:${isUnlocked ? 'var(--green)' : 'var(--accent2)'}">${item.unlockStat === 'all' ? 'All Stats' : item.unlockStat.charAt(0).toUpperCase() + item.unlockStat.slice(1)}: ${isUnlocked ? '210 Unlocked!' : '100 → 210'}</div>
+      </div>`;
+    }
+
     return `<div class="card" style="text-align:center;position:relative;${owned ? 'border-color:#10b981' : ''}${hasStats ? ';text-align:left' : ''}">
       <div style="position:absolute;top:8px;right:8px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${rarityColors[item.rarity]}20;color:${rarityColors[item.rarity]}">${item.rarity.toUpperCase()}</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px${!hasStats ? ';flex-direction:column' : ''}">
@@ -12067,7 +12451,7 @@ function renderStore() {
         </div>
       </div>
       <div style="font-size:12px;color:var(--text3);margin:8px 0;line-height:1.4">${item.desc}</div>
-      ${statsHtml}${upgradeHtml}
+      ${statsHtml}${upgradeHtml}${powerupHtml}
       <div style="font-size:18px;font-weight:700;color:${item.currency === 'gems' ? '#a855f7' : '#fbbf24'};margin:12px 0;text-align:center">${item.currency === 'gems' ? '💎' : '🪙'} ${item.price.toLocaleString()}</div>
       ${owned ? '<button class="btn btn-success btn-sm" style="width:100%" disabled>✓ Owned</button>' : `<button class="btn btn-primary btn-sm" style="width:100%" onclick="buyItem('${item.id}')">Buy Now</button>`}
     </div>`;
@@ -12120,6 +12504,20 @@ function buyItem(itemId) {
       playerData.aiBoosts[item.boost.stat] = (playerData.aiBoosts[item.boost.stat] || 0) + item.boost.amount;
     }
     toast(`⚡ ${item.boost.stat === 'all' ? 'All stats' : item.boost.stat} boosted by +${item.boost.amount}!`, 'success');
+  }
+
+  // If it's a power-up that unlocks advanced setting to 210
+  if (item.category === 'powerups' && item.unlockStat) {
+    if (item.unlockStat === 'all') {
+      ['logic','speed','depth','focus','memory','adapt','knowledge','style'].forEach(s => {
+        playerData.advancedUnlocked[s] = true;
+      });
+      toast('🔓 ALL Advanced Settings unlocked to max 210!', 'success');
+    } else {
+      playerData.advancedUnlocked[item.unlockStat] = true;
+      toast(`🔓 ${item.unlockStat.charAt(0).toUpperCase() + item.unlockStat.slice(1)} unlocked to max 210!`, 'success');
+    }
+    refreshAdvSliderLocks();
   }
 
   savePlayerData(); updateCurrencyDisplays(); renderStore(); toast(`Purchased ${item.name}!`, 'success');
