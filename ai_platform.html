@@ -3184,14 +3184,89 @@ function animalAction(ai, action) {
 // ================================================================
 // PERSISTENCE
 // ================================================================
+let _dataLoaded = false; // Guard: only allow saving AFTER data has been loaded
+
 function saveAll() {
+  // GUARD: Never save if data hasn't been loaded yet — prevents wiping saved data with empty arrays
+  if (!_dataLoaded) return;
+
   const data = { ais, chatMessages: chatMessages.slice(-200), tasks, activityLog: activityLog.slice(-100), totalMessages, aiBookStories: aiBookStories.slice(-50), customChatRooms, aiTubeVideos: aiTubeVideos.slice(-30), battleHistory: battleHistory.slice(-50), battleStats, unlockedAchievements, dailyChallengeData, fusionCount: fusionCount || 0, smartnessData };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+  try {
+    const json = JSON.stringify(data);
+
+    // Safety: if we had AIs before but now ais is empty, something went wrong — don't overwrite
+    const existing = localStorage.getItem(STORAGE_KEY);
+    if (existing && ais.length === 0) {
+      try {
+        const prev = JSON.parse(existing);
+        if (prev.ais && prev.ais.length > 0) {
+          console.warn('[saveAll] BLOCKED: Would overwrite', prev.ais.length, 'AIs with empty array. Skipping save.');
+          return;
+        }
+      } catch(e) {}
+    }
+
+    localStorage.setItem(STORAGE_KEY, json);
+
+    // Also save a backup copy (rotated — keep last 2)
+    try {
+      const backupKey2 = STORAGE_KEY + '_backup_2';
+      const backupKey1 = STORAGE_KEY + '_backup_1';
+      const existing1 = localStorage.getItem(backupKey1);
+      if (existing1 && ais.length > 0) {
+        localStorage.setItem(backupKey2, existing1);
+      }
+      if (ais.length > 0) {
+        localStorage.setItem(backupKey1, json);
+      }
+    } catch(e) { /* backup save failed — non-critical */ }
+
+  } catch(e) {
+    // localStorage quota exceeded — try to free space and retry
+    console.error('[saveAll] Save failed:', e);
+    if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
+      console.warn('[saveAll] localStorage quota exceeded! Trimming data...');
+      // Aggressively trim to fit
+      chatMessages = chatMessages.slice(-50);
+      activityLog = activityLog.slice(-30);
+      aiBookStories = aiBookStories.slice(-10);
+      aiTubeVideos = aiTubeVideos.slice(-10);
+      battleHistory = battleHistory.slice(-10);
+      try {
+        const trimmedData = { ais, chatMessages, tasks, activityLog, totalMessages, aiBookStories, customChatRooms, aiTubeVideos, battleHistory, battleStats, unlockedAchievements, dailyChallengeData, fusionCount: fusionCount || 0, smartnessData };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedData));
+        console.log('[saveAll] Saved with trimmed data');
+        toast('⚠️ Storage nearly full — older messages trimmed to save space', 'info');
+      } catch(e2) {
+        console.error('[saveAll] Even trimmed save failed:', e2);
+        toast('❌ Storage full! Data could not be saved', 'error');
+      }
+    }
+  }
 }
+
 function loadAll() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
+    let raw = localStorage.getItem(STORAGE_KEY);
+
+    // If primary save is missing or corrupted, try backups
+    if (!raw) {
+      console.warn('[loadAll] Primary save not found, trying backup_1...');
+      raw = localStorage.getItem(STORAGE_KEY + '_backup_1');
+      if (!raw) {
+        console.warn('[loadAll] Backup 1 not found, trying backup_2...');
+        raw = localStorage.getItem(STORAGE_KEY + '_backup_2');
+      }
+      if (raw) {
+        console.log('[loadAll] Recovered data from backup!');
+        // Restore the primary save from backup
+        try { localStorage.setItem(STORAGE_KEY, raw); } catch(e) {}
+      }
+    }
+
+    if (!raw) { _dataLoaded = true; return; }
+
     const d = JSON.parse(raw);
     ais = d.ais || [];
     chatMessages = d.chatMessages || [];
@@ -3207,7 +3282,27 @@ function loadAll() {
     dailyChallengeData = d.dailyChallengeData || null;
     fusionCount = d.fusionCount || 0;
     if (d.smartnessData) smartnessData = d.smartnessData;
-  } catch(e) { console.error('Load failed', e); }
+
+    _dataLoaded = true;
+    console.log('[loadAll] Loaded:', ais.length, 'AIs,', chatMessages.length, 'messages,', tasks.length, 'tasks');
+  } catch(e) {
+    console.error('[loadAll] Load failed:', e);
+    // Try to recover from backup
+    try {
+      const backup = localStorage.getItem(STORAGE_KEY + '_backup_1') || localStorage.getItem(STORAGE_KEY + '_backup_2');
+      if (backup) {
+        const d = JSON.parse(backup);
+        ais = d.ais || [];
+        chatMessages = d.chatMessages || [];
+        tasks = d.tasks || [];
+        activityLog = d.activityLog || [];
+        totalMessages = d.totalMessages || 0;
+        console.log('[loadAll] Recovered', ais.length, 'AIs from backup after parse error!');
+        toast('⚠️ Data was corrupted — recovered from backup!', 'info');
+      }
+    } catch(e2) { console.error('[loadAll] Backup recovery also failed:', e2); }
+    _dataLoaded = true;
+  }
 }
 
 // ================================================================
