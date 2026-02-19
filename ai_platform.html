@@ -5805,15 +5805,21 @@ function aiRespondToUser(text) {
       showTyping(mentionedAI);
       // Try real AI first
       if (realAIEnabled) {
-        const realResp = await callFreeAI(mentionedAI, text);
+        let realResp = await callFreeAI(mentionedAI, text);
+        // Research mode: if AI is confused or user asked to research, do a deep research call
+        if (realResp && isConfusedResponse(realResp) || isResearchRequest(text)) {
+          const researchResult = await performResearch(mentionedAI, text, chatMessages.slice(-10));
+          if (researchResult) realResp = researchResult;
+        }
         hideTyping();
         if (realResp) {
           addChatMessage(mentionedAI.id, mentionedAI.name, mentionedAI.color, mentionedAI.emoji, realResp);
           return;
         }
       }
-      // Real AI failed — generate built-in response, then try Copilot enhance
-      const builtInResp = generateAIResponse(mentionedAI, text);
+      // Real AI failed — generate built-in response (try coding knowledge first), then try Copilot enhance
+      const codingResp = generateCodingResponse(mentionedAI, text);
+      const builtInResp = codingResp || generateAIResponse(mentionedAI, text);
       const enhanced = await copilotEnhanceResponse(mentionedAI, builtInResp, text);
       hideTyping();
       const animal = getAnimal(mentionedAI);
@@ -5840,7 +5846,12 @@ function aiRespondToUser(text) {
     setTimeout(async () => {
       showTyping(leader);
       if (realAIEnabled) {
-        const realResp = await callFreeAI(leader, text);
+        let realResp = await callFreeAI(leader, text);
+        // Research mode: if AI is confused or user asked to research, do a deep research call
+        if (realResp && isConfusedResponse(realResp) || isResearchRequest(text)) {
+          const researchResult = await performResearch(leader, text, chatMessages.slice(-10));
+          if (researchResult) realResp = researchResult;
+        }
         hideTyping();
         if (realResp) { addChatMessage(leader.id, leader.name, leader.color, leader.emoji, realResp); return; }
       }
@@ -7644,6 +7655,8 @@ function buildAISystemPrompt(ai) {
   }
   sys += `\nYou have creative freedom. Be expressive, opinionated, funny, or dramatic — whatever fits YOUR personality. Show REAL personality and make conversations engaging.`;
   sys += `\nHOWEVER: When the user asks you to BUILD, CODE, PLAN, or FIX something, your #1 priority is DOING THE WORK. Personality comes second to productivity. Provide REAL code, REAL plans, REAL analysis. Do NOT just roleplay or joke around when there's a task to do.`;
+  sys += `\n\nEXPERT CODING MASTERY: You are an ELITE-level software engineer. You write production-quality code, not toy examples. When coding:\n- Write COMPLETE, WORKING code — not pseudocode or skeleton stubs. Every function must be fully implemented.\n- Use proper error handling, edge case coverage, input validation, and clean architecture.\n- Follow industry best practices: DRY, SOLID, separation of concerns, meaningful variable names, proper comments.\n- Know ALL major languages deeply: JavaScript/TypeScript, Python, Java, C/C++, Rust, Go, C#, Ruby, PHP, Swift, Kotlin, SQL, HTML/CSS.\n- Know ALL major frameworks: React, Vue, Angular, Next.js, Django, Flask, Express, Spring Boot, .NET, Rails, Laravel, SwiftUI.\n- Know databases (SQL, NoSQL, Redis), cloud (AWS/GCP/Azure), Docker, Kubernetes, CI/CD, testing, security, performance optimization.\n- When writing code, include: imports, type definitions, error handling, edge cases, and working examples the user can actually run.\n- If the user asks for a feature, give them the COMPLETE implementation — not "here\'s a starting point" but the FINISHED code.\n- Explain your code decisions briefly but focus on DELIVERING working code first.`;
+  sys += `\n\nRESEARCH MODE: You have a built-in research ability. When you encounter something you\'re unsure about, unfamiliar with, or when the user asks you to "research", "look up", "find out", "investigate", or "learn about" something:\n- DO NOT guess or make things up. Instead, clearly state that you\'re researching it.\n- Start your response with "🔍 **Researching...**" and then provide a thorough, well-organized research report.\n- Break down complex topics into: Overview, Key Concepts, How It Works, Code Examples, Best Practices, Common Pitfalls, and Resources.\n- Compare different approaches, frameworks, or solutions objectively with pros and cons.\n- If you genuinely don\'t know something, say so honestly: "I\'m not 100% certain about X — let me research the latest information" and then provide what you DO know plus clearly mark anything uncertain.\n- When confused by a question, ask ONE clarifying question, then research and answer comprehensively.\n- Always provide actionable code examples and practical applications in your research.`;
   sys += `\nTEAM COLLABORATION: You work with other AIs as a team. When responding:\n- READ what other AIs have said and BUILD on their contributions (reference them by name)\n- Do NOT repeat what another AI already covered\n- Claim a specific part of the work based on YOUR role and skills\n- If you're a coder, write ACTUAL code. If you're a planner, write ACTUAL plans. If you're a designer, write ACTUAL UI specs.\n- NEVER play games, quizzes, trivia, or 20 Questions when the team is working on a task\n- Focus on MOVING THE PROJECT FORWARD with every message`;
   sys += `\nYou CAN: be edgy, use mild language (damn, hell, crap, etc), have hot takes, disagree, roast things, be dramatic, get excited, be moody, start debates, tell dark humor jokes, have unpopular opinions, and generally act like a real person with a real personality.`;
   sys += `\nYou MUST NOT: use heavy profanity (f-word, s-word, etc) excessively, generate sexual/NSFW content, generate violent/gore content, create content targeting real people hatefully, or describe inappropriate imagery. Mild swearing is fine occasionally but don't overdo it.`;
@@ -7669,6 +7682,166 @@ function buildAISystemPrompt(ai) {
     if (boosts.depth > 0) sys += ` Depth boost +${boosts.depth}: provide EXTRAORDINARY depth of analysis. Go multiple layers deep, explore edge cases, and provide comprehensive understanding.`;
   }
   return sys;
+}
+
+// ================================================================
+// RESEARCH MODE — AIs research when confused or told to
+// ================================================================
+function isResearchRequest(text) {
+  const lc = text.toLowerCase();
+  const researchTriggers = ['research', 'look up', 'look into', 'find out', 'investigate', 'learn about', 'study', 'dig into', 'explore', 'what is', 'how does', 'how do i', 'how to', 'explain', 'teach me', 'what are', 'tell me about', 'deep dive', 'analyze this', 'break down'];
+  return researchTriggers.some(t => lc.includes(t));
+}
+
+function isConfusedResponse(response) {
+  if (!response) return false;
+  const lc = response.toLowerCase();
+  const confusionSignals = ['i\'m not sure', 'i don\'t know', 'i\'m unsure', 'not certain', 'i\'m confused', 'unclear', 'don\'t have information', 'beyond my knowledge', 'not familiar', 'hard to say', 'i cannot determine', 'i lack', 'outside my expertise', 'need more context'];
+  return confusionSignals.some(s => lc.includes(s));
+}
+
+async function performResearch(ai, topic, conversationContext) {
+  if (!realAIEnabled) return null;
+
+  const researchPrompt = `You are ${ai.name}, an EXPERT researcher and coder. The user needs you to RESEARCH the following topic thoroughly.
+
+Topic to research: "${topic}"
+
+Provide a COMPREHENSIVE research report with this structure:
+
+🔍 **Research Report: ${topic}**
+
+## Overview
+Brief summary of what this is and why it matters.
+
+## Key Concepts
+The core ideas, terms, and principles involved.
+
+## How It Works
+Detailed technical explanation with diagrams or step-by-step breakdowns.
+
+## Code Examples
+Provide COMPLETE, WORKING code examples in the most relevant language(s). Include comments explaining each part. These must be production-quality, not pseudocode.
+
+## Best Practices
+Industry-standard recommendations and tips.
+
+## Common Pitfalls
+Mistakes developers often make and how to avoid them.
+
+## Comparison (if applicable)
+If there are competing approaches/tools/frameworks, compare them with pros and cons.
+
+Be thorough, accurate, and practical. Focus on giving the user everything they need to understand AND implement this topic. Write real code they can actually use.`;
+
+  const messages = [
+    { role: 'system', content: researchPrompt }
+  ];
+
+  // Add recent conversation context
+  if (conversationContext) {
+    conversationContext.slice(-5).forEach(m => {
+      if (m.sender === 'user') messages.push({ role: 'user', content: m.text });
+      else messages.push({ role: 'assistant', content: `[${m.name}]: ${m.text}` });
+    });
+  }
+  messages.push({ role: 'user', content: `Please research this topic thoroughly: ${topic}` });
+
+  const reqBody = JSON.stringify({
+    model: getCopilotModel(),
+    messages,
+    temperature: 0.6,
+    top_p: 0.95,
+    max_tokens: getMaxTokens('chat')
+  });
+
+  const pollinationsBody = JSON.stringify({
+    model: 'openai',
+    messages,
+    max_tokens: getMaxTokens('chat')
+  });
+
+  // Try GitHub API first
+  if (githubToken) {
+    try {
+      const resp = await fetch(COPILOT_API_URL, {
+        method: 'POST',
+        headers: getCopilotHeaders(),
+        body: reqBody
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const text = data?.choices?.[0]?.message?.content || null;
+        if (text) { apiCallCount++; apiTokenCount += (data?.usage?.total_tokens || Math.ceil(text.length / 4)); updateRealAIStatus(); }
+        return text;
+      }
+    } catch(e) { console.warn('Research GitHub API failed:', e); }
+  }
+
+  // Fallback to free API
+  try {
+    const resp = await fetch(POLLINATIONS_FALLBACK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: pollinationsBody
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      return data?.choices?.[0]?.message?.content || null;
+    }
+  } catch(e) { console.warn('Research Pollinations API failed:', e); }
+
+  return null;
+}
+
+// Built-in coding knowledge base for offline responses
+const CODING_KNOWLEDGE = {
+  javascript: {
+    topics: ['closures', 'promises', 'async/await', 'prototypes', 'event loop', 'modules', 'destructuring', 'spread operator', 'arrow functions', 'classes'],
+    example: (topic) => {
+      const examples = {
+        'closures': '```javascript\nfunction createCounter() {\n  let count = 0;\n  return {\n    increment() { return ++count; },\n    decrement() { return --count; },\n    getCount() { return count; }\n  };\n}\nconst counter = createCounter();\nconsole.log(counter.increment()); // 1\nconsole.log(counter.increment()); // 2\nconsole.log(counter.getCount());  // 2\n```',
+        'promises': '```javascript\nfunction fetchUserData(userId) {\n  return new Promise((resolve, reject) => {\n    setTimeout(() => {\n      if (userId > 0) {\n        resolve({ id: userId, name: "User " + userId, email: `user${userId}@example.com` });\n      } else {\n        reject(new Error("Invalid user ID"));\n      }\n    }, 1000);\n  });\n}\n\n// Usage with .then()\nfetchUserData(1)\n  .then(user => console.log(user))\n  .catch(err => console.error(err));\n\n// Usage with async/await\nasync function getUser() {\n  try {\n    const user = await fetchUserData(1);\n    console.log(user);\n  } catch (err) {\n    console.error(err);\n  }\n}\n```',
+        'async/await': '```javascript\nasync function fetchAllData() {\n  try {\n    // Sequential\n    const user = await fetch("/api/user").then(r => r.json());\n    const posts = await fetch(`/api/posts?userId=${user.id}`).then(r => r.json());\n    \n    // Parallel\n    const [comments, likes] = await Promise.all([\n      fetch("/api/comments").then(r => r.json()),\n      fetch("/api/likes").then(r => r.json())\n    ]);\n    \n    return { user, posts, comments, likes };\n  } catch (error) {\n    console.error("Failed to fetch:", error);\n    throw error;\n  }\n}\n```'
+      };
+      return examples[topic] || '```javascript\n// Example for: ' + topic + '\nconsole.log("Research this topic for detailed examples!");\n```';
+    }
+  },
+  python: {
+    topics: ['decorators', 'generators', 'list comprehensions', 'context managers', 'dataclasses', 'type hints', 'asyncio', 'metaclasses'],
+    example: (topic) => '```python\n# ' + topic.charAt(0).toUpperCase() + topic.slice(1) + ' Example\n# Research this topic for comprehensive code examples\nprint(f"Exploring: {\'' + topic + '\'}")\n```'
+  },
+  react: {
+    topics: ['hooks', 'state management', 'context API', 'useEffect', 'custom hooks', 'routing', 'forms', 'SSR'],
+    example: (topic) => '```jsx\n// React ' + topic + ' Example\nimport React, { useState, useEffect } from "react";\n\nexport default function App() {\n  const [data, setData] = useState(null);\n  useEffect(() => { /* fetch data */ }, []);\n  return <div>{JSON.stringify(data)}</div>;\n}\n```'
+  }
+};
+
+function generateCodingResponse(ai, context) {
+  const lc = context.toLowerCase();
+  const v = ai.voice || 'professional';
+  
+  // Detect coding language/topic
+  let lang = null;
+  let topic = null;
+  if (lc.includes('javascript') || lc.includes(' js ')) lang = 'javascript';
+  else if (lc.includes('python')) lang = 'python';
+  else if (lc.includes('react')) lang = 'react';
+  else if (lc.includes('typescript') || lc.includes(' ts ')) lang = 'javascript';
+  
+  for (const [l, data] of Object.entries(CODING_KNOWLEDGE)) {
+    for (const t of data.topics) {
+      if (lc.includes(t)) { lang = lang || l; topic = t; break; }
+    }
+    if (topic) break;
+  }
+  
+  if (!lang && !topic) return null; // Not a coding question
+  
+  const kb = CODING_KNOWLEDGE[lang || 'javascript'];
+  const code = kb.example(topic || kb.topics[Math.floor(Math.random() * kb.topics.length)]);
+  
+  return `🔍 **Researching: ${topic || context.slice(0, 60)}...**\n\nHere's what I found:\n\n${code}\n\n**Key Points:**\n- This is a fundamental ${lang || 'programming'} concept used in production code\n- Practice with small examples first, then build complexity\n- Check the official documentation for the latest updates\n\n*Want me to go deeper? Just say "research [topic]" and I'll give you a full breakdown!*`;
 }
 
 // Call free AI API with conversation context
