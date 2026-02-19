@@ -4099,10 +4099,12 @@ function formatChatText(text) {
       const lang = langMatch ? langMatch[1] : '';
       code = code.replace(/^[a-z]+\n/i, '');
       const cbId = 'cb-' + (++_codeBlockId);
+      const isRunnable = lang === 'html' || code.includes('<html') || code.includes('<body') || code.includes('<canvas') || code.includes('<!DOCTYPE');
+      const runBtn = isRunnable ? `<button onclick="runCodeBlock('${cbId}')" style="background:rgba(46,213,115,0.15);border:1px solid rgba(46,213,115,0.3);color:#2ed573;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:0.72rem;transition:all .2s;margin-right:4px" onmouseenter="this.style.background='rgba(46,213,115,0.3)';this.style.color='#fff'" onmouseleave="this.style.background='rgba(46,213,115,0.15)';this.style.color='#2ed573'">▶️ Run</button>` : '';
       return `<div style="position:relative;margin:8px 0">
         <div style="display:flex;justify-content:space-between;align-items:center;background:#0d0d1f;padding:4px 12px;border-radius:8px 8px 0 0;font-size:0.72rem;color:#888;font-family:'Fira Code','Consolas',monospace">
           <span>${lang ? lang.toUpperCase() : 'CODE'}</span>
-          <button onclick="copyCodeBlock('${cbId}')" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#aaa;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:0.72rem;transition:all .2s" onmouseenter="this.style.background='rgba(99,102,241,0.3)';this.style.color='#fff'" onmouseleave="this.style.background='rgba(255,255,255,0.08)';this.style.color='#aaa'">📋 Copy</button>
+          <div style="display:flex;gap:4px">${runBtn}<button onclick="copyCodeBlock('${cbId}')" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#aaa;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:0.72rem;transition:all .2s" onmouseenter="this.style.background='rgba(99,102,241,0.3)';this.style.color='#fff'" onmouseleave="this.style.background='rgba(255,255,255,0.08)';this.style.color='#aaa'">📋 Copy</button></div>
         </div>
         <pre id="${cbId}" style="background:#0a0a1a;color:#7bed9f;padding:12px;border-radius:0 0 8px 8px;overflow-x:auto;font-size:0.82rem;line-height:1.4;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;font-family:'Fira Code','Consolas',monospace;margin:0">${escapeHtml(code)}</pre>
       </div>`;
@@ -4111,6 +4113,62 @@ function formatChatText(text) {
       return escapeHtml(part).replace(/\n/g, '<br>');
     }
   }).join('');
+}
+
+function runCodeBlock(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let code = el.textContent;
+  // Ensure it's full HTML — wrap if needed
+  if (!code.includes('<html') && !code.includes('<!DOCTYPE')) {
+    code = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111;color:#fff;font-family:"Segoe UI",sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh}</style></head><body>${code}</body></html>`;
+  }
+  // Open game runner modal
+  let modal = document.getElementById('game-runner-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'game-runner-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(6px)';
+    modal.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <span style="color:#2ed573;font-size:1.2rem;font-weight:bold">▶️ Game Runner</span>
+        <button onclick="document.getElementById('game-runner-modal').style.display='none';document.getElementById('game-runner-frame').srcdoc=''" style="background:rgba(255,75,75,0.2);border:1px solid rgba(255,75,75,0.4);color:#ff4b4b;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:0.9rem">✕ Close</button>
+        <button onclick="openGameFullscreen()" style="background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);color:#6366f1;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:0.9rem">🔲 Fullscreen</button>
+      </div>
+      <iframe id="game-runner-frame" sandbox="allow-scripts allow-same-origin" style="width:90%;max-width:800px;height:70vh;border:2px solid #333;border-radius:12px;background:#000"></iframe>
+    `;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  const frame = document.getElementById('game-runner-frame');
+  frame.srcdoc = code;
+  toast('Game launched! 🎮', 'success');
+}
+
+function autoRunGameCode(code) {
+  // Strip markdown code fences if present
+  code = code.replace(/^```html\n?/i, '').replace(/\n?```$/i, '');
+  if (!code.includes('<html') && !code.includes('<!DOCTYPE')) {
+    code = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111;color:#fff;font-family:"Segoe UI",sans-serif}</style></head><body>${code}</body></html>`;
+  }
+  runCodeBlock.__autoCode = code;
+  // Create a temporary element with the code so runCodeBlock can find it
+  let tmp = document.getElementById('auto-game-code');
+  if (!tmp) { tmp = document.createElement('pre'); tmp.id = 'auto-game-code'; tmp.style.display = 'none'; document.body.appendChild(tmp); }
+  tmp.textContent = code;
+  runCodeBlock('auto-game-code');
+}
+
+function openGameFullscreen() {
+  const frame = document.getElementById('game-runner-frame');
+  if (!frame) return;
+  const code = frame.srcdoc;
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.open();
+    win.document.write(code);
+    win.document.close();
+  }
 }
 
 function copyCodeBlock(id) {
@@ -4430,6 +4488,15 @@ function copilotTick(ai, context) {
       output += `✅ **Project Ready!**\n`;
       output += `📊 ${files.length} files | ~${cs.linesWritten} lines | Session #${cs.sessionsCompleted}\n`;
       output += `🚀 Copy the files above to get started!`;
+
+      // Auto-launch if it's a game/HTML project
+      const htmlFile = files.find(f => f.name === 'index.html' && (f.code.includes('<canvas') || f.code.includes('<body') || f.code.includes('requestAnimationFrame') || lc.includes('game')));
+      if (htmlFile) {
+        setTimeout(() => {
+          const code = htmlFile.code.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+          autoRunGameCode(code);
+        }, 1500);
+      }
 
       // Auto-complete the task
       setTimeout(() => {
@@ -5386,6 +5453,71 @@ function getProjectTemplate(title) {
     };
   }
 
+  // ─── CATCH / PADDLE GAME ───
+  if (lc.includes('catch') || lc.includes('paddle') || lc.includes('ball')) {
+    return {
+      type: 'Catch the Ball Game',
+      analysis: '📋 Requirements:\n• Canvas-based paddle movement\n• Falling balls with increasing speed\n• Mouse/touch paddle control\n• Score tracking\n• Difficulty progression\n• Lives system + game over screen',
+      structure: '📁 Structure:\n```\nindex.html\n├── CSS — centered canvas, dark bg, HUD\n├── HTML — canvas, score, lives, difficulty\n└── JS  — game loop, paddle input, ball physics, collision\n```',
+      coreCode: '```html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>Catch the Ball!</title>\n<style>\n  *{margin:0;padding:0;box-sizing:border-box}\n  body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(180deg,#0a0a2e,#1a1a4e);font-family:"Segoe UI",sans-serif;color:#fff}\n  .hud{display:flex;gap:24px;margin-bottom:12px;font-size:1rem}\n  .hud span{color:#0ff;font-weight:bold}\n  canvas{border:2px solid #333;border-radius:8px;background:#0a0a1a;cursor:none}\n  button{margin-top:12px;padding:10px 24px;border:none;border-radius:8px;background:#6c5ce7;color:#fff;font-size:1rem;cursor:pointer}\n  button:hover{background:#7c6cf7}\n</style>\n</head>\n<body>\n<div class="hud">Score: <span id="sc">0</span> &nbsp; Difficulty: <span id="df">Easy</span> &nbsp; Lives: <span id="lv">3</span></div>\n<canvas id="c" width="480" height="520"></canvas>\n<button onclick="init()">Restart</button>\n<script>\n  const cv=document.getElementById("c"),ctx=cv.getContext("2d");\n  let padX=210,padW=80,padH=14,balls=[],score=0,lives=3,speed=2,spawnRate=80,frame=0,alive=true;\n  function init(){score=0;lives=3;speed=2;spawnRate=80;frame=0;alive=true;balls=[];update()}\n  function spawnBall(){balls.push({x:Math.random()*(cv.width-20)+10,y:-15,r:8+Math.random()*8,vy:speed+Math.random()*1.5,color:"hsl("+Math.floor(Math.random()*360)+",80%,60%)"})}\n  function update(){\n    if(!alive)return;\n    ctx.clearRect(0,0,cv.width,cv.height);\n    // Paddle\n    const grad=ctx.createLinearGradient(padX,cv.height-30,padX+padW,cv.height-30);\n    grad.addColorStop(0,"#6c5ce7");grad.addColorStop(1,"#a855f7");\n    ctx.fillStyle=grad;ctx.beginPath();ctx.roundRect(padX,cv.height-30,padW,padH,7);ctx.fill();\n    // Balls\n    for(let i=balls.length-1;i>=0;i--){\n      const b=balls[i];b.y+=b.vy;\n      ctx.fillStyle=b.color;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();\n      ctx.fillStyle="rgba(255,255,255,0.3)";ctx.beginPath();ctx.arc(b.x-b.r*0.3,b.y-b.r*0.3,b.r*0.3,0,Math.PI*2);ctx.fill();\n      // Caught?\n      if(b.y+b.r>=cv.height-30&&b.y-b.r<=cv.height-30+padH&&b.x>=padX&&b.x<=padX+padW){\n        score++;balls.splice(i,1);\n        // Particles\n        for(let p=0;p<6;p++){const px=b.x,py=b.y;const el=document.createElement("div");\n        el.style.cssText="position:fixed;width:4px;height:4px;border-radius:50%;background:"+b.color+";pointer-events:none;z-index:9999;left:"+px+"px;top:"+py+"px;transition:all 0.5s ease-out;opacity:1;";\n        document.body.appendChild(el);setTimeout(()=>{el.style.transform="translate("+(Math.random()*60-30)+"px,"+(Math.random()*-50-20)+"px)";el.style.opacity="0"},10);setTimeout(()=>el.remove(),600)}\n        continue;\n      }\n      // Missed?\n      if(b.y-b.r>cv.height){balls.splice(i,1);lives--;if(lives<=0){alive=false}}\n    }\n    // Spawn\n    frame++;if(frame%Math.max(15,spawnRate)===0)spawnBall();\n    // Difficulty\n    if(score>0&&score%10===0){speed=2+score*0.1;spawnRate=Math.max(15,80-score);padW=Math.max(40,80-score*0.5)}\n    // HUD\n    document.getElementById("sc").textContent=score;document.getElementById("lv").textContent=lives;\n    document.getElementById("df").textContent=score<10?"Easy":score<25?"Medium":score<50?"Hard":"Insane";\n    if(alive)requestAnimationFrame(update);\n    else{ctx.fillStyle="rgba(0,0,0,0.7)";ctx.fillRect(0,0,cv.width,cv.height);\n      ctx.fillStyle="#ff4757";ctx.font="bold 36px Segoe UI";ctx.textAlign="center";ctx.fillText("Game Over!",cv.width/2,cv.height/2-20);\n      ctx.fillStyle="#fff";ctx.font="18px Segoe UI";ctx.fillText("Score: "+score,cv.width/2,cv.height/2+20);\n      ctx.fillText("Click Restart to play again",cv.width/2,cv.height/2+50)}\n  }\n  cv.addEventListener("mousemove",e=>{const r=cv.getBoundingClientRect();padX=Math.max(0,Math.min(cv.width-padW,e.clientX-r.left-padW/2))});\n  cv.addEventListener("touchmove",e=>{e.preventDefault();const r=cv.getBoundingClientRect();padX=Math.max(0,Math.min(cv.width-padW,e.touches[0].clientX-r.left-padW/2))},{passive:false});\n  init();\n<\/script>\n</body>\n</html>\n```',
+      errorHandling: '✅ Error handling:\n• Paddle clamped to canvas bounds\n• Touch support with preventDefault\n• Lives system prevents instant death\n• Speed/difficulty scale gradually',
+      integration: '🔗 Connected:\n• Mouse/touch → paddle position\n• Game loop → spawn, move, collide\n• Catch → score + particles\n• Miss → lives-- → game over\n\n📦 Save as index.html or click ▶️ Run!',
+      review: '🔍 Review:\n✅ Smooth 60fps game loop\n✅ Mouse + touch controls\n✅ Particle effects on catch\n✅ Progressive difficulty\n✅ Gradient paddle + colorful balls\n✅ Game over screen with score',
+    };
+  }
+
+  // ─── PLATFORMER GAME ───
+  if (lc.includes('platform') || lc.includes('jump') || lc.includes('runner') || lc.includes('side scroll')) {
+    return {
+      type: 'Platformer Game',
+      analysis: '📋 Requirements:\n• Canvas-based character with gravity/jumping\n• Platform generation (scrolling)\n• Arrow/WASD controls + space jump\n• Score based on distance\n• Obstacle avoidance\n• Death + restart',
+      structure: '📁 Structure:\n```\nindex.html\n├── CSS — canvas, dark bg, score HUD\n├── HTML — canvas, score display\n└── JS  — physics, platforms, scrolling, input\n```',
+      coreCode: '```html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>Platform Runner</title>\n<style>*{margin:0;padding:0;box-sizing:border-box}body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#111;font-family:"Segoe UI",sans-serif;color:#fff}.hud{margin-bottom:8px;font-size:1.1rem}.hud span{color:#0ff;font-weight:bold}canvas{border:2px solid #333;border-radius:8px;background:#0a0a2e}</style>\n</head>\n<body>\n<div class="hud">Score: <span id="sc">0</span></div>\n<canvas id="c" width="600" height="400"></canvas>\n<script>\nconst cv=document.getElementById("c"),ctx=cv.getContext("2d");\nconst W=cv.width,H=cv.height;\nlet player,platforms,score,gameOver,keys={};\nfunction init(){\n  player={x:80,y:200,w:24,h:30,vy:0,grounded:false,color:"#6c5ce7"};\n  platforms=[{x:0,y:H-30,w:W,h:30,color:"#2d3436"}];\n  for(let i=0;i<8;i++)platforms.push({x:120+i*120+Math.random()*60,y:H-80-Math.random()*180,w:60+Math.random()*60,h:12,color:"hsl("+(i*40)+",60%,40%)"});\n  score=0;gameOver=false;loop();\n}\nfunction loop(){\n  if(gameOver){ctx.fillStyle="rgba(0,0,0,0.7)";ctx.fillRect(0,0,W,H);ctx.fillStyle="#ff4757";ctx.font="bold 32px Segoe UI";ctx.textAlign="center";ctx.fillText("Game Over!",W/2,H/2-15);ctx.fillStyle="#fff";ctx.font="18px Segoe UI";ctx.fillText("Score: "+score+"  |  Press R to restart",W/2,H/2+20);return}\n  ctx.fillStyle="#0a0a2e";ctx.fillRect(0,0,W,H);\n  // Stars\n  for(let i=0;i<30;i++){ctx.fillStyle="rgba(255,255,255,"+(0.2+Math.random()*0.3)+")";ctx.fillRect((i*97+score*0.3)%W,(i*53)%H,1.5,1.5)}\n  // Physics\n  if(keys["ArrowLeft"]||keys["a"])player.x-=4;\n  if(keys["ArrowRight"]||keys["d"])player.x+=4;\n  if((keys["ArrowUp"]||keys["w"]||keys[" "])&&player.grounded){player.vy=-10;player.grounded=false}\n  player.vy+=0.5;player.y+=player.vy;player.grounded=false;\n  // Platform collision\n  platforms.forEach(p=>{\n    if(player.vy>=0&&player.x+player.w>p.x&&player.x<p.x+p.w&&player.y+player.h>=p.y&&player.y+player.h<=p.y+p.h+8){\n      player.y=p.y-player.h;player.vy=0;player.grounded=true;\n    }\n  });\n  // Scroll\n  if(player.x>W*0.4){const dx=player.x-W*0.4;player.x-=dx;platforms.forEach(p=>p.x-=dx);score+=Math.ceil(dx)}\n  // Remove off-screen, add new\n  platforms=platforms.filter(p=>p.x+p.w>-50);\n  const last=platforms.reduce((a,b)=>a.x>b.x?a:b);\n  while(last.x<W+200){const nx=last.x+80+Math.random()*100,ny=Math.max(60,Math.min(H-60,last.y+(Math.random()*100-50)));\n    platforms.push({x:nx,y:ny,w:50+Math.random()*70,h:12,color:"hsl("+(Math.random()*360)+",60%,40%)"});\n    last.x=nx;last.w=50+Math.random()*70}\n  // Death\n  if(player.y>H+50)gameOver=true;\n  // Draw platforms\n  platforms.forEach(p=>{ctx.fillStyle=p.color;ctx.beginPath();ctx.roundRect(p.x,p.y,p.w,p.h,4);ctx.fill()});\n  // Draw player\n  ctx.fillStyle=player.color;ctx.fillRect(player.x,player.y,player.w,player.h);\n  ctx.fillStyle="#fff";ctx.fillRect(player.x+6,player.y+8,5,5);ctx.fillRect(player.x+15,player.y+8,5,5);\n  ctx.fillStyle="#ff6b6b";ctx.fillRect(player.x+8,player.y+18,10,3);\n  document.getElementById("sc").textContent=score;\n  requestAnimationFrame(loop);\n}\ndocument.addEventListener("keydown",e=>{keys[e.key]=true;if(e.key==="r"||e.key==="R")init()});\ndocument.addEventListener("keyup",e=>{keys[e.key]=false});\ninit();\n<\/script>\n</body>\n</html>\n```',
+      errorHandling: '✅ Error handling:\n• Player clamped to platforms\n• Infinite platform generation\n• Off-screen platforms cleaned up\n• R key for clean restart',
+      integration: '🔗 Connected:\n• Keys → movement + jump\n• Gravity → fall → platform collision\n• Camera scroll → score\n• Fall off screen → game over\n\n📦 Click ▶️ Run to play!',
+      review: '🔍 Review:\n✅ Smooth scrolling platformer\n✅ Arrow/WASD + space\n✅ Infinite procedural levels\n✅ Character with face\n✅ Parallax stars\n✅ Score by distance',
+    };
+  }
+
+  // ─── PONG GAME ───
+  if (lc.includes('pong') || lc.includes('ping pong') || lc.includes('tennis')) {
+    return {
+      type: 'Pong Game',
+      analysis: '📋 Requirements:\n• Two paddles (player vs AI)\n• Ball with physics and angle reflection\n• Score tracking\n• AI opponent\n• Win condition\n• Retro aesthetic',
+      structure: '📁 Structure:\n```\nindex.html\n├── CSS — dark bg, centered canvas, retro font\n├── HTML — canvas, score display\n└── JS  — ball physics, paddle AI, scoring\n```',
+      coreCode: '```html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>Pong</title>\n<style>*{margin:0;padding:0;box-sizing:border-box}body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#000;font-family:"Courier New",monospace;color:#fff}.hud{font-size:2rem;margin-bottom:10px;letter-spacing:8px}.hud .p1{color:#0ff}.hud .p2{color:#f0f}canvas{border:2px solid #222;background:#0a0a0a}p{margin-top:8px;color:#555;font-size:0.8rem}</style>\n</head>\n<body>\n<div class="hud"><span class="p1" id="s1">0</span> : <span class="p2" id="s2">0</span></div>\n<canvas id="c" width="600" height="400"></canvas>\n<p>W/S or Arrow Up/Down to move | First to 7 wins</p>\n<script>\nconst cv=document.getElementById("c"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;\nlet p1y=H/2-40,p2y=H/2-40,pw=10,ph=80,bx=W/2,by=H/2,bvx=4,bvy=2,s1=0,s2=0,keys={},over=false;\nfunction reset(){bx=W/2;by=H/2;bvx=(Math.random()>0.5?1:-1)*4;bvy=(Math.random()-0.5)*4}\nfunction loop(){\n  if(over){ctx.fillStyle="rgba(0,0,0,0.8)";ctx.fillRect(0,0,W,H);ctx.fillStyle=s1>=7?"#0ff":"#f0f";ctx.font="bold 36px Courier New";ctx.textAlign="center";ctx.fillText((s1>=7?"Player":"AI")+" Wins!",W/2,H/2);ctx.fillStyle="#555";ctx.font="16px Courier New";ctx.fillText("Press R to restart",W/2,H/2+30);return}\n  ctx.fillStyle="#0a0a0a";ctx.fillRect(0,0,W,H);\n  // Dashed center line\n  ctx.setLineDash([8,8]);ctx.strokeStyle="#222";ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);\n  // Player input\n  if(keys["w"]||keys["ArrowUp"])p1y=Math.max(0,p1y-5);\n  if(keys["s"]||keys["ArrowDown"])p1y=Math.min(H-ph,p1y+5);\n  // AI\n  const aiTarget=by-ph/2;p2y+=(aiTarget-p2y)*0.06;p2y=Math.max(0,Math.min(H-ph,p2y));\n  // Ball\n  bx+=bvx;by+=bvy;\n  if(by<=0||by>=H)bvy=-bvy;\n  // Paddle collision\n  if(bx<=pw+10&&by>=p1y&&by<=p1y+ph){bvx=Math.abs(bvx)*1.05;bvy+=(by-(p1y+ph/2))*0.15}\n  if(bx>=W-pw-10&&by>=p2y&&by<=p2y+ph){bvx=-Math.abs(bvx)*1.05;bvy+=(by-(p2y+ph/2))*0.15}\n  // Score\n  if(bx<0){s2++;reset()}if(bx>W){s1++;reset()}\n  if(s1>=7||s2>=7)over=true;\n  // Draw\n  ctx.shadowBlur=10;ctx.shadowColor="#0ff";ctx.fillStyle="#0ff";ctx.fillRect(10,p1y,pw,ph);\n  ctx.shadowColor="#f0f";ctx.fillStyle="#f0f";ctx.fillRect(W-pw-10,p2y,pw,ph);\n  ctx.shadowColor="#fff";ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(bx,by,6,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;\n  document.getElementById("s1").textContent=s1;document.getElementById("s2").textContent=s2;\n  requestAnimationFrame(loop);\n}\ndocument.addEventListener("keydown",e=>{keys[e.key]=true;if(e.key==="r"||e.key==="R"){s1=s2=0;over=false;reset();loop()}});\ndocument.addEventListener("keyup",e=>{keys[e.key]=false});\nreset();loop();\n<\/script>\n</body>\n</html>\n```',
+      errorHandling: '✅ Error handling:\n• Paddles clamped to bounds\n• Ball speed capped via natural friction\n• AI difficulty balanced\n• R key clean restart',
+      integration: '🔗 Connected:\n• Keys → player paddle\n• AI tracking → CPU paddle\n• Ball → reflect off paddles/walls\n• Score limits → win screen\n\n📦 Click ▶️ Run to play!',
+      review: '🔍 Review:\n✅ Retro Pong aesthetic with glow\n✅ AI opponent with natural movement\n✅ Ball speed increases per rally\n✅ Angle reflection physics\n✅ First to 7 wins\n✅ Dashed center line',
+    };
+  }
+
+  // ─── MEMORY / MATCHING GAME ───
+  if (lc.includes('memory') || lc.includes('matching') || lc.includes('card game') || lc.includes('pair')) {
+    return {
+      type: 'Memory Card Game',
+      analysis: '📋 Requirements:\n• Grid of face-down cards\n• Click to flip and match pairs\n• Move counter\n• Win detection\n• Card flip animation\n• Shuffle on start',
+      structure: '📁 Structure:\n```\nindex.html\n├── CSS — card grid, flip animations, gradient bg\n├── HTML — game board, stats, restart\n└── JS  — shuffle, flip logic, match detection, win check\n```',
+      coreCode: '```html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>Memory Game</title>\n<style>\n*{margin:0;padding:0;box-sizing:border-box}\nbody{min-height:100vh;background:linear-gradient(135deg,#0f0c29,#302b63);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Segoe UI",sans-serif;color:#fff;gap:16px}\n.stats{display:flex;gap:20px;font-size:1rem}.stats span{color:#0ff;font-weight:bold}\n.grid{display:grid;grid-template-columns:repeat(4,90px);gap:10px}\n.card{width:90px;height:90px;cursor:pointer;perspective:600px}\n.card-inner{position:relative;width:100%;height:100%;transition:transform 0.5s;transform-style:preserve-3d}\n.card.flipped .card-inner{transform:rotateY(180deg)}\n.card-front,.card-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2.2rem}\n.card-back{background:linear-gradient(135deg,#6c5ce7,#a855f7);box-shadow:0 4px 15px rgba(108,92,231,0.3)}\n.card-front{transform:rotateY(180deg);background:#1a1a3e;border:2px solid #333}\n.card.matched .card-inner{transform:rotateY(180deg)}.card.matched .card-front{border-color:#2ed573;background:#1a3a2e}\nbutton{padding:10px 24px;border:none;border-radius:8px;background:#6c5ce7;color:#fff;font-size:1rem;cursor:pointer}\n.win{font-size:1.5rem;color:#2ed573;font-weight:bold;animation:pulse 1s infinite}\n@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}\n</style>\n</head>\n<body>\n<div class="stats">Moves: <span id="mv">0</span> &nbsp; Pairs: <span id="pr">0</span>/8</div>\n<div class="grid" id="grid"></div>\n<div id="msg"></div>\n<button onclick="init()">New Game</button>\n<script>\nconst emojis=["🎮","🚀","⭐","🎵","🔥","💎","🌈","🎯"];\nlet cards,flipped=[],matched=0,moves=0,locked=false;\nfunction shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}\nfunction init(){\n  cards=shuffle([...emojis,...emojis].map((e,i)=>({emoji:e,id:i})));\n  matched=0;moves=0;flipped=[];locked=false;\n  document.getElementById("mv").textContent=0;document.getElementById("pr").textContent="0";document.getElementById("msg").innerHTML="";\n  const grid=document.getElementById("grid");\n  grid.innerHTML=cards.map((c,i)=>`<div class="card" onclick="flip(${i})"><div class="card-inner"><div class="card-back">❓</div><div class="card-front">${c.emoji}</div></div></div>`).join("");\n}\nfunction flip(i){\n  if(locked)return;const el=document.querySelectorAll(".card")[i];\n  if(el.classList.contains("flipped")||el.classList.contains("matched"))return;\n  el.classList.add("flipped");flipped.push({idx:i,emoji:cards[i].emoji,el});\n  if(flipped.length===2){\n    moves++;document.getElementById("mv").textContent=moves;\n    if(flipped[0].emoji===flipped[1].emoji){\n      flipped[0].el.classList.add("matched");flipped[1].el.classList.add("matched");\n      matched++;document.getElementById("pr").textContent=matched;flipped=[];\n      if(matched===8)document.getElementById("msg").innerHTML=\'<div class="win">🎉 You Win! \'+moves+\' moves</div>\';\n    }else{locked=true;setTimeout(()=>{flipped[0].el.classList.remove("flipped");flipped[1].el.classList.remove("flipped");flipped=[];locked=false},800)}\n  }\n}\ninit();\n<\/script>\n</body>\n</html>\n```',
+      errorHandling: '✅ Error handling:\n• Lock prevents triple-flip\n• Already matched cards ignored\n• Clean state reset on new game\n• Win detection at 8 pairs',
+      integration: '🔗 Connected:\n• Click → flip animation → match check\n• Match → lock in place\n• No match → flip back after delay\n• All matched → win message\n\n📦 Click ▶️ Run to play!',
+      review: '🔍 Review:\n✅ CSS 3D flip animation\n✅ Fisher-Yates shuffle\n✅ Move counter\n✅ Pair progress tracking\n✅ Win celebration\n✅ Purple gradient theme',
+    };
+  }
+
+  // ─── BREAKOUT / BRICK BREAKER ───
+  if (lc.includes('breakout') || lc.includes('brick') || lc.includes('arkanoid')) {
+    return {
+      type: 'Breakout Game',
+      analysis: '📋 Requirements:\n• Canvas-based paddle + ball\n• Grid of colored bricks\n• Ball reflection physics\n• Brick destruction\n• Score + lives\n• Win/lose conditions',
+      structure: '📁 Structure:\n```\nindex.html\n├── CSS — centered canvas, dark bg\n├── HTML — canvas, HUD\n└── JS  — ball physics, brick grid, paddle, collision\n```',
+      coreCode: '```html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>Breakout</title>\n<style>*{margin:0;padding:0;box-sizing:border-box}body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#111;font-family:"Segoe UI",sans-serif;color:#fff}.hud{display:flex;gap:24px;margin-bottom:8px;font-size:1rem}.hud span{color:#0ff;font-weight:bold}canvas{border:2px solid #333;border-radius:8px;background:#0a0a1a;cursor:none}p{margin-top:6px;color:#555;font-size:0.8rem}</style>\n</head>\n<body>\n<div class="hud">Score: <span id="sc">0</span> Lives: <span id="lv">3</span></div>\n<canvas id="c" width="480" height="500"></canvas>\n<p>Move mouse to control paddle</p>\n<script>\nconst cv=document.getElementById("c"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;\nconst COLS=8,ROWS=5,BW=W/COLS-4,BH=18;\nlet px,pw=70,bx,by,bvx,bvy,bricks,score,lives,running;\nfunction init(){\n  px=W/2-pw/2;bx=W/2;by=H-60;bvx=3;bvy=-3;score=0;lives=3;running=true;\n  bricks=[];for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)bricks.push({x:c*(BW+4)+2,y:r*(BH+4)+40,w:BW,h:BH,alive:true,color:"hsl("+(r*50+c*15)+",70%,55%)"});\n  loop();\n}\nfunction loop(){\n  if(!running)return;\n  ctx.fillStyle="#0a0a1a";ctx.fillRect(0,0,W,H);\n  // Bricks\n  bricks.forEach(b=>{if(!b.alive)return;ctx.fillStyle=b.color;ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,4);ctx.fill()});\n  // Paddle\n  const pg=ctx.createLinearGradient(px,H-25,px+pw,H-25);pg.addColorStop(0,"#6c5ce7");pg.addColorStop(1,"#a855f7");\n  ctx.fillStyle=pg;ctx.beginPath();ctx.roundRect(px,H-25,pw,10,5);ctx.fill();\n  // Ball\n  bx+=bvx;by+=bvy;\n  if(bx<=6||bx>=W-6)bvx=-bvx;if(by<=6)bvy=-bvy;\n  // Paddle hit\n  if(by>=H-35&&by<=H-20&&bx>=px&&bx<=px+pw){bvy=-Math.abs(bvy);bvx+=(bx-(px+pw/2))*0.1}\n  // Brick collision\n  bricks.forEach(b=>{if(!b.alive)return;if(bx>=b.x&&bx<=b.x+b.w&&by>=b.y&&by<=b.y+b.h){b.alive=false;bvy=-bvy;score+=10}});\n  // Miss\n  if(by>H){lives--;if(lives<=0){running=false;ctx.fillStyle="rgba(0,0,0,0.7)";ctx.fillRect(0,0,W,H);ctx.fillStyle="#ff4757";ctx.font="bold 32px Segoe UI";ctx.textAlign="center";ctx.fillText("Game Over!",W/2,H/2);ctx.fillStyle="#fff";ctx.font="16px Segoe UI";ctx.fillText("Score: "+score+" | Press R to restart",W/2,H/2+30);return}bx=W/2;by=H-60;bvx=3;bvy=-3}\n  // Win\n  if(bricks.every(b=>!b.alive)){running=false;ctx.fillStyle="rgba(0,0,0,0.7)";ctx.fillRect(0,0,W,H);ctx.fillStyle="#2ed573";ctx.font="bold 32px Segoe UI";ctx.textAlign="center";ctx.fillText("You Win! 🎉",W/2,H/2);return}\n  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(bx,by,6,0,Math.PI*2);ctx.fill();\n  document.getElementById("sc").textContent=score;document.getElementById("lv").textContent=lives;\n  requestAnimationFrame(loop);\n}\ncv.addEventListener("mousemove",e=>{const r=cv.getBoundingClientRect();px=Math.max(0,Math.min(W-pw,e.clientX-r.left-pw/2))});\ndocument.addEventListener("keydown",e=>{if(e.key==="r"||e.key==="R")init()});\ninit();\n<\/script>\n</body>\n</html>\n```',
+      errorHandling: '✅ Error handling:\n• Ball bounces off walls\n• Paddle clamped to canvas\n• Lives system with ball reset\n• Win detection when all bricks destroyed',
+      integration: '🔗 Connected:\n• Mouse → paddle\n• Ball → physics → brick collision\n• Brick hit → destroy + score\n• All cleared → win screen\n\n📦 Click ▶️ Run to play!',
+      review: '🔍 Review:\n✅ 40 colored bricks\n✅ Angle-aware paddle reflection\n✅ Lives system\n✅ Win + lose screens\n✅ Mouse paddle control\n✅ Gradient effects',
+    };
+  }
+
   // ─── SNAKE GAME ───
   if (lc.includes('snake')) {
     return {
@@ -5438,7 +5570,22 @@ function getProjectTemplate(title) {
     };
   }
 
-  // ─── GENERIC FALLBACK ───
+  // ─── GENERIC GAME FALLBACK (when "game" is in title but no specific match) ───
+  if (lc.includes('game') || lc.includes('play')) {
+    // Generate a catch-the-falling-objects game as a fun default
+    const gameName = title.replace(/^(make|build|create|a|the|my)\s+/gi, '').trim();
+    return {
+      type: gameName || 'Arcade Game',
+      analysis: `📋 Requirements for "${gameName}":\n• Canvas-based interactive game\n• Player-controlled character/paddle\n• Score system with difficulty progression\n• Visual effects and feedback\n• Game over + restart\n• Keyboard and/or mouse controls`,
+      structure: '📁 Structure:\n```\nindex.html\n├── CSS — canvas, dark bg, HUD display\n├── HTML — canvas, score, controls info\n└── JS  — game loop, player input, enemies, collision, scoring\n```',
+      coreCode: `\`\`\`html\n<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<title>${gameName || 'Game'}</title>\n<style>*{margin:0;padding:0;box-sizing:border-box}body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(180deg,#0a0a2e,#1a1a4e);font-family:"Segoe UI",sans-serif;color:#fff}.hud{display:flex;gap:24px;margin-bottom:8px;font-size:1rem}.hud span{color:#0ff;font-weight:bold}canvas{border:2px solid #333;border-radius:8px;background:#0a0a1a}p{margin-top:8px;color:#555;font-size:0.8rem}</style>\n</head>\n<body>\n<div class="hud">Score: <span id="score">0</span> &nbsp; Lives: <span id="lives">3</span> &nbsp; Level: <span id="level">1</span></div>\n<canvas id="c" width="500" height="500"></canvas>\n<p>Arrow keys / WASD to move • Collect ⭐ • Avoid 💀</p>\n<script>\nconst cv=document.getElementById("c"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;\nlet player,stars,enemies,score,lives,level,frame,gameOver,keys={};\nfunction init(){\n  player={x:W/2,y:H-40,w:28,h:28,speed:5,color:"#6c5ce7"};\n  stars=[];enemies=[];score=0;lives=3;level=1;frame=0;gameOver=false;loop();\n}\nfunction spawn(){\n  if(frame%(Math.max(10,40-level*3))===0)stars.push({x:Math.random()*(W-16)+8,y:-10,r:8,vy:1.5+level*0.3,color:"#ffd700"});\n  if(frame%(Math.max(20,60-level*4))===0)enemies.push({x:Math.random()*(W-16)+8,y:-10,r:10,vy:2+level*0.4,color:"#ff4757"});\n}\nfunction loop(){\n  if(gameOver){ctx.fillStyle="rgba(0,0,0,0.75)";ctx.fillRect(0,0,W,H);ctx.textAlign="center";ctx.fillStyle="#ff4757";ctx.font="bold 36px Segoe UI";ctx.fillText("Game Over!",W/2,H/2-25);ctx.fillStyle="#fff";ctx.font="18px Segoe UI";ctx.fillText("Score: "+score+" | Level: "+level,W/2,H/2+10);ctx.fillText("Press R to restart",W/2,H/2+40);return}\n  ctx.fillStyle="#0a0a1a";ctx.fillRect(0,0,W,H);\n  // Starfield bg\n  for(let i=0;i<20;i++){ctx.fillStyle="rgba(255,255,255,"+(0.1+Math.random()*0.2)+")";ctx.fillRect((i*131+frame*0.2)%W,(i*97+frame*0.5)%H,1.5,1.5)}\n  // Input\n  if(keys["ArrowLeft"]||keys["a"])player.x=Math.max(0,player.x-player.speed);\n  if(keys["ArrowRight"]||keys["d"])player.x=Math.min(W-player.w,player.x+player.speed);\n  if(keys["ArrowUp"]||keys["w"])player.y=Math.max(0,player.y-player.speed);\n  if(keys["ArrowDown"]||keys["s"])player.y=Math.min(H-player.h,player.y+player.speed);\n  // Spawn\n  frame++;spawn();\n  // Stars\n  for(let i=stars.length-1;i>=0;i--){\n    const s=stars[i];s.y+=s.vy;\n    ctx.fillStyle=s.color;ctx.font="16px serif";ctx.fillText("⭐",s.x-8,s.y+5);\n    if(Math.abs(s.x-player.x-player.w/2)<18&&Math.abs(s.y-player.y-player.h/2)<18){stars.splice(i,1);score+=10;if(score>0&&score%100===0)level++;continue}\n    if(s.y>H+10)stars.splice(i,1);\n  }\n  // Enemies\n  for(let i=enemies.length-1;i>=0;i--){\n    const e=enemies[i];e.y+=e.vy;\n    ctx.fillStyle=e.color;ctx.font="18px serif";ctx.fillText("💀",e.x-9,e.y+6);\n    if(Math.abs(e.x-player.x-player.w/2)<16&&Math.abs(e.y-player.y-player.h/2)<16){enemies.splice(i,1);lives--;if(lives<=0)gameOver=true;continue}\n    if(e.y>H+10)enemies.splice(i,1);\n  }\n  // Player\n  ctx.fillStyle=player.color;ctx.beginPath();ctx.roundRect(player.x,player.y,player.w,player.h,6);ctx.fill();\n  ctx.fillStyle="#fff";ctx.fillRect(player.x+6,player.y+8,5,5);ctx.fillRect(player.x+17,player.y+8,5,5);\n  ctx.fillStyle="#2ed573";ctx.fillRect(player.x+9,player.y+18,10,3);\n  // HUD\n  document.getElementById("score").textContent=score;document.getElementById("lives").textContent=lives;document.getElementById("level").textContent=level;\n  requestAnimationFrame(loop);\n}\ndocument.addEventListener("keydown",e=>{keys[e.key]=true;if(e.key==="r"||e.key==="R")init()});\ndocument.addEventListener("keyup",e=>{keys[e.key]=false});\ninit();\n<\/script>\n</body>\n</html>\n\`\`\``,
+      errorHandling: '✅ Error handling:\n• Player clamped to bounds\n• Objects cleaned when off-screen\n• Level progression balanced\n• R key restart',
+      integration: '🔗 Connected:\n• Arrow/WASD → 4-direction movement\n• Stars → collect for points\n• Skulls → lose lives\n• Level up every 100 points\n\n📦 Click ▶️ Run to play!',
+      review: `🔍 Review:\n✅ Fun collect-and-dodge gameplay\n✅ 4-directional movement\n✅ Progressive difficulty\n✅ Character with face\n✅ Background starfield\n✅ Score + lives + levels`,
+    };
+  }
+
+  // ─── GENERIC FALLBACK (non-game) ───
   return {
     type: 'Web App',
     analysis: `📋 Requirements Analysis for "${title}":\n• Core functionality as described\n• Clean, modern user interface\n• Responsive design\n• Input validation and error handling\n• Data persistence where needed`,
@@ -5651,6 +5798,14 @@ function generateAIResponse(ai, context) {
         addChatMessage(ai.id, ai.name, ai.color, ai.emoji, `${doneMsg}Done with "${t.title}"! Submitted for review. \u2705\n\n${template.review}`);
         renderTasks(); updateDashboard(); saveAll();
       }, 4000 + Math.random() * 3000);
+      // Auto-launch if game
+      const gameCode = template.coreCode;
+      if (gameCode && (gameCode.includes('<canvas') || gameCode.includes('requestAnimationFrame') || t.title.toLowerCase().includes('game'))) {
+        setTimeout(() => {
+          const code = gameCode.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+          autoRunGameCode(code);
+        }, 2000);
+      }
       renderTasks(); updateDashboard();
       return fullIntro + parts.join(' ');
     }
