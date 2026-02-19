@@ -1685,6 +1685,55 @@ function onTask(task) {
         </div>
 
         <!-- Bought AIs & Boosts Status -->
+        <!-- Claude Backup — Developer Only -->
+        <div class="card" style="margin-top:16px;border-color:#6366f1;position:relative;overflow:hidden" id="claude-backup-card">
+          <div class="card-header">
+            <span class="card-title">🔮 Claude Backup Engine</span>
+            <span style="font-size:11px;padding:3px 8px;background:rgba(239,68,68,0.2);color:#ef4444;border-radius:6px;border:1px solid rgba(239,68,68,0.3)" id="claude-lock-badge">🔒 LOCKED — Dev Only</span>
+          </div>
+          <!-- Lock overlay -->
+          <div id="claude-lock-overlay" style="padding:20px;text-align:center">
+            <div style="font-size:40px;margin-bottom:12px">🔐</div>
+            <div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px">Developer Access Required</div>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:16px">This is a major backup AI engine (Claude) reserved for developers. Enter the dev password to unlock.</p>
+            <div style="display:flex;gap:8px;justify-content:center;align-items:center">
+              <input type="password" id="claude-dev-password" placeholder="Enter dev password..." style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg4);color:var(--text);font-size:13px;width:200px" onkeydown="if(event.key==='Enter')unlockClaudeBackup()">
+              <button class="btn btn-primary btn-sm" onclick="unlockClaudeBackup()">🔓 Unlock</button>
+            </div>
+            <div id="claude-unlock-error" style="margin-top:8px;font-size:12px;color:#ef4444;display:none"></div>
+          </div>
+          <!-- Unlocked content (hidden by default) -->
+          <div id="claude-unlocked-content" style="display:none">
+            <div style="display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,var(--bg4),rgba(99,102,241,0.1));border-radius:12px;border:1px solid rgba(99,102,241,0.3)">
+              <span style="font-size:28px">🔮</span>
+              <div style="flex:1">
+                <div style="font-weight:600;color:var(--text)">Claude Backup Engine</div>
+                <span style="font-size:12px;color:var(--text3)" id="claude-backup-status">✅ Unlocked — Major Backup Active</span>
+              </div>
+              <label class="toggle"><input type="checkbox" id="claude-backup-toggle" onchange="toggleClaudeBackup(this.checked)" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div style="margin-top:12px;padding:12px;background:var(--bg4);border-radius:8px">
+              <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Claude Model</div>
+              <select id="claude-model-select" style="width:100%" onchange="saveClaudeModel()">
+                <option value="claude-sonnet-4-20250514" selected>Claude Sonnet 4 (Balanced)</option>
+                <option value="claude-3.5-sonnet">Claude 3.5 Sonnet (Fast)</option>
+                <option value="claude-3-haiku-20240307">Claude 3 Haiku (Fastest)</option>
+              </select>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text3);padding:10px;background:rgba(99,102,241,0.08);border-radius:8px;border:1px solid rgba(99,102,241,0.15)">
+              <strong>⚡ When does Claude kick in?</strong><br>
+              Claude activates as a major backup when GitHub API, Copilot Clone, AND Pollinations all fail. It's the last line of defense before falling back to built-in knowledge.
+            </div>
+            <div style="margin-top:10px">
+              <button class="btn btn-secondary btn-sm" onclick="testClaudeBackup()" style="width:100%">🧪 Test Claude Backup</button>
+              <div id="claude-test-status" style="margin-top:6px;font-size:12px;color:var(--text3)"></div>
+            </div>
+            <div style="margin-top:10px;text-align:right">
+              <button class="btn btn-sm" onclick="lockClaudeBackup()" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);font-size:11px">🔒 Re-lock</button>
+            </div>
+          </div>
+        </div>
+
         <div class="card" style="margin-top:16px;border-color:#fbbf24">
           <div class="card-header"><span class="card-title">🛒 Purchased AIs & Boosts</span></div>
           <div id="settings-purchased-ais" style="margin-bottom:12px"></div>
@@ -3287,7 +3336,7 @@ function showPage(page) {
   if (page === 'analysis') { updateAnalysisSelect(); renderAnalysis(); }
   if (page === 'fusion') { renderFusionLab(); }
   if (page === 'upload') { initTradePage(); updateShareCode(); }
-  if (page === 'settings') { updateRealAIStatus(); loadTokenSetting(); renderSmartness(); renderSettingsPurchased(); renderSettingsIQGrid(); loadAssistToggles(); }
+  if (page === 'settings') { updateRealAIStatus(); loadTokenSetting(); renderSmartness(); renderSettingsPurchased(); renderSettingsIQGrid(); loadAssistToggles(); loadClaudeSettings(); }
   if (page === 'store') { renderStore(); }
   if (page === 'builder') { refreshAdvSliderLocks(); }
   if (page === 'aitube') renderAITubeGrid();
@@ -7807,6 +7856,13 @@ let apiTokenCount = 0;
 let githubToken = '';
 let copilotAssistEnabled = true;
 let apiFallbackEnabled = true;
+
+// ── Claude Backup Engine (Developer Only) ──
+let claudeBackupUnlocked = false;
+let claudeBackupEnabled = true;
+let claudeBackupModel = 'claude-sonnet-4-20250514';
+const CLAUDE_DEV_PASSWORD = 'qweiopcvb';
+const CLAUDE_API_URL = 'https://text.pollinations.ai/openai/chat/completions'; // Pollinations supports Claude models
 const COPILOT_API_URL = 'https://models.inference.ai.azure.com/chat/completions';
 const COPILOT_CLONE_URL = 'https://models.inference.ai.azure.com/chat/completions'; // Backup — same endpoint, different model
 const POLLINATIONS_FALLBACK_URL = 'https://text.pollinations.ai/openai/chat/completions';
@@ -7940,6 +7996,142 @@ function getModelDisplayName() {
   return AI_MODEL_NAMES[aiModelChoice] || aiModelChoice;
 }
 
+// ================================================================
+// CLAUDE BACKUP ENGINE — Developer-only major backup
+// ================================================================
+
+function unlockClaudeBackup() {
+  const input = document.getElementById('claude-dev-password');
+  const pw = (input?.value || '').trim();
+  if (pw === CLAUDE_DEV_PASSWORD) {
+    claudeBackupUnlocked = true;
+    try { localStorage.setItem('ai_hub_claude_unlocked', '1'); } catch(e) {}
+    document.getElementById('claude-lock-overlay').style.display = 'none';
+    document.getElementById('claude-unlocked-content').style.display = 'block';
+    document.getElementById('claude-lock-badge').innerHTML = '🔓 UNLOCKED';
+    document.getElementById('claude-lock-badge').style.background = 'rgba(16,185,129,0.2)';
+    document.getElementById('claude-lock-badge').style.color = '#10b981';
+    document.getElementById('claude-lock-badge').style.borderColor = 'rgba(16,185,129,0.3)';
+    toast('🔮 Claude Backup Engine unlocked! Major backup now active.', 'success');
+    if (input) input.value = '';
+  } else {
+    const errEl = document.getElementById('claude-unlock-error');
+    if (errEl) { errEl.textContent = '❌ Wrong password. Developer access denied.'; errEl.style.display = 'block'; }
+    toast('Wrong password!', 'error');
+    if (input) input.value = '';
+  }
+}
+
+function lockClaudeBackup() {
+  claudeBackupUnlocked = false;
+  try { localStorage.removeItem('ai_hub_claude_unlocked'); } catch(e) {}
+  document.getElementById('claude-lock-overlay').style.display = 'block';
+  document.getElementById('claude-unlocked-content').style.display = 'none';
+  document.getElementById('claude-lock-badge').innerHTML = '🔒 LOCKED — Dev Only';
+  document.getElementById('claude-lock-badge').style.background = 'rgba(239,68,68,0.2)';
+  document.getElementById('claude-lock-badge').style.color = '#ef4444';
+  document.getElementById('claude-lock-badge').style.borderColor = 'rgba(239,68,68,0.3)';
+  toast('🔒 Claude Backup re-locked.', 'info');
+}
+
+function toggleClaudeBackup(on) {
+  claudeBackupEnabled = on;
+  try { localStorage.setItem('ai_hub_claude_enabled', on ? '1' : '0'); } catch(e) {}
+  const status = document.getElementById('claude-backup-status');
+  if (status) status.textContent = on ? '✅ Unlocked — Major Backup Active' : '⏸️ Unlocked but Disabled';
+  toast(on ? '🔮 Claude Backup enabled' : '⏸️ Claude Backup disabled', 'info');
+}
+
+function saveClaudeModel() {
+  claudeBackupModel = document.getElementById('claude-model-select')?.value || 'claude-sonnet-4-20250514';
+  try { localStorage.setItem('ai_hub_claude_model', claudeBackupModel); } catch(e) {}
+}
+
+function loadClaudeSettings() {
+  try {
+    claudeBackupUnlocked = localStorage.getItem('ai_hub_claude_unlocked') === '1';
+    claudeBackupEnabled = localStorage.getItem('ai_hub_claude_enabled') !== '0';
+    claudeBackupModel = localStorage.getItem('ai_hub_claude_model') || 'claude-sonnet-4-20250514';
+  } catch(e) {}
+  // Restore UI state if unlocked
+  if (claudeBackupUnlocked) {
+    const overlay = document.getElementById('claude-lock-overlay');
+    const content = document.getElementById('claude-unlocked-content');
+    const badge = document.getElementById('claude-lock-badge');
+    const toggle = document.getElementById('claude-backup-toggle');
+    const modelSel = document.getElementById('claude-model-select');
+    if (overlay) overlay.style.display = 'none';
+    if (content) content.style.display = 'block';
+    if (badge) { badge.innerHTML = '🔓 UNLOCKED'; badge.style.background = 'rgba(16,185,129,0.2)'; badge.style.color = '#10b981'; badge.style.borderColor = 'rgba(16,185,129,0.3)'; }
+    if (toggle) toggle.checked = claudeBackupEnabled;
+    if (modelSel) modelSel.value = claudeBackupModel;
+  }
+}
+
+// Call Claude as major backup — uses Pollinations with Claude model
+async function callClaudeBackup(messages, maxTokens) {
+  if (!claudeBackupUnlocked || !claudeBackupEnabled) return null;
+  console.log('[Claude Backup] Activating major backup with model:', claudeBackupModel);
+
+  const body = JSON.stringify({
+    model: claudeBackupModel,
+    messages,
+    temperature: 0.7,
+    top_p: 0.95,
+    max_tokens: maxTokens || 2048
+  });
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const resp = await fetch(CLAUDE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      if (resp.status === 429) {
+        console.warn('[Claude Backup] Rate limited, retrying...');
+        await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+        continue;
+      }
+      if (!resp.ok) {
+        console.warn('[Claude Backup] Error:', resp.status);
+        break;
+      }
+      const data = await resp.json();
+      const text = data?.choices?.[0]?.message?.content || null;
+      if (text) {
+        apiCallCount++;
+        const tokens = data?.usage?.total_tokens || Math.ceil(text.length / 4);
+        apiTokenCount += tokens;
+        try { localStorage.setItem('ai_hub_api_calls', apiCallCount); localStorage.setItem('ai_hub_api_tokens', apiTokenCount); } catch(e) {}
+        updateRealAIStatus();
+        console.log('[Claude Backup] Success!');
+      }
+      return text;
+    } catch(e) {
+      console.warn('[Claude Backup] Failed (attempt ' + (attempt+1) + '):', e);
+      if (attempt < 1) await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+  return null;
+}
+
+async function testClaudeBackup() {
+  const status = document.getElementById('claude-test-status');
+  if (status) status.innerHTML = '⏳ Testing Claude backup...';
+  const result = await callClaudeBackup(
+    [{ role: 'system', content: 'You are a helpful AI.' }, { role: 'user', content: 'Say "Claude backup working!" in one sentence.' }],
+    100
+  );
+  if (result) {
+    if (status) status.innerHTML = `✅ Claude backup works! Response: "${result.slice(0, 100)}"`;
+    toast('✅ Claude backup test passed!', 'success');
+  } else {
+    if (status) status.innerHTML = '❌ Claude backup test failed. Check console for details.';
+    toast('❌ Claude backup test failed', 'error');
+  }
+}
+
 function isFastModel() {
   return ['claude-opus-4-fast', 'gpt-4o-mini', 'gemini-flash'].includes(aiModelChoice);
 }
@@ -7977,6 +8169,7 @@ function loadAISettings() {
     apiTokenCount = parseInt(localStorage.getItem('ai_hub_api_tokens') || '0');
     aiTokenSetting = localStorage.getItem('ai_hub_tokens') || 'medium';
     loadGitHubToken();
+    loadClaudeSettings();
   } catch(e) {}
   setTimeout(() => {
     const toggle = document.getElementById('real-ai-toggle');
@@ -8338,6 +8531,13 @@ Be thorough, accurate, and practical. Focus on giving the user everything they n
     }
   } catch(e) { console.warn('Research Pollinations API failed:', e); }
 
+  // ── CLAUDE BACKUP — Major backup for research (dev-only) ──
+  if (claudeBackupUnlocked && claudeBackupEnabled) {
+    console.log('[performResearch] All APIs failed, trying Claude major backup...');
+    const claudeResult = await callClaudeBackup(messages, getMaxTokens('chat'));
+    if (claudeResult) return claudeResult;
+  }
+
   return null;
 }
 
@@ -8499,6 +8699,13 @@ async function callFreeAI(ai, userMessage, conversationContext) {
     console.warn('Free AI API also failed:', e);
   }
 
+  // ── CLAUDE BACKUP — Major backup (dev-only) ──
+  if (claudeBackupUnlocked && claudeBackupEnabled) {
+    console.log('[callFreeAI] All APIs failed, trying Claude major backup...');
+    const claudeResult = await callClaudeBackup(messages, getMaxTokens('chat'));
+    if (claudeResult) return claudeResult;
+  }
+
   toast('AI APIs busy — using local knowledge', 'info');
   return null;
 }
@@ -8610,6 +8817,16 @@ Make it POLISHED, FUN, and FULLY FUNCTIONAL. This is not a skeleton — it's a f
     }
   } catch(e) {
     console.warn('Free AI code gen also failed:', e);
+  }
+
+  // ── CLAUDE BACKUP — Major backup for code gen (dev-only) ──
+  if (claudeBackupUnlocked && claudeBackupEnabled) {
+    console.log('[generateAICode] All APIs failed, trying Claude major backup...');
+    const claudeResult = await callClaudeBackup(messages, codeMaxTokens);
+    if (claudeResult) {
+      const extracted = extractHTMLCode(claudeResult);
+      if (extracted) return extracted;
+    }
   }
 
   return null; // Will fall back to templates
