@@ -3272,6 +3272,8 @@ function refreshAll() {
 let chatPageOpen = false;
 let autoChatTimer = null;
 let autoChatEnabled = true;
+let aisBusy = false;          // Global flag: true when AIs are actively generating code/working
+let lastAIResponseTime = 0;   // Track when last AI message was sent to throttle
 
 function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -3672,8 +3674,13 @@ function sendChat() {
     // Track user request so AIs stay on topic
     lastUserRequest = text;
     lastUserRequestTime = Date.now();
+    aisBusy = true; // Mark busy until response completes
     // Have AIs respond
-    setTimeout(() => aiRespondToUser(text), 300 + Math.random() * 600);
+    setTimeout(() => {
+      aiRespondToUser(text);
+      // Clear busy flag after reasonable time for responses to finish
+      setTimeout(() => { aisBusy = false; }, 15000);
+    }, 300 + Math.random() * 600);
   } else {
     const ai = ais.find(a => a.id === sendAs);
     if (ai) addChatMessage(ai.id, ai.name, ai.color, ai.emoji, text);
@@ -4047,6 +4054,10 @@ function addChatMessage(senderId, name, color, emoji, text, isSystem=false) {
   if (!isSystem && senderId !== 'user') text = moderateContent(text);
   const msg = { id: 'msg_'+Date.now()+'_'+Math.random().toString(36).slice(2,4), sender: senderId, name, color, emoji, text, time: Date.now(), isSystem };
   chatMessages.push(msg);
+  // Track last AI response time for throttling auto-chat
+  if (!isSystem && senderId !== 'user') {
+    lastAIResponseTime = Date.now();
+  }
   totalMessages++;
   checkAchievements();
   checkDailyProgress();
@@ -4535,6 +4546,7 @@ function copilotTick(ai, context) {
       // Try real AI code generation first (async — will post result as follow-up message)
       if (realAIEnabled) {
         generateAICode(ai, desc).then(aiCode => {
+          aisBusy = false; // Clear busy flag when code gen completes
           if (aiCode) {
             cs.linesWritten += aiCode.split('\n').length;
             cs.sessionsCompleted++;
@@ -4553,6 +4565,7 @@ function copilotTick(ai, context) {
           // AI code gen failed — fall back to template and post it
           copilotGenerateWithTemplate(ai, cs, desc, lc);
         }).catch(() => {
+          aisBusy = false; // Clear busy flag on failure too
           copilotGenerateWithTemplate(ai, cs, desc, lc);
         });
         return `🤖 **COPILOT** — Project Generator\n\n📂 Building: **${desc}**\n🧠 Generating original AI code... Please wait...`;
@@ -5945,9 +5958,12 @@ function generateAIResponse(ai, context) {
 function scheduleWolfWork(ai) {
   const ws = getWolfState(ai.id);
   if (!ws.working) return;
+  let wolfStepCount = 0;
+  const MAX_WOLF_STEPS = 5; // Limit consecutive messages to prevent spam
 
   const runNext = () => {
     if (!ws.working || !ws.target) return;
+    if (wolfStepCount >= MAX_WOLF_STEPS) { ws.working = false; return; }
     const ws2 = getWolfState(ai.id);
     // If in strike mode with steps left, or transitioning modes
     if (ws2.mode === 'patrol' && !ws2.target) {
@@ -5957,11 +5973,12 @@ function scheduleWolfWork(ai) {
     showTyping(ai);
     setTimeout(() => {
       hideTyping();
+      wolfStepCount++;
       const msg = wolfTick(ai);
       addChatMessage(ai.id, ai.name, ai.color, ai.emoji, msg);
-      // Continue if still working
-      if (ws2.working && (ws2.target || ws2.mode !== 'patrol')) {
-        setTimeout(runNext, 1500 + Math.random() * 2000);
+      // Continue if still working (with step limit check)
+      if (ws2.working && (ws2.target || ws2.mode !== 'patrol') && wolfStepCount < MAX_WOLF_STEPS) {
+        setTimeout(runNext, 3000 + Math.random() * 3000);
       } else {
         // Check if there are more tasks
         const moreTasks = tasks.filter(t => (t.assignee === ai.id || !t.assignee) && (t.status === 'backlog'));
@@ -6176,7 +6193,7 @@ function aiRespondToUser(text) {
 
   // Otherwise: team collaboration
   // Leader responds first, then support AIs chime in
-  const supportCount = Math.min(scored.length - 1, easy ? 0 : Math.min(2, Math.floor(scored.length / 2)));
+  const supportCount = Math.min(scored.length - 1, easy ? 0 : Math.min(1, Math.floor(scored.length / 3)));
   const supporters = scored.slice(1, 1 + supportCount).map(s => s.ai);
 
   let delay = 200;
@@ -6280,7 +6297,7 @@ function getPersonalityMessage(ai) {
 
   // === TOPIC-AWARE FALLBACK ===
   // If user recently asked something, generate a relevant response instead of random chat
-  const TOPIC_WINDOW = 300000; // 5 minutes — stay on-topic for a while
+  const TOPIC_WINDOW = 120000; // 2 minutes — stay on-topic briefly, then stop
   if (lastUserRequest && (Date.now() - lastUserRequestTime < TOPIC_WINDOW)) {
     const topic = lastUserRequest;
     const shortTopic = topic.slice(0,50);
@@ -6401,7 +6418,7 @@ function getPersonalityMessage(ai) {
   }
 
   // 30% chance: use workspace-aware message — but ONLY if no active user topic
-  const hasActiveTopic = lastUserRequest && (Date.now() - lastUserRequestTime < 300000);
+  const hasActiveTopic = lastUserRequest && (Date.now() - lastUserRequestTime < 120000);
   if (!hasActiveTopic && Math.random() < 0.3 && !isWolf && !isCopilot) {
     const wsMsg = getWorkspaceChatMessage(ai);
     if (wsMsg && !recentAutoMessages.has(wsMsg.slice(0, 50))) {
@@ -6885,15 +6902,19 @@ function toggleAutoChat(on) {
 let lastAutoChat = 0;
 let lastUserRequest = '';       // tracks what user last asked
 let lastUserRequestTime = 0;    // when user last sent a message
-const USER_COOLDOWN_MS = 30000; // 30s: auto-chat pauses after user message
+const USER_COOLDOWN_MS = 120000; // 120s: auto-chat pauses after user message so AIs focus on the task
 
 function startAutoChat() {
   if (autoChatTimer || !autoChatEnabled) return;
   autoChatTimer = setInterval(() => {
     if (!chatPageOpen || ais.length < 1) return;
-    // Throttle: no auto-chat within 6s of last one (avoid API rate limits)
-    if (Date.now() - lastAutoChat < 6000) return;
-    // PAUSE auto-chat for 30s after user sends a message so AIs can respond properly
+    // Don't auto-chat while AIs are busy generating code
+    if (aisBusy) return;
+    // Throttle: no auto-chat within 15s of last one (avoid API rate limits & spam)
+    if (Date.now() - lastAutoChat < 15000) return;
+    // Throttle: no auto-chat within 10s of any AI response
+    if (Date.now() - lastAIResponseTime < 10000) return;
+    // PAUSE auto-chat for 120s after user sends a message so AIs focus on the task
     if (lastUserRequest && (Date.now() - lastUserRequestTime < USER_COOLDOWN_MS)) return;
     lastAutoChat = Date.now();
 
@@ -6909,9 +6930,9 @@ function startAutoChat() {
       if (!msg) msg = getPersonalityMessage(starter);
       addChatMessage(starter.id, starter.name, starter.color, starter.emoji, msg);
 
-      // When there's an active user topic, reduce reply chance to avoid cascading loops
-      const hasActiveTopic = lastUserRequest && (Date.now() - lastUserRequestTime < 300000);
-      if (ais.length >= 2 && Math.random() < (hasActiveTopic ? 0.2 : 0.6)) {
+      // When there's an active user topic, suppress auto-chat replies almost entirely
+      const hasActiveTopic = lastUserRequest && (Date.now() - lastUserRequestTime < 120000);
+      if (ais.length >= 2 && !hasActiveTopic && Math.random() < 0.4) {
         let replier = pick(ais);
         let safety = 10;
         while (replier.id === starter.id && safety-- > 0) replier = pick(ais);
@@ -6931,7 +6952,7 @@ function startAutoChat() {
         }
       }
     }, 500 + Math.random() * 800);
-  }, 5000 + Math.random() * 6000);
+  }, 12000 + Math.random() * 10000);
 }
 
 function triggerAIChat() {
@@ -8243,7 +8264,7 @@ async function callFreeAI(ai, userMessage, conversationContext) {
 
   let systemPrompt = buildAISystemPrompt(ai);
   // Add active user request context so AIs stay on topic
-  if (lastUserRequest && (Date.now() - lastUserRequestTime < 300000)) {
+  if (lastUserRequest && (Date.now() - lastUserRequestTime < 120000)) {
     systemPrompt += `\n\nCRITICAL CONTEXT: The user recently asked: "${lastUserRequest}". Your response MUST be relevant to this request. Do NOT go off-topic. Do NOT ramble about unrelated technical topics. Do NOT lecture about random subjects. Focus ONLY on helping with what the user asked for. If they asked you to build something, actually work on it — provide plans, code, or actionable steps. If other AIs are working on it too, read their messages and contribute something DIFFERENT and COMPLEMENTARY. Reference other AIs by name when building on their work.`;
   }
   // Build conversation history from recent messages (last 10)
@@ -8506,7 +8527,7 @@ async function generateRealAIAutoChat(ai) {
   // Include last user request as key context
   let topicContext = '';
   let behaviorGuide = '';
-  if (lastUserRequest && (Date.now() - lastUserRequestTime < 300000)) {
+  if (lastUserRequest && (Date.now() - lastUserRequestTime < 120000)) {
     const isBigProject = /game|app|website|platform|system|engine|full|entire|complete|build me|create a|make a/i.test(lastUserRequest);
     const isCodeFix = /fix|bug|error|broken|crash|not working|issue|wrong|fail|debug|problem|glitch|stuck/i.test(lastUserRequest);
     topicContext = `\n\nCRITICAL — USER'S REQUEST: "${lastUserRequest}"\nEverything you say MUST directly relate to this request. If other AIs went off-topic, IGNORE their tangents and come back to the user's request. Do NOT follow other AIs into unrelated subjects. READ what teammates already said and BUILD on it — don't repeat.`;
@@ -8589,7 +8610,7 @@ async function generateRealAIReply(ai, prevMsg, prevAI) {
   let systemPrompt = buildAISystemPrompt(ai);
   // Enforce topic for AI-to-AI replies too
   let topicEnforcement = '';
-  if (lastUserRequest && (Date.now() - lastUserRequestTime < 300000)) {
+  if (lastUserRequest && (Date.now() - lastUserRequestTime < 120000)) {
     systemPrompt += `\n\nCRITICAL: The user's current request is: "${lastUserRequest}". ALL your messages must relate to this. If ${prevAI.name} went off-topic, steer the conversation BACK to the user's request. Do NOT follow tangents.`;
     topicEnforcement = ` The user asked: "${lastUserRequest.slice(0,80)}". Stay on THIS topic. If ${prevAI.name} went off-topic, redirect back to the user's request.`;
   }
