@@ -7654,8 +7654,18 @@ let githubToken = '';
 let copilotAssistEnabled = true;
 let apiFallbackEnabled = true;
 const COPILOT_API_URL = 'https://models.inference.ai.azure.com/chat/completions';
+const COPILOT_CLONE_URL = 'https://models.inference.ai.azure.com/chat/completions'; // Backup — same endpoint, different model
 const POLLINATIONS_FALLBACK_URL = 'https://text.pollinations.ai/openai/chat/completions';
 const POLLINATIONS_URL = COPILOT_API_URL; // backward compat alias
+
+// Copilot Clone — backup model rotation (tries a different model when primary fails)
+const COPILOT_CLONE_MODELS = ['gpt-4o', 'gpt-4o-mini', 'o3-mini', 'Phi-4', 'Mistral-large-2411'];
+function getCopilotCloneModel() {
+  // Pick a different model than the currently selected one
+  const current = getCopilotModel();
+  const backups = COPILOT_CLONE_MODELS.filter(m => m !== current);
+  return backups[Math.floor(Math.random() * backups.length)] || 'gpt-4o';
+}
 
 // GitHub Models API — same AI models that power GitHub Copilot
 const AI_MODEL_MAP = {
@@ -7726,6 +7736,50 @@ function saveGitHubToken() {
 }
 function loadGitHubToken() {
   try { githubToken = localStorage.getItem('ai_hub_github_token') || ''; } catch(e) {}
+}
+
+// ── Copilot Clone: Backup AI call using a different model on the same GitHub API ──
+// Acts as a "clone" of GitHub Copilot — same infrastructure, different model for redundancy
+async function callCopilotClone(messages, maxTokens) {
+  if (!githubToken) return null;
+  const backupModel = getCopilotCloneModel();
+  console.log('[Copilot Clone] Trying backup model:', backupModel);
+  const body = JSON.stringify({
+    model: backupModel,
+    messages,
+    temperature: 0.75,
+    top_p: 0.95,
+    max_tokens: maxTokens || getMaxTokens('chat')
+  });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const resp = await fetch(COPILOT_CLONE_URL, {
+        method: 'POST',
+        headers: getCopilotHeaders(),
+        body
+      });
+      if (resp.status === 429) {
+        await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+        continue;
+      }
+      if (!resp.ok) { console.warn('[Copilot Clone] Error:', resp.status); break; }
+      const data = await resp.json();
+      const text = data?.choices?.[0]?.message?.content || null;
+      if (text) {
+        apiCallCount++;
+        const tokens = data?.usage?.total_tokens || Math.ceil(text.length / 4);
+        apiTokenCount += tokens;
+        try { localStorage.setItem('ai_hub_api_calls', apiCallCount); localStorage.setItem('ai_hub_api_tokens', apiTokenCount); } catch(e) {}
+        updateRealAIStatus();
+        console.log('[Copilot Clone] Success with model:', backupModel);
+      }
+      return text;
+    } catch(e) {
+      console.warn('[Copilot Clone] Failed (attempt ' + (attempt+1) + '):', e);
+      if (attempt < 1) await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+  return null;
 }
 
 function getModelDisplayName() {
@@ -8110,6 +8164,13 @@ Be thorough, accurate, and practical. Focus on giving the user everything they n
     } catch(e) { console.warn('Research GitHub API failed:', e); }
   }
 
+  // ── COPILOT CLONE BACKUP for research ──
+  if (githubToken) {
+    console.log('[performResearch] Primary failed, trying Copilot Clone backup...');
+    const cloneResult = await callCopilotClone(messages, getMaxTokens('chat'));
+    if (cloneResult) return cloneResult;
+  }
+
   // Fallback to free API
   try {
     const resp = await fetch(POLLINATIONS_FALLBACK_URL, {
@@ -8254,6 +8315,13 @@ async function callFreeAI(ai, userMessage, conversationContext) {
     }
   }
 
+  // ── COPILOT CLONE BACKUP — try a different model on the same GitHub API ──
+  if (githubToken) {
+    console.log('[callFreeAI] Primary failed, trying Copilot Clone backup...');
+    const cloneResult = await callCopilotClone(messages, getMaxTokens('chat'));
+    if (cloneResult) return cloneResult;
+  }
+
   // Free API — no login needed (Pollinations.ai)
   try {
     const resp = await fetch(POLLINATIONS_FALLBACK_URL, {
@@ -8354,6 +8422,16 @@ Make it POLISHED, FUN, and FULLY FUNCTIONAL. This is not a skeleton — it's a f
         console.warn('GitHub code gen failed (attempt ' + (attempt+1) + '):', e);
         if (attempt < 2) await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
       }
+    }
+  }
+
+  // ── COPILOT CLONE BACKUP — try a different model for code gen ──
+  if (githubToken) {
+    console.log('[generateAICode] Primary failed, trying Copilot Clone backup...');
+    const cloneResult = await callCopilotClone(messages, codeMaxTokens);
+    if (cloneResult) {
+      const extracted = extractHTMLCode(cloneResult);
+      if (extracted) return extracted;
     }
   }
 
