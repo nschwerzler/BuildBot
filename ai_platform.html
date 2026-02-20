@@ -4322,7 +4322,7 @@ function runCodeBlock(id) {
   modal.style.display = 'flex';
   const frame = document.getElementById('game-runner-frame');
   // Inject error detection script to catch runtime errors in the iframe
-  const errorHandler = `<script>
+  const errorHandler = `<scr` + `ipt>
     window.__gameErrors = [];
     window.onerror = function(msg, src, line, col, err) {
       window.__gameErrors.push({msg, line, col});
@@ -4332,7 +4332,7 @@ function runCodeBlock(id) {
       }
       return true;
     };
-  </script>`;
+  </scr` + `ipt>`;
   // Insert error handler right after <head> or at the start
   let injectedCode = code;
   if (code.includes('<head>')) {
@@ -4372,7 +4372,7 @@ window.addEventListener('message', function(event) {
       frame.__fixAttempted = false; // allow one more retry if the fix also fails
       // Re-inject error handler
       let reinjected = fixedCode;
-      const errScript = `<script>window.__gameErrors=[];window.onerror=function(m,s,l,c,e){window.__gameErrors.push({msg:m,line:l,col:c});if(window.__gameErrors.length===1)try{window.parent.postMessage({type:'game-error',errors:window.__gameErrors,code:document.documentElement.outerHTML},'*')}catch(x){}return true};</script>`;
+      const errScript = `<scr` + `ipt>window.__gameErrors=[];window.onerror=function(m,s,l,c,e){window.__gameErrors.push({msg:m,line:l,col:c});if(window.__gameErrors.length===1)try{window.parent.postMessage({type:'game-error',errors:window.__gameErrors,code:document.documentElement.outerHTML},'*')}catch(x){}return true}</scr` + `ipt>`;
       if (reinjected.includes('<head>')) reinjected = reinjected.replace('<head>', '<head>' + errScript);
       else reinjected = errScript + reinjected;
       frame.srcdoc = reinjected;
