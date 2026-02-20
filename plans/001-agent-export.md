@@ -65,7 +65,7 @@ BuildBot/
 |---------------|-----------------|---------------------|
 | **Builder** (`?page=builder`) | Create individual AI with persona, skills, personality sliders, code | **Agent Builder** — scaffolds full agent folder, writes agent.json, seed.md, eval.md |
 | **Find** (`?page=find`) | Search/discover AIs by name, role, skill | **Agent Browser** — browse agents from disk, view knowledge files, health status |
-| **Craft AI** (`?page=craftai`) | Randomize and batch-create AIs | **Template Stamper** — stamp out agents from templates with randomized personas |
+| **Craft AI** (`?page=craftai`) | Randomize and batch-create AIs | **Merged into Builder** — "Randomize" tab/mode within the builder page |
 | **Free Mode** (`?page=freemode`) | Watch AIs interact autonomously | **Swarm Simulator** — watch agent teams collaborate, route messages |
 | **Fusion Lab** (`?page=fusion`) | Merge AIs into hybrids | **Swarm Builder** — compose agent teams, assign roles, define routing |
 | **Chat** (`?page=chat`) | Chat with AIs | **Agent Console** — send commands to agents, view responses |
@@ -166,12 +166,30 @@ The Fusion Lab page becomes the Swarm Builder. Instead of merging AIs into one, 
 - [ ] Add guardrails config to builder (max runs, kill switch, review after N)
 
 ## Phase 4: UI — Agent Builder Enhancements
-- [ ] Add "Deploy Agent" button → scaffolds folder via API, shows toast
-- [ ] Add template selector dropdown in builder (the 5 templates)
-- [ ] Add data sources input field
+- [ ] Consolidate Builder page into 3 tabs/modes:
+  - **Manual Build** — current builder (identity, personality, skills, code, instructions)
+  - **Randomize** — current Craft AI (lock preferences, randomize rest, batch generate)
+  - **From Template** — pick a base template, fill in domain-specific fields
+- [ ] Tab bar at top of Builder page: `[📝 Manual] [🎲 Randomize] [📋 Template]`
+- [ ] Randomize tab inherits all Craft AI functionality:
+  - Lock/unlock role, animal, model, voice
+  - Batch count selector (1, 2, 3, 5)
+  - Auto-accept toggle
+  - Preview cards with rarity, power bar, stats
+  - "Keep" / "Keep All" / "Reroll" buttons
+- [ ] Template tab:
+  - Template selector dropdown (query-extract-train, monitor-alert-update, etc.)
+  - Domain field (e.g. "security-scanning", "compliance", "build-systems")
+  - Data sources input (e.g. "kusto://SecurityCluster/BinSkimScans")
+  - Data profile picker (bulk, slow-drip, fast-query, hybrid)
+- [ ] All three tabs share the same "Deploy Agent" button at bottom
+- [ ] Add data profile picker to Manual Build tab too
+- [ ] Add learning config to builder (mode, thresholds, auto-accept)
+- [ ] Add guardrails config to builder (max runs, kill switch, review after N)
 - [ ] Add eval criteria editor (textarea → eval.md)
-- [ ] Add guardrails editor (sliders for max_runs, review thresholds)
 - [ ] Show agent directory tree after deploy (collapsible file browser)
+- [ ] "Deploy Agent" writes full agent folder to disk via API
+- [ ] Nav item for Craft AI redirects to Builder with Randomize tab active
 
 ## Phase 5: UI — Fleet Dashboard
 - [ ] New "Fleet" nav page showing all agents from `GET /api/agents`
