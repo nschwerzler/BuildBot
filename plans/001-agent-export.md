@@ -520,6 +520,87 @@ copilot-cli chat --model claude-sonnet-4.6 --system-prompt agents/siggy/prompts/
 
 ---
 
+## Phase -1: Move to Brain Repo
+
+AI Hub belongs in the Brain repo — it's a directive management tool, not a game. Brain is the source of truth for all AI platform directives.
+
+### New Location
+```
+C:\github\Brain\AIHub\
+├── ai_platform.html              # The single self-contained UI
+├── scripts/
+│   ├── server.js                  # Express: static files + write API
+│   └── launch.ps1                 # Starts server, opens browser
+├── agents/                        # Agent folders (written by UI)
+├── swarms/                        # Swarm team definitions
+├── templates/                     # Base agent templates
+├── fleet.json                     # Fleet orchestration config
+└── README.md                      # Setup & usage instructions
+```
+
+### Why Brain Repo
+- Brain is the global AI directives source of truth (`C:\github\Brain`)
+- AIHub manages directives visually — it IS a Brain tool
+- Agents/skills/rules created here feed into Brain's platform system
+- Brain already has publish scripts that sync to AI platforms
+- BuildBot stays as a game project, clean separation
+
+### Migration Steps
+- [ ] Create `C:\github\Brain\AIHub\` directory
+- [ ] Copy `ai_platform.html` to `Brain\AIHub\`
+- [ ] Copy `scripts\launch.ps1` to `Brain\AIHub\scripts\`
+- [ ] Copy `plans\001-agent-export.md` to `Brain\AIHub\plans\` (or Brain\Plans\)
+- [ ] Update `launch.ps1` paths to work from new location
+- [ ] Do NOT copy game files (Python games, voxel engine, etc.)
+- [ ] Update Brain's `.github\copilot-instructions.md` to reference AIHub
+- [ ] Update global instructions to know about AIHub location
+
+### Working with AIHub (instructions to add to Brain repo)
+
+Add to Brain's workspace instructions:
+
+```markdown
+## AIHub — Visual Agent & Directive Manager
+
+**Location:** `C:\github\Brain\AIHub\`
+**Launch:** `.\AIHub\scripts\launch.ps1` or `cd AIHub && npx http-server . -p 8765`
+**URL:** `http://localhost:8765/ai_platform.html`
+
+### Quick Links
+- Builder: `?page=builder` — create/edit agents with frontmatter preview
+- Fleet: `?page=fleet` — view all deployed agents, health, knowledge
+- Swarms: `?page=fusion` — drag-and-drop agent team composition
+- Analytics: `?page=analysis` — fleet health, knowledge stats, coverage
+- Browse: `?page=find` — search and filter agents
+
+### What AIHub Does
+- Visual builder for agents with YAML frontmatter/endmatter
+- Scaffolds full agent folder structure to disk (agent.json, knowledge/, rules/, etc.)
+- Manages agent versions (semver bump on deploy)
+- Composes agent swarms with drag-and-drop routing
+- Fleet analytics: health, staleness, knowledge growth
+- 100% self-contained single HTML file — works offline
+
+### Terminology
+- "agent" = a portable folder with agent.json + knowledge files + rules
+- "swarm" = a team of agents with routing (swarm.json)
+- "deploy" = write agent folder to disk via local server API
+- "directive" = the markdown files agents consume (instructions, rules, prompts)
+```
+
+### Update Brain's Terminology
+
+Add to `dictionary.instructions.md` or `global.instructions.md`:
+
+| User Says | Meaning | Location |
+|-----------|---------|----------|
+| "AIHub" / "agent hub" / "hub" | Visual agent management page | `C:\github\Brain\AIHub\ai_platform.html` |
+| "launch hub" / "open hub" | Start local server + open AIHub | `.\AIHub\scripts\launch.ps1` |
+| "deploy agent" | Scaffold agent folder to disk via AIHub | AIHub builder → Deploy |
+| "build swarm" / "create team" | Compose agent team in AIHub | AIHub → Swarm Builder |
+
+---
+
 ## Phase 0: Strip Gaming / Toy Features
 
 The current AI Hub was built as a game. For work use (directive management, agent fleet), the following pages and features need to be removed or repurposed:
