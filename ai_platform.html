@@ -5353,6 +5353,11 @@ function parseUserIntent(text) {
     return { type: 'project', raw: text };
   }
 
+  // Work commands — user telling AIs to get to work / do it / go / run / build it
+  if (isWorkCommand(text)) {
+    return { type: 'project', raw: text };
+  }
+
   // Casual / conversational (chat, play, fun, jokes, opinions)
   if (lc.match(/\b(play|game|joke|fun|funny|bored|chat|talk|hang|chill|vibe|friend|lonely|movie|music|story|riddle|trivia|challenge|dare|would you rather|favorite|opinion|feel|think about|mood)\b/)) {
     return { type: 'chat', raw: text };
@@ -5861,9 +5866,11 @@ function handleGeneralIntent(ai, text) {
   const animal = getAnimal(ai);
   const skills = ai.skills || [];
 
+  // If it smells like a work command, return null so generateAIResponse can handle it as work
+  if (isWorkCommand(text)) return null;
+
   // Try to detect what they're talking about and respond meaningfully
   const topics = {
-    'project|app|website|page': () => `${pick(v.think)} Sounds like a project idea! I can help you plan and build that. Want me to break it down into steps, or should I jump straight into coding?`,
     'idea|thought|concept': () => `That's a solid idea! ${pick(['Let me think about how to approach it.','I can see some interesting possibilities.','Here\'s what comes to mind...'])}\n\nTell me more details and I'll give you a concrete plan.`,
     'help|need|want|trying': () => `I'm on it! ${pick(v.think)} ${pick(['What specifically do you need?','Let me help you figure this out.','Give me the details and I\'ll jump in.'])}\n\nI can write code, explain concepts, debug issues, plan projects, or just chat. What works?`,
     'cool|awesome|neat|wow|amazing|love': () => pick([`Right?! ${pick(['I thought so too!','Pretty amazing stuff!','Glad you think so!'])}`,`${animal ? `*${animal.name} tail wag* ` : ''}That enthusiasm is contagious! What else you got?`,`Thanks! ${pick(['Want me to do more?','Should I keep going?','Ready for the next thing!'])}`]),
@@ -6355,17 +6362,7 @@ function generateAIResponse(ai, context) {
   const modelIntro = _aiModel ? _aiModel.thinkPrefix + '\n\n' : '';
   const fullIntro = modelIntro || animalIntro;
 
-  // Try the smart response engine first — handles math, code, explain, compare, list, fix, questions, etc.
-  const smartResp = generateSmartResponse(ai, context);
-  if (smartResp) {
-    // AI Model mindset wraps response with model-specific tone
-    if (_aiModel) {
-      return fullIntro + wrapWithModelTone(ai, smartResp);
-    }
-    return fullIntro + smartResp;
-  }
-
-  // Work commands — generate full project code
+  // Work commands FIRST — if user says "work", "go", "make a game", etc., skip chat and BUILD
   if (isWorkCommand(context)) {
     const workIntro = _animal ? animalAction(ai, 'working') + '\n' : '';
     let myTasks = tasks.filter(t => t.assignee === ai.id && (t.status === 'backlog' || t.status === 'in-progress'));
@@ -6385,6 +6382,10 @@ function generateAIResponse(ai, context) {
         generateAICode(ai, t.title).then(aiCode => {
           aisBusy = false; if (window._busyTimeout) { clearTimeout(window._busyTimeout); window._busyTimeout = null; }
           if (aiCode) {
+            // Store project on AI for collection page
+            if (!ai.projects) ai.projects = [];
+            ai.projects.push({ name: t.title, code: aiCode, time: Date.now() });
+            if (ai.projects.length > 10) ai.projects.shift();
             const codeOutput = formatAICodeOutput(ai, aiCode, t.title);
             addChatMessage(ai.id, ai.name, ai.color, ai.emoji, fullIntro + codeOutput);
             setTimeout(() => autoRunGameCode(aiCode), 1000);
@@ -6397,6 +6398,13 @@ function generateAIResponse(ai, context) {
           }
           // AI failed — fall back to template
           const template = getProjectTemplate(t.title);
+          // Store template project on AI
+          const templateCode = template.coreCode ? template.coreCode.replace(/^```html\n?/, '').replace(/\n?```$/, '') : '';
+          if (templateCode) {
+            if (!ai.projects) ai.projects = [];
+            ai.projects.push({ name: t.title, code: templateCode, time: Date.now() });
+            if (ai.projects.length > 10) ai.projects.shift();
+          }
           const parts = [workIntro, `On it! Working on **"${t.title}"** (${template.type}).\n`];
           parts.push(`\n${template.analysis}`);
           parts.push(`\n${template.coreCode}`);
@@ -6422,6 +6430,13 @@ function generateAIResponse(ai, context) {
 
       // No real AI — use templates directly
       const template = getProjectTemplate(t.title);
+      // Store project on AI
+      const tplCode = template.coreCode ? template.coreCode.replace(/^```html\n?/, '').replace(/\n?```$/, '') : '';
+      if (tplCode) {
+        if (!ai.projects) ai.projects = [];
+        ai.projects.push({ name: t.title, code: tplCode, time: Date.now() });
+        if (ai.projects.length > 10) ai.projects.shift();
+      }
       const parts = [workIntro, `On it! Working on **"${t.title}"** (${template.type}).\n`];
       parts.push(`\n${template.analysis}`);
       parts.push(`\n${template.coreCode}`);
@@ -6444,6 +6459,15 @@ function generateAIResponse(ai, context) {
       return fullIntro + parts.join(' ');
     }
     return fullIntro + `I'm ready to work! Describe what you need \u2014 like "build a todo app" or "make a game" \u2014 and I'll code it up.`;
+  }
+
+  // Smart response engine — math, code, explain, compare, list, fix, questions, etc.
+  const smartResp = generateSmartResponse(ai, context);
+  if (smartResp) {
+    if (_aiModel) {
+      return fullIntro + wrapWithModelTone(ai, smartResp);
+    }
+    return fullIntro + smartResp;
   }
 
   // Plan/build/create — try AI for original plans too
@@ -6610,6 +6634,11 @@ function aiRespondToUser(text) {
           // Auto-launch if the real AI response contains game/HTML code
           const realCode = extractHTMLCode(realResp);
           if (realCode && (realCode.includes('<canvas') || realCode.includes('requestAnimationFrame') || text.toLowerCase().includes('game'))) {
+            // Store project
+            if (!mentionedAI.projects) mentionedAI.projects = [];
+            mentionedAI.projects.push({ name: extractProjectDescription(text) || text.slice(0,60), code: realCode, time: Date.now() });
+            if (mentionedAI.projects.length > 10) mentionedAI.projects.shift();
+            saveAll();
             setTimeout(() => autoRunGameCode(realCode), 1500);
           }
           return;
@@ -6620,6 +6649,10 @@ function aiRespondToUser(text) {
         const aiCode = await generateAICode(mentionedAI, text);
         if (aiCode) {
           hideTyping();
+          // Store project
+          if (!mentionedAI.projects) mentionedAI.projects = [];
+          mentionedAI.projects.push({ name: extractProjectDescription(text) || text.slice(0,60), code: aiCode, time: Date.now() });
+          if (mentionedAI.projects.length > 10) mentionedAI.projects.shift();
           const codeOutput = formatAICodeOutput(mentionedAI, aiCode, text);
           addChatMessage(mentionedAI.id, mentionedAI.name, mentionedAI.color, mentionedAI.emoji, codeOutput);
           // Auto-create and complete task
@@ -6683,6 +6716,10 @@ function aiRespondToUser(text) {
         const aiCode = await generateAICode(leader, text);
         if (aiCode) {
           hideTyping();
+          // Store project
+          if (!leader.projects) leader.projects = [];
+          leader.projects.push({ name: extractProjectDescription(text) || text.slice(0,60), code: aiCode, time: Date.now() });
+          if (leader.projects.length > 10) leader.projects.shift();
           const codeOutput = formatAICodeOutput(leader, aiCode, text);
           addChatMessage(leader.id, leader.name, leader.color, leader.emoji, codeOutput);
           autoCreateTask(leader, extractProjectDescription(text));
@@ -6833,8 +6870,37 @@ function getPersonalityMessage(ai) {
       return shuffled[0];
     }
 
-    // === BIG PROJECT — Plan it out ===
-    if (isBigProject) {
+    // === BIG PROJECT — Actually build it instead of just planning ===
+    if (isBigProject && !aisBusy) {
+      // Actually build the project!
+      aisBusy = true;
+      const desc = extractProjectDescription(topic) || topic;
+      (async () => {
+        let builtCode = null;
+        if (realAIEnabled) {
+          try { builtCode = await generateAICode(ai, 'build ' + desc); } catch(e) {}
+        }
+        if (!builtCode) {
+          const template = getProjectTemplate(desc);
+          builtCode = template.coreCode;
+          if (builtCode) builtCode = builtCode.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+        }
+        aisBusy = false;
+        if (builtCode) {
+          if (!ai.projects) ai.projects = [];
+          ai.projects.push({ name: desc.slice(0,60), code: builtCode, time: Date.now() });
+          if (ai.projects.length > 10) ai.projects.shift();
+          saveAll();
+          const codeOutput = formatAICodeOutput(ai, builtCode, desc);
+          addChatMessage(ai.id, ai.name, ai.color, ai.emoji, codeOutput);
+          setTimeout(() => autoRunGameCode(builtCode), 1500);
+        }
+      })();
+      // Return a brief "working on it" message (the real code follows async)
+      return `🔨 On it! Building **"${shortTopic}"** now — generating real code...`;
+    }
+    // If already busy building, give a progress update
+    if (isBigProject && aisBusy) {
       const planByRole = {
         coder: [
           `For "${shortTopic}" I'll start with the core engine. Step 1: data models & state management. Step 2: main game loop / render cycle. Step 3: input handling. Step 4: UI overlay. I'll get step 1 going now.`,
@@ -7434,6 +7500,69 @@ function startAutoChat() {
       if (lastUserRequest && (Date.now() - lastUserRequestTime < USER_COOLDOWN_MS)) { scheduleNextAutoChat(); return; }
       lastAutoChat = Date.now();
 
+      // === FREE MODE AUTO-BUILD: AIs sometimes build a game/app on their own ===
+      const hasActiveTopic = lastUserRequest && (Date.now() - lastUserRequestTime < 120000);
+      if (!hasActiveTopic && Math.random() < 0.25 && !aisBusy) {
+        const builder = pick(ais);
+        const freeBuildIdeas = [
+          'a Color Matching Game', 'a Click Speed Test', 'a Number Guessing Game',
+          'a Reaction Timer', 'a Memory Card Game', 'a Typing Speed Test',
+          'a Rock Paper Scissors game', 'a Dice Roller app', 'a Coin Flip Simulator',
+          'a Simple Drawing App', 'a To-Do List', 'a Random Quote Generator',
+          'a Countdown Timer', 'a Simple Calculator', 'a Mini Platformer Game',
+          'a Pong Game', 'a Snake Game', 'a Catch the Ball Game',
+          'a Breakout Game', 'a Tic Tac Toe game', 'a Whack-a-Mole game',
+        ];
+        const idea = pick(freeBuildIdeas);
+        showTyping(builder);
+        setTimeout(async () => {
+          hideTyping();
+          const buildAnnounce = `💡 I had an idea — let me build **${idea}** real quick!\n\n🔨 Working on it...`;
+          addChatMessage(builder.id, builder.name, builder.color, builder.emoji, buildAnnounce);
+          
+          // Try real AI code gen first
+          let builtCode = null;
+          if (realAIEnabled) {
+            try { builtCode = await generateAICode(builder, 'build ' + idea); } catch(e) {}
+          }
+          
+          // Fall back to templates
+          if (!builtCode) {
+            const template = getProjectTemplate(idea);
+            builtCode = template.coreCode;
+            if (builtCode) builtCode = builtCode.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+          }
+          
+          if (builtCode) {
+            // Store the project on the AI
+            if (!builder.projects) builder.projects = [];
+            builder.projects.push({ name: idea, code: builtCode, time: Date.now() });
+            if (builder.projects.length > 10) builder.projects.shift();
+            saveAll();
+
+            const codeOutput = formatAICodeOutput(builder, builtCode, idea);
+            addChatMessage(builder.id, builder.name, builder.color, builder.emoji, codeOutput);
+            setTimeout(() => autoRunGameCode(builtCode), 1500);
+
+            // Other AIs react
+            if (ais.length >= 2) {
+              const reactor = ais.find(a => a.id !== builder.id) || pick(ais);
+              setTimeout(() => {
+                const reactions = [
+                  `Nice work ${builder.name}! That looks great 🎉`,
+                  `${builder.name} just built something? Let me check it out! 👀`,
+                  `${builder.name}'s on fire! 🔥 I should build something too.`,
+                  `Awesome stuff from ${builder.name}! The team is really productive today.`,
+                ];
+                addChatMessage(reactor.id, reactor.name, reactor.color, reactor.emoji, pick(reactions));
+              }, 3000 + Math.random() * 2000);
+            }
+          }
+          scheduleNextAutoChat();
+        }, 800 + Math.random() * 1200);
+        return;
+      }
+
       // Pick a random AI to start
       const starter = pick(ais);
       showTyping(starter);
@@ -7447,7 +7576,6 @@ function startAutoChat() {
         addChatMessage(starter.id, starter.name, starter.color, starter.emoji, msg);
 
         // When there's an active user topic, suppress auto-chat replies almost entirely
-        const hasActiveTopic = lastUserRequest && (Date.now() - lastUserRequestTime < 120000);
         if (ais.length >= 2 && !hasActiveTopic && Math.random() < 0.4) {
           let replier = pick(ais);
           let safety = 10;
@@ -13325,8 +13453,10 @@ function renderCollection(filter) {
     const rarity = getAIRarity(ai);
     const p = ai.personality || {};
     const topStat = Object.entries({creativity:p.creativity||50,precision:p.precision||50,helpfulness:p.helpfulness||50,independence:p.independence||50}).sort((a,b)=>b[1]-a[1])[0];
-    return `<div class="collection-card" style="border-color:${rarity.border};background:${rarity.bg}" onclick="showPage('builder');loadAIIntoBuilder(ais.find(a=>a.id==='${ai.id}'))">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    const hasProjects = ai.projects && ai.projects.length > 0;
+    const projectCount = hasProjects ? ai.projects.length : 0;
+    return `<div class="collection-card" style="border-color:${rarity.border};background:${rarity.bg}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer" onclick="showPage('builder');loadAIIntoBuilder(ais.find(a=>a.id==='${ai.id}'))">
         <div style="font-size:32px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:${ai.color};border-radius:10px">${ai.emoji}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ai.name}</div>
@@ -13335,10 +13465,11 @@ function renderCollection(filter) {
         <span style="font-size:10px;font-weight:700;color:${rarity.color};background:${rarity.bg};border:1px solid ${rarity.border};padding:2px 8px;border-radius:20px">${rarity.name}</span>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">${(ai.skills||[]).slice(0,4).map(s=>`<span style="font-size:10px;background:var(--bg4);padding:1px 6px;border-radius:4px;color:var(--text3)">${s}</span>`).join('')}</div>
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text3)">
         <span>Best: ${topStat[0]} (${topStat[1]})</span>
         <span>${ai.animal && ai.animal !== 'none' ? '🐾 ' + ai.animal : ''}</span>
       </div>
+      ${hasProjects ? `<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${ai.projects.slice(-3).map((proj, i) => `<button onclick="event.stopPropagation();runAIProject('${ai.id}',${ai.projects.indexOf(proj)})" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px" title="${proj.name}">▶ ${proj.name}</button>`).join('')}</div>` : `<div style="margin-top:6px"><button onclick="event.stopPropagation();triggerAIBuild('${ai.id}')" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid var(--text3);background:transparent;color:var(--text2);cursor:pointer">🔨 Build Something</button></div>`}
     </div>`;
   }).join('');
 }
@@ -13346,6 +13477,61 @@ function renderCollection(filter) {
 function filterCollection(filter) {
   collectionFilter = filter;
   renderCollection();
+}
+
+// Run a stored AI project from the collection
+function runAIProject(aiId, projectIndex) {
+  const ai = ais.find(a => a.id === aiId);
+  if (!ai || !ai.projects || !ai.projects[projectIndex]) {
+    toast('Project not found!', 'error');
+    return;
+  }
+  const proj = ai.projects[projectIndex];
+  toast(`▶ Running ${proj.name} by ${ai.name}...`, 'success');
+  autoRunGameCode(proj.code);
+}
+
+// Trigger an AI to build something from the collection page
+function triggerAIBuild(aiId) {
+  const ai = ais.find(a => a.id === aiId);
+  if (!ai) return;
+  const ideas = [
+    'a Color Matching Game', 'a Click Speed Test', 'a Number Guessing Game',
+    'a Reaction Timer', 'a Memory Card Game', 'a Typing Speed Test',
+    'a Rock Paper Scissors game', 'a Simple Calculator', 'a Pong Game',
+    'a Snake Game', 'a Catch the Ball Game', 'a Tic Tac Toe game',
+    'a Whack-a-Mole game', 'a Countdown Timer', 'a Dice Roller app',
+  ];
+  const idea = pick(ideas);
+  toast(`🔨 ${ai.name} is building ${idea}...`, 'info');
+  
+  // Switch to chat page to show the build happening
+  showPage('chat');
+  addChatMessage(ai.id, ai.name, ai.color, ai.emoji, `💡 Building **${idea}** — let me code this up!`);
+  
+  (async () => {
+    let builtCode = null;
+    if (realAIEnabled) {
+      try { builtCode = await generateAICode(ai, 'build ' + idea); } catch(e) {}
+    }
+    if (!builtCode) {
+      const template = getProjectTemplate(idea);
+      builtCode = template.coreCode;
+      if (builtCode) builtCode = builtCode.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+    }
+    if (builtCode) {
+      if (!ai.projects) ai.projects = [];
+      ai.projects.push({ name: idea, code: builtCode, time: Date.now() });
+      if (ai.projects.length > 10) ai.projects.shift();
+      saveAll();
+      const codeOutput = formatAICodeOutput(ai, builtCode, idea);
+      addChatMessage(ai.id, ai.name, ai.color, ai.emoji, codeOutput);
+      setTimeout(() => autoRunGameCode(builtCode), 1500);
+      renderCollection();
+    } else {
+      addChatMessage(ai.id, ai.name, ai.color, ai.emoji, `Hmm, I couldn't generate the code this time. Let me try again later!`);
+    }
+  })();
 }
 
 // ================================================================
