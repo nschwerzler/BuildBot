@@ -546,12 +546,14 @@ C:\github\Brain\AIHub\
 - BuildBot stays as a game project, clean separation
 
 ### Migration Steps
+
+> **CRITICAL: DO NOT modify the BuildBot repo (`C:\github\BuildBot`).** BuildBot is a game project. AIHub is being extracted as a new, lighter-weight HTML page written fresh into the Brain repo. Do not edit, delete, or restructure files in BuildBot as part of this plan.
+
 - [ ] Create `C:\github\Brain\AIHub\` directory
-- [ ] Copy `ai_platform.html` to `Brain\AIHub\`
-- [ ] Copy `scripts\launch.ps1` to `Brain\AIHub\scripts\`
-- [ ] Copy `plans\001-agent-export.md` to `Brain\AIHub\plans\` (or Brain\Plans\)
+- [ ] Write a **new, clean** `ai_platform.html` into `Brain\AIHub\` (stripped of gaming features, not a copy of BuildBot's 14K-line file)
+- [ ] Write `scripts\launch.ps1` to `Brain\AIHub\scripts\`
+- [ ] Copy this plan to `Brain\AIHub\docs\Design.md` (rename from 001-agent-export.md)
 - [ ] Update `launch.ps1` paths to work from new location
-- [ ] Do NOT copy game files (Python games, voxel engine, etc.)
 - [ ] Update Brain's `.github\copilot-instructions.md` to reference AIHub
 - [ ] Update global instructions to know about AIHub location
 - [ ] Add `.vscode/extensions.json` recommending Live Preview:
@@ -563,6 +565,18 @@ C:\github\Brain\AIHub\
   }
   ```
 - [ ] Verify Live Preview works: open `ai_platform.html` → right-click → "Show Preview"
+- [ ] Commit and push to Brain repo (`C:\github\Brain`) on main
+
+### What Gets Built (not copied)
+The new `ai_platform.html` in Brain is a **fresh build** inspired by BuildBot's UI patterns but:
+- No gaming features (battle, store, achievements, inventory, etc.)
+- No currency system, rarity, power bars, IQ scores
+- No 14,000 lines of game logic
+- Clean sidebar with only fleet/agent/workspace sections
+- Sci-fi AI icons instead of gaming emojis
+- Frontmatter/endmatter panel built-in
+- Drag-and-drop swarm builder
+- Designed for directive management from day one
 
 ### Working with AIHub (instructions to add to Brain repo)
 
