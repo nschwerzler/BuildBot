@@ -1,0 +1,254 @@
+# Plan 001 — Self-Learning Portable Agent Fleet
+
+**Status:** Active  
+**Created:** 2026-02-19  
+**Goal:** AI Hub scaffolds, manages, and visualizes self-learning agents. Each agent is a portable folder with human-readable knowledge files, tools, rules, and personality. The HTML page writes real files to the workspace via a local Express server.
+
+---
+
+## Architecture
+
+```
+BuildBot/
+├── ai_platform.html              # UI — agent builder, fleet dashboard, chat
+├── scripts/
+│   ├── server.js                  # Express: static files + read/write API
+│   └── launch.ps1                 # Starts server, opens browser
+├── templates/                     # Base agent templates
+│   ├── query-extract-train/
+│   ├── monitor-alert-update/
+│   ├── scan-validate-report/
+│   ├── collect-merge-publish/
+│   └── ingest-summarize-learn/
+├── agents/                        # Live agents (each a portable folder)
+│   └── binskim-signatures/
+│       ├── agent.json             # Identity, config, persona, data profile
+│       ├── manifest.json          # Dependencies, health, requirements
+│       ├── VERSION                # Semver, snapshot before retrain
+│       ├── tools/
+│       │   ├── tools.json         # Tool definitions (MCP-compatible)
+│       │   └── scripts/           # Tool implementations (ps1, py, cs)
+│       ├── knowledge/
+│       │   ├── seed.md            # Starting domain knowledge (you write this)
+│       │   ├── learned.md         # Accumulated learnings (agent appends)
+│       │   ├── corrections.md     # Past mistakes & fixes
+│       │   ├── patterns.md        # Effective queries, patterns, success rates
+│       │   └── embeddings.bin     # Vector index for RAG (non-human-readable OK)
+│       ├── rules/
+│       │   ├── validation.md      # Data quality rules in plain english
+│       │   └── guardrails.md      # Boundaries, what NOT to do
+│       ├── eval.md                # Success criteria
+│       ├── workflows/
+│       │   └── extract.json       # The steps this agent runs
+│       ├── inbox/                 # Messages from other agents
+│       ├── outbox/                # Messages to broadcast
+│       ├── history/
+│       │   ├── runs.db            # High volume telemetry (DB OK)
+│       │   └── changelog.md       # Human-readable run summaries
+│       ├── snapshots/             # Versioned tarballs before retrains
+│       └── prompts/
+│           ├── system.md          # GENERATED from all above files
+│           └── templates/         # Task-specific prompt templates
+├── fleet.json                     # Horde orchestration config
+└── plans/
+    └── 001-agent-export.md        # This plan
+```
+
+### Key Rule
+> **If a human might read it, debug it, or review it → markdown/json file.**
+> **If it's telemetry, vectors, or thousands of rows → db.**
+> Everything the agent "knows" should be readable by `cat`. Git-versionable. Diffable.
+
+---
+
+## Base Templates
+
+| Template | Pattern | Example |
+|----------|---------|---------|
+| `query-extract-train` | Query data source → Extract/transform → Store → Retrain | BinSkim signatures, CVE burndown |
+| `monitor-alert-update` | Watch for changes → Alert on condition → Update state | ADO work item watchers, build break detection |
+| `scan-validate-report` | Run scan → Validate against rules → Generate report | Compliance checks, security scanning |
+| `collect-merge-publish` | Gather from multiple sources → Merge/dedupe → Publish | Cross-team status rollups, SBOM aggregation |
+| `ingest-summarize-learn` | Slow drip ingestion → Summarize → Update knowledge | WorkIQ transcripts, meeting notes, email digests |
+
+---
+
+## Phase 1: Local Server with Write API
+- [ ] Create `scripts/server.js` — Express server
+  - Serves static files from workspace root (replaces http-server)
+  - `POST /api/agent` — scaffolds full agent folder from template
+  - `POST /api/write` — writes any file within agents/ or templates/
+  - `GET /api/agents` — lists all agent folders
+  - `GET /api/agent/:id` — reads agent.json + all knowledge files
+  - `GET /api/agent/:id/file/*` — reads any file in an agent folder
+  - `PUT /api/agent/:id/file/*` — writes any file in an agent folder
+  - Path traversal protection (must stay inside workspace)
+- [ ] Update `scripts/launch.ps1` to use `node scripts/server.js`
+
+## Phase 2: Agent Scaffold
+- [ ] Add `scaffoldAgent(template, config)` JS function
+  - Creates full directory structure from template
+  - Writes agent.json with persona, data profile, guardrails
+  - Writes starter knowledge/seed.md, rules/validation.md, rules/guardrails.md
+  - Writes eval.md with success criteria
+  - Writes blank learned.md, corrections.md, patterns.md
+  - Writes VERSION as "0.1.0"
+  - Writes manifest.json with health defaults
+- [ ] Create template base files in `templates/query-extract-train/` etc.
+
+## Phase 3: agent.json Generation
+- [ ] Map AI Hub builder fields → agent.json format:
+  - Name, emoji, role → persona
+  - Animal mindset → personality/speaks_like
+  - Skills → capabilities
+  - Instructions → seed.md content
+  - Code editor → workflows/extract.json or tools/scripts/
+  - Advanced sliders → guardrails thresholds
+- [ ] Add data profile picker to builder (bulk, slow-drip, fast-query, hybrid)
+- [ ] Add learning config to builder (mode, thresholds, auto-accept)
+- [ ] Add guardrails config to builder (max runs, kill switch, review after N)
+
+## Phase 4: UI — Agent Builder Enhancements
+- [ ] Add "Deploy Agent" button → scaffolds folder via API, shows toast
+- [ ] Add template selector dropdown in builder (the 5 templates)
+- [ ] Add data sources input field
+- [ ] Add eval criteria editor (textarea → eval.md)
+- [ ] Add guardrails editor (sliders for max_runs, review thresholds)
+- [ ] Show agent directory tree after deploy (collapsible file browser)
+
+## Phase 5: UI — Fleet Dashboard
+- [ ] New "Fleet" nav page showing all agents from `GET /api/agents`
+- [ ] Per-agent card: persona, health status, last run, knowledge stats
+- [ ] Click agent → view/edit knowledge files inline
+- [ ] Edit learned.md, corrections.md, patterns.md directly in browser
+- [ ] Show inbox/outbox messages between agents
+
+## Phase 6: Load Agents from Disk
+- [ ] On init, call `GET /api/agents` to discover existing agent folders
+- [ ] Parse agent.json → merge into AI Hub's agent list
+- [ ] Flag file-backed agents with `fromDisk: true`
+- [ ] Edits in builder re-write agent.json + knowledge files
+
+## Phase 7: Self-Learning Loop (future — Agency.exe)
+- [ ] Run agent workflow → evaluate output against eval.md
+- [ ] Confidence routing: >0.95 auto-add, >0.85 queue, <0.85 flag
+- [ ] Append to learned.md, update patterns.md with success rates
+- [ ] Regenerate prompts/system.md from current state
+- [ ] Bump VERSION on knowledge changes
+- [ ] Confidence decay: flag patterns not validated in 30 days
+
+## Phase 8: Inter-Agent Communication (future)
+- [ ] Inbox/outbox message format (JSON in inbox/, outbox/ folders)
+- [ ] Fleet dashboard shows pending messages
+- [ ] Accept/reject messages from inbox → merge into knowledge
+- [ ] Fleet.json orchestration: parallel groups, concurrency limits
+
+---
+
+## agent.json Format
+
+```json
+{
+  "id": "binskim-signatures",
+  "version": "1.4.2",
+  "extends": "query-extract-train",
+  "domain": "security-scanning",
+  "specialty": "BinSkim binary analysis signature extraction",
+  "persona": {
+    "name": "Siggy",
+    "role": "BinSkim Signature Specialist",
+    "personality": "Paranoid security nerd. Assumes every binary is guilty until proven safe.",
+    "speaks_like": "Terse, technical, flags everything suspicious",
+    "emoji": "🔍",
+    "catchphrase": "Trust nothing. Verify everything."
+  },
+  "model": "claude-sonnet-4-5-20250929",
+  "data_profile": "fast-query",
+  "data_sources": ["kusto://SecurityCluster/BinSkimScans"],
+  "capabilities": ["kusto-query", "ado-workitems", "json-transform"],
+  "learning": {
+    "mode": "continuous",
+    "review_threshold": 0.85,
+    "auto_accept_above": 0.95,
+    "max_unreviewed_learnings": 50
+  },
+  "guardrails": {
+    "max_runs_per_day": 50,
+    "max_learnings_per_run": 10,
+    "max_knowledge_file_size_kb": 500,
+    "require_human_review_after": 100,
+    "kill_switch": false
+  }
+}
+```
+
+## manifest.json Format
+
+```json
+{
+  "requires": {
+    "data_sources": ["kusto://SecurityCluster"],
+    "tools": ["copilot-cli", "ado-api"],
+    "secrets": ["KUSTO_TOKEN", "ADO_PAT"],
+    "min_knowledge_facts": 5
+  },
+  "health": {
+    "last_successful_run": "2025-02-18T14:30:00Z",
+    "consecutive_failures": 0,
+    "knowledge_staleness_days": 3
+  }
+}
+```
+
+## Example Personas
+
+| Agent | Name | Personality | Catchphrase |
+|-------|------|------------|-------------|
+| binskim-signatures | Siggy | Paranoid security nerd | "Trust nothing. Verify everything." |
+| cve-tracker | Patch | Urgent, always worried about deadlines | "Every unpatched day is a risk day." |
+| ado-workitems | Tracker | Organized, loves status updates | "If it's not tracked, it didn't happen." |
+| workiq-transcripts | Echo | Patient listener, finds buried insights | "The real decision was on slide 47." |
+| build-validator | Forge | Grumpy, hates broken builds | "It compiled on my machine is not a defense." |
+
+---
+
+## Self-Learning Flow
+
+```
+RUN N:
+  Input → Agent (knowledge v1.4) → Output + Metadata
+                                        │
+                                        ▼
+                                   Evaluate Output (eval.md criteria)
+                                   ┌─────────────────┐
+                                   │ Confidence?      │
+                                   │ >0.95 → auto-add │
+                                   │ >0.85 → queue    │
+                                   │ <0.85 → flag     │
+                                   └────────┬────────┘
+                                            ▼
+                                   learned.md updated
+                                   patterns.md updated
+                                   system.md regenerated
+                                   VERSION bumped
+
+RUN N+1:
+  Input → Agent (knowledge v1.5) → Better Output
+```
+
+---
+
+## Open Questions
+- [ ] LLM routing: Claude API vs local Phi-3.5 vs Copilot CLI per agent? Or configurable per agent.json?
+- [ ] Where do agents live long-term? Git repo per agent? Monorepo? Shared network drive?
+- [ ] Secret management: env vars, Azure Key Vault, or per-agent encrypted config?
+- [ ] Bulk data agents (20GB+) — stream from ADO API or export to local files first?
+- [ ] Human review workflow: CLI prompt, web UI, or Teams notifications?
+- [ ] Agency.exe: .NET 10 AOT CLI for execution/learning/orchestration (separate repo?)
+
+---
+
+## Current State
+- Phase: Not started
+- Active task: None
+- Blockers: None
