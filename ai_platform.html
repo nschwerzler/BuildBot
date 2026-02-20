@@ -4605,7 +4605,8 @@ function autoRunGameCode(code) {
 
   // Inject error handler so iframe errors are catchable
   if (!code.includes('window.onerror')) {
-    code = code.replace(/<head([^>]*)>/i, `<head$1><script>window.onerror=function(m,s,l,c,e){console.error('[Game Error]',m,'at line',l);return true;}</script>`);
+    const errHandlerScript = '<scr' + 'ipt>window.onerror=function(m,s,l,c,e){console.error("[Game Error]",m,"at line",l);return true;}<\/scr' + 'ipt>';
+    code = code.replace(/<head([^>]*)>/i, '<head$1>' + errHandlerScript);
   }
 
   // ── Check if code is complete; if not, fix via Pollinations ──
@@ -9238,7 +9239,7 @@ function extractHTMLCode(text) {
   }
 
   // 7. Last resort: if there's a <script> with substantial code and some HTML, wrap it
-  if (t.includes('<script') && t.includes('</script>') && t.length > 300) {
+  if (t.includes('<scr' + 'ipt') && t.includes('</scr' + 'ipt>') && t.length > 300) {
     return _cleanExtractedHTML(t);
   }
 
