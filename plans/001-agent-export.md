@@ -432,3 +432,82 @@ copilot-cli chat --model claude-sonnet-4.6 --system-prompt agents/siggy/prompts/
 - Phase: Not started
 - Active task: None
 - Blockers: None
+
+---
+
+## Phase 0: Strip Gaming / Toy Features
+
+The current AI Hub was built as a game. For work use (directive management, agent fleet), the following pages and features need to be removed or repurposed:
+
+### Pages to Remove
+| Page | Nav Item | Why |
+|------|----------|-----|
+| Battle Arena (`page-battle`) | ⚔️ Battle Arena [PVP] | Gaming mechanic |
+| Collection (`page-collection`) | 📚 Collection | Card collection game |
+| Achievements (`page-achievements`) | 🏆 Achievements | Gamification |
+| Daily Rewards (`page-dailyrewards`) | 🎁 Daily Rewards [CLAIM] | Gamification |
+| Store (`page-store`) | 🛒 Store [∞] | Currency/purchase system |
+| Inventory (`page-inventory`) | 🎒 Inventory | Game inventory |
+| AI Tube (`page-aitube`) | 📺 AI Tube [NEW] | Entertainment |
+| AI Book (`page-aibook`) | 📚 AI Book | Entertainment |
+| AI World (`page-aiworld`) | 🌍 AI World [GAME] | Game simulation |
+| Custom Chats (`page-customchats`) | 💬 Custom Chats | Toy chat rooms |
+
+### Features to Remove
+- Coins/gems currency system (🪙 💎)
+- Rarity system (Common, Rare, Epic, Legendary)
+- Power bars and IQ scores
+- Daily challenges
+- Animal mindset stat numbers (keep the personality concept, drop RPG stats)
+- Trading post
+- AI-to-AI auto-chat simulation
+- Store power-ups and stat unlocks
+- Pirate voice and other joke voices
+
+### Sidebar Restructure (After Cleanup)
+
+```
+Platform
+  📊 Dashboard
+  🔧 Agent Builder          ← Manual + Randomize + Template tabs
+  📈 Fleet Analytics         ← repurposed Analysis
+
+Fleet
+  🚀 Fleet Dashboard        ← NEW: all agents, health, runs
+  🔍 Agent Browser           ← repurposed Find
+  🐝 Swarm Builder           ← repurposed Fusion Lab
+
+Workspace
+  💬 Agent Console           ← repurposed Chat
+  📋 Task Planner            ← keep as-is
+  🔗 Workflows               ← keep as-is
+  💡 Prompts Library          ← keep as-is
+
+Developer
+  📝 Code Snippets            ← keep
+  💻 Terminal                 ← keep
+  📁 Projects                 ← keep
+  🐛 Debugger                 ← keep
+  📂 File Manager             ← keep
+  ⚖️ AI Compare               ← keep
+  🔌 Plugins                  ← keep
+  🔑 API Keys                 ← keep
+
+System
+  📜 History                  ← keep
+  ⚙️ Settings                 ← keep (remove store/currency refs)
+```
+
+### Cleanup Approach
+- [ ] Remove gaming nav items from sidebar HTML
+- [ ] Remove gaming page `<div>` blocks from HTML
+- [ ] Remove gaming JS functions (renderBattleArena, renderCollection, renderAchievements, renderStore, renderInventory, renderDailyRewards, renderAITubeGrid, renderAIBook, etc.)
+- [ ] Remove currency variables (playerData.coins, playerData.gems)
+- [ ] Remove rarity/power calculation functions
+- [ ] Remove daily challenge system
+- [ ] Remove IQ/smartness system
+- [ ] Clean up Settings page (remove store refs, purchased AIs section, currency display)
+- [ ] Update showPage() titles map
+- [ ] Remove trading system (upload/share code)
+- [ ] Remove voice options that are jokes (pirate)
+- [ ] Keep: personality sliders, animal mindset concept (as persona flavor), model mindset, skills, instructions, code editor
