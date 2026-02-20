@@ -3327,6 +3327,11 @@ function init() {
   if (ais.length > 0) {
     setInterval(autoAIActivity, 8000 + Math.random() * 12000);
   }
+  // Navigate to page from query string (e.g. ?page=store)
+  const urlPage = new URLSearchParams(window.location.search).get('page');
+  if (urlPage && document.getElementById('page-' + urlPage)) {
+    showPage(urlPage);
+  }
 }
 
 // Load Copilot Assist & API Fallback toggle states
@@ -3424,6 +3429,10 @@ function showPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
   const titles = {dashboard:'Dashboard',builder:'AI Builder',chat:'AI Chat Room',tasks:'Task Planner',upload:'AI Trading',find:'Find AI',craftai:'Craft AI',freemode:'Free Mode',analysis:'AI Analysis',fusion:'Fusion Lab',aiworld:'AI World',aitube:'AI Tube',aibook:'AI Book',customchats:'Custom Chats',battle:'Battle Arena',collection:'Collection',achievements:'Achievements',smartness:'AI Smartness',settings:'Settings',store:'Store',inventory:'Inventory'};
+  // Update URL query string so ?page= reflects current page
+  const url = new URL(window.location);
+  if (page === 'dashboard') { url.searchParams.delete('page'); } else { url.searchParams.set('page', page); }
+  window.history.replaceState(null, '', url);
   if (page === 'dashboard') { updateDashboard(); updateSidebarAIs(); }
   if (page === 'find') renderFindAI();
   if (page === 'craftai') renderCraftAI();
