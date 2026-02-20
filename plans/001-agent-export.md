@@ -191,6 +191,49 @@ The Fusion Lab page becomes the Swarm Builder. Instead of merging AIs into one, 
 - [ ] "Deploy Agent" writes full agent folder to disk via API
 - [ ] Nav item for Craft AI redirects to Builder with Randomize tab active
 
+### Frontmatter & Endmatter Panel (always visible in Builder)
+The builder always shows a live preview of the file's frontmatter and endmatter, making versioning visible and easy to bump.
+
+```
+┌─────────────────────────────────────────────────┐
+│ 📋 Frontmatter                          [Copy]  │
+│ ┌─────────────────────────────────────────────┐ │
+│ │ ---                                         │ │
+│ │ name: "Siggy"                               │ │
+│ │ description: "BinSkim signature scanner"    │ │
+│ │ domain: "security-scanning"                 │ │
+│ │ extends: "query-extract-train"              │ │
+│ │ applyTo: "agents/binskim-signatures/**"     │ │
+│ │ ---                                         │ │
+│ └─────────────────────────────────────────────┘ │
+│                                                 │
+│  [📝 Manual] [🎲 Randomize] [📋 Template]      │
+│                                                 │
+│  ... builder fields ...                         │
+│                                                 │
+│ 📋 Endmatter                            [Copy]  │
+│ ┌─────────────────────────────────────────────┐ │
+│ │ <!-- endmatter                              │ │
+│ │ version: "1.4.2"                            │ │
+│ │ -->                                         │ │
+│ └─────────────────────────────────────────────┘ │
+│                                                 │
+│ Version: [1].[4].[2]  [⬆ Bump Patch] [⬆ Minor] │
+│                                                 │
+│ [💾 Save] [🚀 Deploy Agent] [🗑️ Delete]        │
+└─────────────────────────────────────────────────┘
+```
+
+- [ ] Live frontmatter preview panel at top of builder (readonly, auto-generated from fields)
+- [ ] Frontmatter fields: name, description, domain, extends (template), applyTo (path glob)
+- [ ] Live endmatter preview panel at bottom of builder (editable version)
+- [ ] Version displayed as 3 separate inputs: major.minor.patch
+- [ ] "Bump Patch" and "Bump Minor" quick buttons
+- [ ] Version auto-increments patch on each deploy
+- [ ] Copy button on both panels (copies raw YAML to clipboard)
+- [ ] When loading an agent from disk, parse frontmatter/endmatter and populate fields
+- [ ] Frontmatter/endmatter format matches Brain repo conventions (YAML front, HTML comment end)
+
 ## Phase 5: UI — Fleet Dashboard
 - [ ] New "Fleet" nav page showing all agents from `GET /api/agents`
 - [ ] Per-agent card: persona, health status, last run, knowledge stats
@@ -200,15 +243,57 @@ The Fusion Lab page becomes the Swarm Builder. Instead of merging AIs into one, 
 
 ## Phase 5b: UI — Swarm Builder (repurpose Fusion Lab)
 - [ ] Redesign Fusion Lab page → Swarm Builder
-- [ ] Left panel: drag agents from agent list into swarm
-- [ ] Right panel: visual team composition with role assignment
+- [ ] Drag-and-drop agent team composition:
+
+```
+┌──────────────────────┬───────────────────────────────────┐
+│ 📦 Available Agents  │ 🐝 Security Strike Force          │
+│                      │                                   │
+│ ┌──────────────┐     │  ┌─1─────────┐    ┌─2─────────┐  │
+│ │ 🔍 Siggy     │ ══> │  │ 🔍 Siggy  │───>│ 🩹 Patch  │  │
+│ │ scanner      │     │  │ scanner   │    │ tracker   │  │
+│ └──────────────┘     │  └───────────┘    └─────┬─────┘  │
+│ ┌──────────────┐     │                         │        │
+│ │ 🩹 Patch     │ ══> │                   ┌─3───▼─────┐  │
+│ │ tracker      │     │                   │ ✅ Checker │  │
+│ └──────────────┘     │                   │ validator  │  │
+│ ┌──────────────┐     │                   └───────────┘  │
+│ │ ✅ Checker   │ ══> │                                   │
+│ │ validator    │     │  Pattern: [pipeline ▼]            │
+│ └──────────────┘     │  Schedule: [daily ▼]              │
+│ ┌──────────────┐     │  Max parallel: [3]                │
+│ │ 📊 Tracker   │     │                                   │
+│ │ reporter     │     │  [🚀 Deploy Swarm]                │
+│ └──────────────┘     │                                   │
+└──────────────────────┴───────────────────────────────────┘
+```
+
+- [ ] Left panel: list of all agents, draggable cards
+  - Each card shows: icon, name, role, domain, health dot (green/yellow/red)
+  - Search/filter bar at top
+  - Drag agent card → drop onto right panel to add to swarm
+- [ ] Right panel: swarm workspace (drop zone)
+  - Dropped agents appear as nodes in a visual flow
+  - Drag nodes to reorder (changes pipeline order)
+  - Click node → assign role (scanner, tracker, validator, reporter, leader)
+  - Draw connections between nodes by dragging from output port → input port
+  - Delete node: drag out of zone or click X
+  - Auto-layout: agents snap to grid, connections auto-route
+- [ ] Connection lines show routing:
+  - Solid line = always routes
+  - Dashed line = conditional (on event type)
+  - Click connection → edit trigger condition (e.g. "on: new-signature")
 - [ ] Role picker per member: scanner, tracker, validator, reporter, leader
 - [ ] Routing pattern selector: pipeline, fan-out, fan-in, round-robin, pub-sub
-- [ ] Visual flow diagram showing message routing between agents
+  - Selecting a pattern auto-arranges nodes and connections
+  - Manual mode: draw your own connections
 - [ ] Concurrency config (max parallel, per-group limits)
 - [ ] Schedule picker (manual, daily, on-push, cron)
+- [ ] Swarm name + emoji + description fields at top
 - [ ] "Deploy Swarm" button → writes swarms/{name}/swarm.json via API
 - [ ] Swarm templates: Security Team, Compliance Squad, Build Pipeline, Data Ingest
+- [ ] Drag-and-drop uses native HTML5 drag API (dragstart, dragover, drop)
+- [ ] Mobile fallback: tap agent → tap "Add to Swarm" button
 
 ## Phase 5c: UI — Find Page Enhancement
 - [ ] Find page reads agents from disk (GET /api/agents) not just localStorage
