@@ -280,7 +280,8 @@ The Fusion Lab page becomes the Swarm Builder. Instead of merging AIs into one, 
     "emoji": "🔍",
     "catchphrase": "Trust nothing. Verify everything."
   },
-  "model": "claude-sonnet-4-5-20250929",
+  "model": "claude-sonnet-4.6",
+  "model_fallback": "gpt-4.1",
   "data_profile": "fast-query",
   "data_sources": ["kusto://SecurityCluster/BinSkimScans"],
   "capabilities": ["kusto-query", "ado-workitems", "json-transform"],
@@ -357,12 +358,73 @@ RUN N+1:
 ---
 
 ## Open Questions
-- [ ] LLM routing: Claude API vs local Phi-3.5 vs Copilot CLI per agent? Or configurable per agent.json?
 - [ ] Where do agents live long-term? Git repo per agent? Monorepo? Shared network drive?
 - [ ] Secret management: env vars, Azure Key Vault, or per-agent encrypted config?
 - [ ] Bulk data agents (20GB+) — stream from ADO API or export to local files first?
 - [ ] Human review workflow: CLI prompt, web UI, or Teams notifications?
 - [ ] Agency.exe: .NET 10 AOT CLI for execution/learning/orchestration (separate repo?)
+
+---
+
+## Available Tooling
+
+**IDE:** VS Code only  
+**AI Access:** GitHub Copilot (VS Code extension + Copilot CLI) — no standalone API keys
+
+### Available Models (via Copilot)
+
+| Model | Cost | Provider | Best For |
+|-------|------|----------|----------|
+| **Claude Opus 4.6 (1M context)** | 6x | Anthropic | Deep reasoning, large context, complex planning |
+| Claude Opus 4.6 | 3x | Anthropic | Deep reasoning, architecture |
+| Claude Opus 4.5 | 3x | Anthropic | Analysis, writing |
+| Claude Opus 4.6 (fast mode) | 30x | Anthropic | Speed + quality (preview) |
+| Claude Sonnet 4 | 1x | Anthropic | General coding, balanced |
+| Claude Sonnet 4.5 | 1x | Anthropic | General coding |
+| Claude Sonnet 4.6 | 1x | Anthropic | General coding |
+| Claude Haiku 4.5 | 0.33x | Anthropic | Fast/cheap tasks, triage |
+| GPT-4.1 | 0x | OpenAI | Free tier, general |
+| GPT-4o | 0x | OpenAI | Free tier, multimodal |
+| GPT-5 mini | 0x | OpenAI | Free tier, lightweight |
+| GPT-5.1 | 1x | OpenAI | Advanced reasoning |
+| GPT-5.1-Codex | 1x | OpenAI | Code generation |
+| GPT-5.1-Codex-Max | 1x | OpenAI | Heavy code generation |
+| GPT-5.1-Codex-Mini (Preview) | 0.33x | OpenAI | Cheap code gen |
+| GPT-5.2 | 1x | OpenAI | Latest general |
+| GPT-5.2-Codex | 1x | OpenAI | Latest code gen |
+| GPT-5.3-Codex | 1x | OpenAI | Cutting edge code |
+| Gemini 2.5 Pro | 1x | Google | Multimodal, reasoning |
+| Gemini 3 Flash (Preview) | 0.33x | Google | Fast/cheap |
+| Gemini 3 Pro (Preview) | 1x | Google | General |
+| Gemini 3.1 Pro (Preview) | 1x | Google | Latest Google |
+
+### Model Strategy for Agents
+
+| Use Case | Model | Why |
+|----------|-------|-----|
+| **Agent scaffold / planning** | Claude Opus 4.6 (1M) | Deep reasoning, sees full agent context |
+| **Code generation** | GPT-5.1-Codex or Claude Sonnet 4.6 | 1x cost, strong at code |
+| **Triage / classification** | Claude Haiku 4.5 or GPT-5.1-Codex-Mini | 0.33x cost, fast |
+| **Bulk processing** | GPT-4.1 / GPT-4o / GPT-5 mini | 0x cost (free tier) |
+| **Knowledge review** | Claude Sonnet 4.5 | Balanced quality/cost |
+| **System prompt generation** | Claude Opus 4.6 (1M) | Needs full agent context in one pass |
+
+### How Agents Access Models
+
+Agents don't call APIs directly. They go through **Copilot CLI**:
+
+```bash
+# Copilot CLI is the only LLM interface
+# Agents write prompts → Copilot CLI sends to model → returns response
+
+# From agent workflow:
+copilot-cli chat --model claude-sonnet-4.6 --system-prompt agents/siggy/prompts/system.md --input "Analyze these BinSkim results..."
+
+# Or via VS Code Copilot extension (interactive):
+# Agent knowledge files are loaded as context, user interacts via chat
+```
+
+**No standalone API keys.** All model access is through GitHub Copilot's infrastructure.
 
 ---
 
