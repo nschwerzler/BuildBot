@@ -2231,6 +2231,8 @@ function onTask(task) {
 // DATA STORE
 // ================================================================
 const STORAGE_KEY = 'ai_forge_data';
+const IDB_NAME = 'ai_hub_backup_db';
+const IDB_STORE = 'saves';
 let ais = [];
 let chatMessages = [];
 let tasks = [];
@@ -2246,6 +2248,58 @@ let dailyChallengeData = null;
 let smartnessData = { aiIQ: {}, totalHelped: 0, clonesDeployed: 0, history: [] };
 let tradeListings = JSON.parse(localStorage.getItem('aiHubTrades')) || [];
 function saveTradeListings() { localStorage.setItem('aiHubTrades', JSON.stringify(tradeListings)); }
+
+// ── IndexedDB Backup Helpers ──
+function _openIDB() {
+  return new Promise((resolve, reject) => {
+    try {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore(IDB_STORE); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    } catch(e) { reject(e); }
+  });
+}
+function _idbSave(key, value) {
+  _openIDB().then(db => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(value, key);
+    tx.oncomplete = () => db.close();
+    tx.onerror = () => db.close();
+  }).catch(e => console.warn('[IDB] save failed:', e));
+}
+function _idbLoad(key) {
+  return _openIDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get(key);
+      req.onsuccess = () => { db.close(); resolve(req.result || null); };
+      req.onerror = () => { db.close(); reject(req.error); };
+    });
+  }).catch(e => { console.warn('[IDB] load failed:', e); return null; });
+}
+
+// ── High-watermark AI count — tracks max AIs ever to detect data loss ──
+function _getAIHighWatermark() {
+  try { return parseInt(localStorage.getItem('ai_forge_hwm') || '0', 10) || 0; } catch(e) { return 0; }
+}
+function _setAIHighWatermark(count) {
+  try {
+    const current = _getAIHighWatermark();
+    if (count > current) localStorage.setItem('ai_forge_hwm', String(count));
+  } catch(e) {}
+}
+
+// ── Session storage mirror — survives page refresh within same session ──
+function _sessionSave(data) {
+  try { sessionStorage.setItem(STORAGE_KEY + '_session', JSON.stringify(data)); } catch(e) {}
+}
+function _sessionLoad() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY + '_session');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
 
 // Available options
 const EMOJIS = ['🤖','🧠','⚡','🔥','💎','🌟','🎯','🚀','👾','🦾','🐉','🦊','🐺','🦅','🌀','💫','🎭','🛡️','⚔️','🔮'];
@@ -3185,17 +3239,18 @@ function animalAction(ai, action) {
 // PERSISTENCE
 // ================================================================
 let _dataLoaded = false; // Guard: only allow saving AFTER data has been loaded
+let _saveThrottleTimer = null;
 
 function saveAll() {
   // GUARD: Never save if data hasn't been loaded yet — prevents wiping saved data with empty arrays
-  if (!_dataLoaded) return;
+  if (!_dataLoaded) { console.warn('[saveAll] BLOCKED — data not loaded yet'); return; }
 
-  const data = { ais, chatMessages: chatMessages.slice(-200), tasks, activityLog: activityLog.slice(-100), totalMessages, aiBookStories: aiBookStories.slice(-50), customChatRooms, aiTubeVideos: aiTubeVideos.slice(-30), battleHistory: battleHistory.slice(-50), battleStats, unlockedAchievements, dailyChallengeData, fusionCount: fusionCount || 0, smartnessData };
+  const data = { ais, chatMessages: chatMessages.slice(-200), tasks, activityLog: activityLog.slice(-100), totalMessages, aiBookStories: aiBookStories.slice(-50), customChatRooms, aiTubeVideos: aiTubeVideos.slice(-30), battleHistory: battleHistory.slice(-50), battleStats, unlockedAchievements, dailyChallengeData, fusionCount: fusionCount || 0, smartnessData, _savedAt: Date.now(), _aiCount: ais.length };
 
   try {
     const json = JSON.stringify(data);
 
-    // Safety: if we had AIs before but now ais is empty, something went wrong — don't overwrite
+    // SAFETY CHECK 1: Don't overwrite existing AIs with empty array
     const existing = localStorage.getItem(STORAGE_KEY);
     if (existing && ais.length === 0) {
       try {
@@ -3207,7 +3262,20 @@ function saveAll() {
       } catch(e) {}
     }
 
+    // SAFETY CHECK 2: Don't save fewer AIs than our high-watermark (data loss detection)
+    const hwm = _getAIHighWatermark();
+    if (ais.length === 0 && hwm > 0) {
+      console.warn('[saveAll] BLOCKED: High-watermark is', hwm, 'but ais is empty. Likely data loss — not saving.');
+      return;
+    }
+
     localStorage.setItem(STORAGE_KEY, json);
+
+    // Update high-watermark
+    _setAIHighWatermark(ais.length);
+
+    // Session storage mirror (instant backup for same session)
+    _sessionSave(data);
 
     // Also save a backup copy (rotated — keep last 2)
     try {
@@ -3222,19 +3290,28 @@ function saveAll() {
       }
     } catch(e) { /* backup save failed — non-critical */ }
 
+    // IndexedDB backup (async, non-blocking — more durable than localStorage)
+    if (ais.length > 0) {
+      // Throttle IDB saves to every 10 seconds max
+      if (!_saveThrottleTimer) {
+        _saveThrottleTimer = setTimeout(() => { _saveThrottleTimer = null; }, 10000);
+        _idbSave('primary', json);
+        _idbSave('backup_ts', Date.now());
+      }
+    }
+
   } catch(e) {
     // localStorage quota exceeded — try to free space and retry
     console.error('[saveAll] Save failed:', e);
     if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
       console.warn('[saveAll] localStorage quota exceeded! Trimming data...');
-      // Aggressively trim to fit
       chatMessages = chatMessages.slice(-50);
       activityLog = activityLog.slice(-30);
       aiBookStories = aiBookStories.slice(-10);
       aiTubeVideos = aiTubeVideos.slice(-10);
       battleHistory = battleHistory.slice(-10);
       try {
-        const trimmedData = { ais, chatMessages, tasks, activityLog, totalMessages, aiBookStories, customChatRooms, aiTubeVideos, battleHistory, battleStats, unlockedAchievements, dailyChallengeData, fusionCount: fusionCount || 0, smartnessData };
+        const trimmedData = { ais, chatMessages, tasks, activityLog, totalMessages, aiBookStories, customChatRooms, aiTubeVideos, battleHistory, battleStats, unlockedAchievements, dailyChallengeData, fusionCount: fusionCount || 0, smartnessData, _savedAt: Date.now(), _aiCount: ais.length };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedData));
         console.log('[saveAll] Saved with trimmed data');
         toast('⚠️ Storage nearly full — older messages trimmed to save space', 'info');
@@ -3246,63 +3323,183 @@ function saveAll() {
   }
 }
 
+function _applyLoadedData(d) {
+  ais = d.ais || [];
+  chatMessages = d.chatMessages || [];
+  tasks = d.tasks || [];
+  activityLog = d.activityLog || [];
+  totalMessages = d.totalMessages || 0;
+  aiBookStories = d.aiBookStories || [];
+  customChatRooms = d.customChatRooms || [];
+  aiTubeVideos = d.aiTubeVideos || [];
+  battleHistory = d.battleHistory || [];
+  battleStats = d.battleStats || { bestStreak: 0, totalKOs: 0, wins: {} };
+  unlockedAchievements = d.unlockedAchievements || {};
+  dailyChallengeData = d.dailyChallengeData || null;
+  fusionCount = d.fusionCount || 0;
+  if (d.smartnessData) smartnessData = d.smartnessData;
+}
+
 function loadAll() {
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
+    let source = 'primary';
 
-    // If primary save is missing or corrupted, try backups
+    // If primary save is missing or corrupted, try all backup layers
     if (!raw) {
       console.warn('[loadAll] Primary save not found, trying backup_1...');
       raw = localStorage.getItem(STORAGE_KEY + '_backup_1');
-      if (!raw) {
-        console.warn('[loadAll] Backup 1 not found, trying backup_2...');
-        raw = localStorage.getItem(STORAGE_KEY + '_backup_2');
-      }
-      if (raw) {
-        console.log('[loadAll] Recovered data from backup!');
-        // Restore the primary save from backup
-        try { localStorage.setItem(STORAGE_KEY, raw); } catch(e) {}
+      source = 'backup_1';
+    }
+    if (!raw) {
+      console.warn('[loadAll] Backup 1 not found, trying backup_2...');
+      raw = localStorage.getItem(STORAGE_KEY + '_backup_2');
+      source = 'backup_2';
+    }
+    // Try sessionStorage (survives same-session page refreshes)
+    if (!raw) {
+      console.warn('[loadAll] No localStorage saves found, trying sessionStorage...');
+      const sessionData = _sessionLoad();
+      if (sessionData && sessionData.ais && sessionData.ais.length > 0) {
+        raw = JSON.stringify(sessionData);
+        source = 'session';
       }
     }
 
-    if (!raw) { _dataLoaded = true; return; }
+    // If nothing in localStorage/session, try IndexedDB (async recovery — show banner later)
+    if (!raw) {
+      const hwm = _getAIHighWatermark();
+      if (hwm > 0) {
+        console.warn('[loadAll] ALL local saves gone but HWM is', hwm, '— scheduling IndexedDB recovery...');
+        _dataLoaded = true;
+        _tryIDBRecovery();
+        return;
+      }
+      _dataLoaded = true;
+      return;
+    }
+
+    if (source !== 'primary' && raw) {
+      console.log('[loadAll] Recovered data from', source, '!');
+      try { localStorage.setItem(STORAGE_KEY, raw); } catch(e) {}
+      setTimeout(() => toast('⚠️ Data recovered from ' + source + ' backup!', 'info'), 500);
+    }
 
     const d = JSON.parse(raw);
-    ais = d.ais || [];
-    chatMessages = d.chatMessages || [];
-    tasks = d.tasks || [];
-    activityLog = d.activityLog || [];
-    totalMessages = d.totalMessages || 0;
-    aiBookStories = d.aiBookStories || [];
-    customChatRooms = d.customChatRooms || [];
-    aiTubeVideos = d.aiTubeVideos || [];
-    battleHistory = d.battleHistory || [];
-    battleStats = d.battleStats || { bestStreak: 0, totalKOs: 0, wins: {} };
-    unlockedAchievements = d.unlockedAchievements || {};
-    dailyChallengeData = d.dailyChallengeData || null;
-    fusionCount = d.fusionCount || 0;
-    if (d.smartnessData) smartnessData = d.smartnessData;
+    _applyLoadedData(d);
+
+    // Validate: did we actually get AIs? If not but HWM says we should have, try harder
+    const hwm = _getAIHighWatermark();
+    if (ais.length === 0 && hwm > 0) {
+      console.warn('[loadAll] Loaded 0 AIs but HWM is', hwm, '— data may be corrupted, trying other sources...');
+      // Try other localStorage backups
+      const otherSources = [STORAGE_KEY + '_backup_1', STORAGE_KEY + '_backup_2'];
+      for (const key of otherSources) {
+        try {
+          const bRaw = localStorage.getItem(key);
+          if (bRaw) {
+            const bd = JSON.parse(bRaw);
+            if (bd.ais && bd.ais.length > 0) {
+              console.log('[loadAll] Found', bd.ais.length, 'AIs in', key);
+              _applyLoadedData(bd);
+              try { localStorage.setItem(STORAGE_KEY, bRaw); } catch(e) {}
+              setTimeout(() => toast('⚠️ Data recovered from backup — ' + bd.ais.length + ' AIs restored!', 'info'), 500);
+              break;
+            }
+          }
+        } catch(e) {}
+      }
+      // If still empty, try session
+      if (ais.length === 0) {
+        const sd = _sessionLoad();
+        if (sd && sd.ais && sd.ais.length > 0) {
+          _applyLoadedData(sd);
+          setTimeout(() => toast('⚠️ Data recovered from session backup — ' + sd.ais.length + ' AIs restored!', 'info'), 500);
+        }
+      }
+      // If STILL empty, schedule IDB recovery
+      if (ais.length === 0) {
+        _dataLoaded = true;
+        _tryIDBRecovery();
+        return;
+      }
+    }
 
     _dataLoaded = true;
-    console.log('[loadAll] Loaded:', ais.length, 'AIs,', chatMessages.length, 'messages,', tasks.length, 'tasks');
+    _setAIHighWatermark(ais.length);
+    console.log('[loadAll] Loaded:', ais.length, 'AIs,', chatMessages.length, 'messages,', tasks.length, 'tasks (source:', source, ')');
   } catch(e) {
     console.error('[loadAll] Load failed:', e);
-    // Try to recover from backup
-    try {
-      const backup = localStorage.getItem(STORAGE_KEY + '_backup_1') || localStorage.getItem(STORAGE_KEY + '_backup_2');
-      if (backup) {
-        const d = JSON.parse(backup);
-        ais = d.ais || [];
-        chatMessages = d.chatMessages || [];
-        tasks = d.tasks || [];
-        activityLog = d.activityLog || [];
-        totalMessages = d.totalMessages || 0;
-        console.log('[loadAll] Recovered', ais.length, 'AIs from backup after parse error!');
-        toast('⚠️ Data was corrupted — recovered from backup!', 'info');
+    // Try to recover from any available backup
+    const backupKeys = [STORAGE_KEY + '_backup_1', STORAGE_KEY + '_backup_2'];
+    for (const key of backupKeys) {
+      try {
+        const backup = localStorage.getItem(key);
+        if (backup) {
+          const d = JSON.parse(backup);
+          if (d.ais && d.ais.length > 0) {
+            _applyLoadedData(d);
+            console.log('[loadAll] Recovered', ais.length, 'AIs from', key, 'after parse error!');
+            setTimeout(() => toast('⚠️ Data was corrupted — recovered ' + ais.length + ' AIs from backup!', 'info'), 500);
+            break;
+          }
+        }
+      } catch(e2) {}
+    }
+    // Try session storage too
+    if (ais.length === 0) {
+      const sd = _sessionLoad();
+      if (sd && sd.ais && sd.ais.length > 0) {
+        _applyLoadedData(sd);
+        setTimeout(() => toast('⚠️ Recovered ' + sd.ais.length + ' AIs from session!', 'info'), 500);
       }
-    } catch(e2) { console.error('[loadAll] Backup recovery also failed:', e2); }
+    }
     _dataLoaded = true;
   }
+}
+
+// Async IndexedDB recovery — called when all localStorage sources are empty but HWM > 0
+async function _tryIDBRecovery() {
+  try {
+    const raw = await _idbLoad('primary');
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d.ais && d.ais.length > 0) {
+        _applyLoadedData(d);
+        console.log('[IDB Recovery] Restored', ais.length, 'AIs from IndexedDB!');
+        // Re-save to localStorage
+        try { localStorage.setItem(STORAGE_KEY, raw); } catch(e) {}
+        toast('🎉 Data recovered from IndexedDB backup! ' + ais.length + ' AIs restored!', 'success');
+        refreshAll();
+        updateChatSelect();
+        return;
+      }
+    }
+  } catch(e) { console.warn('[IDB Recovery] Failed:', e); }
+
+  // Show recovery banner if we truly have no data but used to
+  const hwm = _getAIHighWatermark();
+  if (hwm > 0 && ais.length === 0) {
+    _showRecoveryBanner(hwm);
+  }
+}
+
+// Show a visible banner when data loss is detected
+function _showRecoveryBanner(expectedCount) {
+  let banner = document.getElementById('data-recovery-banner');
+  if (banner) return; // already showing
+  banner = document.createElement('div');
+  banner.id = 'data-recovery-banner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;padding:16px 24px;font-family:"Segoe UI",sans-serif;font-size:14px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.5)';
+  banner.innerHTML = `
+    <span style="font-size:24px">⚠️</span>
+    <div style="flex:1">
+      <strong>Data Loss Detected!</strong> You previously had ${expectedCount} AI(s) but they're gone. Your browser may have cleared storage.
+      <br><small>Try: Settings → Import a backup file, or check if you have a different browser/tab with your data.</small>
+    </div>
+    <button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px">Dismiss</button>
+  `;
+  document.body.prepend(banner);
 }
 
 // ================================================================
@@ -4394,27 +4591,36 @@ window.addEventListener('message', function(event) {
 
 function autoRunGameCode(code) {
   // Strip markdown code fences if present
-  code = code.replace(/^```html\n?/i, '').replace(/\n?```$/i, '');
-  if (!code.includes('<html') && !code.includes('<!DOCTYPE')) {
-    code = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111;color:#fff;font-family:"Segoe UI",sans-serif}</style></head><body>${code}</body></html>`;
+  code = code.replace(/^```[a-z]*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+  
+  // Try to extract HTML if the AI wrapped it in extra text
+  if (!code.includes('<html') && !code.includes('<!DOCTYPE') && !code.includes('<!doctype')) {
+    const extracted = extractHTMLCode(code);
+    if (extracted) {
+      code = extracted;
+    } else {
+      code = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111;color:#fff;font-family:"Segoe UI",sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh}</style></head><body>${code}</body></html>`;
+    }
+  }
+
+  // Inject error handler so iframe errors are catchable
+  if (!code.includes('window.onerror')) {
+    code = code.replace(/<head([^>]*)>/i, `<head$1><script>window.onerror=function(m,s,l,c,e){console.error('[Game Error]',m,'at line',l);return true;}</script>`);
   }
 
   // ── Check if code is complete; if not, fix via Pollinations ──
   if (!isCodeComplete(code)) {
     console.warn('[autoRunGameCode] Incomplete code detected, attempting Pollinations fix...');
-    toast('⚠️ Code looks incomplete — auto-fixing with Pollinations AI...', 'info');
+    toast('⚠️ Code looks incomplete — auto-fixing...', 'info');
     const desc = lastUserRequest || 'a web app/game';
     fixWithPollinations(code, 'code', desc).then(fixedCode => {
       if (fixedCode) {
         console.log('[autoRunGameCode] Pollinations fix succeeded!');
-        toast('✅ Code fixed by Pollinations AI!', 'success');
-        // Re-run with the fixed code (skip the validation loop since fixWithPollinations already validated)
+        toast('✅ Code fixed!', 'success');
         _launchCode(fixedCode);
-        // Also update the last chat message that contained the broken code
         _updateLastCodeMessage(fixedCode);
       } else {
-        console.warn('[autoRunGameCode] Pollinations fix failed, launching original anyway');
-        toast('⚠️ Auto-fix failed — launching as-is', 'info');
+        console.warn('[autoRunGameCode] Fix failed, launching original anyway');
         _launchCode(code);
       }
     });
@@ -7496,9 +7702,9 @@ function updateExportSelect() {
 }
 
 function exportAll() {
-  const data = { version: 1, exported: new Date().toISOString(), ais, tasks };
-  downloadJSON(data, 'ai_forge_export.json');
-  toast('All AIs exported!', 'success');
+  const data = { version: 2, exported: new Date().toISOString(), ais, tasks, chatMessages, activityLog, totalMessages, aiBookStories, customChatRooms, aiTubeVideos, battleHistory, battleStats, unlockedAchievements, dailyChallengeData, fusionCount, smartnessData };
+  downloadJSON(data, 'ai_forge_full_backup_' + new Date().toISOString().slice(0,10) + '.json');
+  toast('Full backup exported! (' + ais.length + ' AIs, ' + chatMessages.length + ' messages)', 'success');
 }
 
 function exportSingle() {
@@ -7526,9 +7732,29 @@ function importAIs(event) {
     try {
       const data = JSON.parse(e.target.result);
       let imported = 0;
+
+      // Full backup restore (version 2) — restores everything
+      if (data.version === 2 && data.ais && ais.length === 0) {
+        if (confirm(`This is a full backup with ${data.ais.length} AI(s). Restore ALL data from this backup?`)) {
+          _applyLoadedData(data);
+          if (data.totalMessages) totalMessages = data.totalMessages;
+          saveAll();
+          refreshAll();
+          updateChatSelect();
+          loadChatHistory();
+          toast(`🎉 Full restore complete! ${ais.length} AIs, ${chatMessages.length} messages restored!`, 'success');
+          return;
+        }
+      }
+
+      // Normal import — add AIs to existing collection
       if (data.ais && Array.isArray(data.ais)) {
         data.ais.forEach(ai => {
-          // Generate new ID to avoid conflicts
+          // Check if AI with same name already exists
+          const exists = ais.some(a => a.name === ai.name);
+          if (exists) {
+            ai.name = ai.name + ' (imported)';
+          }
           ai.id = 'ai_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
           ai.imported = new Date().toISOString();
           ais.push(ai);
@@ -7547,6 +7773,7 @@ function importAIs(event) {
       updateChatSelect();
       toast(`Imported ${imported} AI(s)!`, 'success');
     } catch(err) {
+      console.error('Import error:', err);
       toast('Invalid file format!', 'error');
     }
   };
@@ -8818,23 +9045,40 @@ async function callFreeAI(ai, userMessage, conversationContext) {
 async function generateAICode(ai, description) {
   if (!realAIEnabled) return null;
 
-  const codePrompt = `You are ${ai.name}, an ELITE full-stack developer. The user wants you to BUILD: "${description}"
+  // Detect what kind of project this is for tailored prompts
+  const isGame = /game|play|score|level|arcade|puzzle|shooter|platformer|rpg|adventure|snake|pong|tetris|flappy|space invader|breakout|racing/i.test(description);
+  const isApp = /app|tool|calculator|editor|tracker|manager|dashboard|planner|converter|timer|clock|todo|note|list|form|chat|weather/i.test(description);
+  const isAnimation = /animation|animate|particle|effect|visual|art|creative|draw|paint|fractal|firework|star|sparkle/i.test(description);
 
-YOUR TASK: Generate a COMPLETE, WORKING, SELF-CONTAINED HTML file that implements EXACTLY what the user described.
+  let specificRules = '';
+  if (isGame) {
+    specificRules = `\nGAME-SPECIFIC REQUIREMENTS:\n- Use HTML5 Canvas with requestAnimationFrame game loop\n- Include player controls: Arrow keys AND WASD for movement\n- Add a visible HUD with Score, Lives/Health, and Level\n- Implement collision detection that actually works\n- Add game over screen with final score and "Press R to Restart"\n- Include at least 3 levels of difficulty progression\n- Add particle effects or visual feedback on hits/scores\n- Include sound effects using AudioContext (beeps/boops)\n- Make the game actually FUN — good physics, satisfying feedback, increasing challenge\n- Canvas should be at least 600x400 pixels\n- Add a start screen with instructions before the game begins`;
+  } else if (isApp) {
+    specificRules = `\nAPP-SPECIFIC REQUIREMENTS:\n- Include a polished, professional UI with proper layout\n- Add localStorage persistence so data survives page reload\n- Include input validation and helpful error messages\n- Add keyboard shortcuts where appropriate\n- Include undo/redo or confirmation dialogs for destructive actions\n- Make buttons and inputs have hover/focus states\n- Include loading states and smooth transitions\n- Add a header/toolbar with the app name and key actions\n- Make it responsive (works on mobile too)`;
+  } else if (isAnimation) {
+    specificRules = `\nANIMATION-SPECIFIC REQUIREMENTS:\n- Use Canvas or CSS animations for smooth 60fps rendering\n- Include interactive elements (mouse/touch responsive)\n- Add color variety and visual interest\n- Include at least 2 different visual effects or modes\n- Make it mesmerizing and visually impressive`;
+  }
 
-CRITICAL RULES:
-1. Output ONLY the raw HTML code. No explanations, no markdown fences, no commentary before or after.
-2. The code must be a SINGLE, COMPLETE HTML file with ALL CSS and JS inline (no external dependencies).
-3. The code MUST actually work when opened in a browser or iframe.
-4. For GAMES: Use <canvas> with requestAnimationFrame, include keyboard/mouse controls, score system, game over + restart (R key).
-5. For APPS: Include full UI, working interactivity, localStorage persistence where appropriate.
-6. For WEBSITES: Include responsive design, navigation, proper semantic HTML.
-7. Use a modern dark theme with gradients and nice colors (unless user specified otherwise).
-8. Write REAL, ORIGINAL code — not a template. Make it unique and tailored to what the user asked for.
-9. Include proper error handling and edge cases.
-10. The HTML must start with <!DOCTYPE html> and be complete.
+  const codePrompt = `You are ${ai.name}, a WORLD-CLASS full-stack developer. Generate a COMPLETE, WORKING, SELF-CONTAINED HTML file.
 
-Make it POLISHED, FUN, and FULLY FUNCTIONAL. This is not a skeleton — it's a finished product.`;
+BUILD REQUEST: "${description}"
+
+MANDATORY RULES:
+1. Output ONLY raw HTML code. NO markdown fences (\`\`\`), NO explanations, NO comments before/after the code.
+2. Start EXACTLY with <!DOCTYPE html> and end EXACTLY with </html>. Nothing else outside.
+3. SINGLE HTML file with ALL CSS in <style> and ALL JS in <script> — ZERO external dependencies or CDN links.
+4. The code MUST work perfectly when loaded in an iframe with srcdoc.
+5. Modern dark theme: background #0a0a1a or #111, accent colors, border-radius, subtle gradients, good typography.
+6. Every feature mentioned in the description MUST be implemented and functional.
+7. All JavaScript must be error-free. Use try/catch around risky operations.
+8. Close EVERY tag, brace, and parenthesis. The code must be 100% syntactically valid.
+9. Include window error handler: window.onerror = (m,s,l) => console.error(m);
+10. Minimum 150 lines of code for any project. Make it SUBSTANTIAL.
+${specificRules}
+
+QUALITY BAR: This code will be shown to users as a finished product. Make it polished, complete, and impressive. Do NOT cut corners.
+
+START YOUR RESPONSE WITH <!DOCTYPE html> IMMEDIATELY. NO OTHER TEXT.`;
 
   const messages = [
     { role: 'system', content: codePrompt },
@@ -8939,21 +9183,88 @@ Make it POLISHED, FUN, and FULLY FUNCTIONAL. This is not a skeleton — it's a f
 // Extract clean HTML from AI response (strips markdown fences, explanations, etc.)
 function extractHTMLCode(text) {
   if (!text) return null;
-  // Try to find HTML code block in markdown
-  const htmlBlockMatch = text.match(/```html\s*\n([\s\S]*?)```/i);
-  if (htmlBlockMatch) return htmlBlockMatch[1].trim();
-  // Try generic code block
-  const codeBlockMatch = text.match(/```\s*\n([\s\S]*?)```/);
-  if (codeBlockMatch && codeBlockMatch[1].includes('<!DOCTYPE')) return codeBlockMatch[1].trim();
-  // If the response itself starts with <!DOCTYPE or <html, it's raw HTML
-  const trimmed = text.trim();
-  if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<HTML')) return trimmed;
-  // Try to find HTML anywhere in the response
-  const htmlMatch = text.match(/(<!DOCTYPE html[\s\S]*<\/html>)/i);
-  if (htmlMatch) return htmlMatch[1].trim();
-  // If contains substantial HTML tags, return as-is
-  if (trimmed.includes('<body') && trimmed.includes('<script') && trimmed.length > 200) return trimmed;
+
+  // Strip any leading/trailing whitespace
+  let t = text.trim();
+
+  // Remove common AI prefixes like "Here's the code:" or "Sure, here you go:"
+  t = t.replace(/^(Here('s| is)[^\n]*:\s*\n?|Sure[^\n]*:\s*\n?|Certainly[^\n]*:\s*\n?|Of course[^\n]*:\s*\n?|Below[^\n]*:\s*\n?|I('ve| have)[^\n]*:\s*\n?)/i, '').trim();
+
+  // 1. Try HTML code block in markdown (greedy to get longest match)
+  const htmlBlockMatches = [...t.matchAll(/```html\s*\n([\s\S]*?)\n?```/gi)];
+  if (htmlBlockMatches.length > 0) {
+    // Pick the longest match (most likely the full code)
+    const best = htmlBlockMatches.reduce((a, b) => a[1].length > b[1].length ? a : b);
+    if (best[1].length > 50) {
+      const extracted = best[1].trim();
+      if (extracted.includes('<') && extracted.includes('>')) return _cleanExtractedHTML(extracted);
+    }
+  }
+
+  // 2. Try generic code block containing HTML
+  const codeBlockMatch = t.match(/```[a-z]*\s*\n([\s\S]*?)\n?```/);
+  if (codeBlockMatch && (codeBlockMatch[1].includes('<!DOCTYPE') || codeBlockMatch[1].includes('<html'))) {
+    return _cleanExtractedHTML(codeBlockMatch[1].trim());
+  }
+
+  // 3. If the response itself starts with <!DOCTYPE or <html, it's raw HTML
+  if (t.startsWith('<!DOCTYPE') || t.startsWith('<!doctype') || /^<html/i.test(t)) {
+    // Strip any trailing text after </html>
+    const endIdx = t.toLowerCase().lastIndexOf('</html>');
+    if (endIdx > 0) return _cleanExtractedHTML(t.substring(0, endIdx + 7));
+    return _cleanExtractedHTML(t);
+  }
+
+  // 4. Try to find the longest <!DOCTYPE...></html> block anywhere in the text
+  const htmlMatch = t.match(/(<!DOCTYPE[\s\S]*?<\/html>)/i);
+  if (htmlMatch && htmlMatch[1].length > 100) return _cleanExtractedHTML(htmlMatch[1].trim());
+
+  // 5. Try <html>...</html> without DOCTYPE
+  const htmlTagMatch = t.match(/(<html[\s\S]*?<\/html>)/i);
+  if (htmlTagMatch && htmlTagMatch[1].length > 100) {
+    return _cleanExtractedHTML('<!DOCTYPE html>\n' + htmlTagMatch[1].trim());
+  }
+
+  // 6. If contains substantial HTML structure, extract and wrap it
+  if (t.includes('<body') && t.includes('</body>') && t.length > 200) {
+    const bodyMatch = t.match(/(<body[\s\S]*<\/body>)/i);
+    const styleMatch = t.match(/(<style[\s\S]*?<\/style>)/gi);
+    if (bodyMatch) {
+      let doc = '<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8"><title>Generated</title>';
+      if (styleMatch) doc += '\n' + styleMatch.join('\n');
+      doc += '\n</head>\n' + bodyMatch[1] + '\n</html>';
+      return doc;
+    }
+  }
+
+  // 7. Last resort: if there's a <script> with substantial code and some HTML, wrap it
+  if (t.includes('<script') && t.includes('</script>') && t.length > 300) {
+    return _cleanExtractedHTML(t);
+  }
+
   return null;
+}
+
+// Clean extracted HTML — ensure it's a valid document
+function _cleanExtractedHTML(html) {
+  if (!html) return null;
+  let h = html.trim();
+  // Remove stray markdown fences that might have leaked through
+  h = h.replace(/^```[a-z]*\s*\n?/gm, '').replace(/\n?```\s*$/gm, '').trim();
+  // Ensure it starts with DOCTYPE
+  if (!h.toLowerCase().startsWith('<!doctype')) {
+    if (h.toLowerCase().startsWith('<html')) h = '<!DOCTYPE html>\n' + h;
+    else h = '<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8"></head>\n<body>\n' + h + '\n</body>\n</html>';
+  }
+  // Ensure it ends with </html>
+  if (!h.toLowerCase().includes('</html>')) h += '\n</html>';
+  // Strip any text after final </html>
+  const endIdx = h.toLowerCase().lastIndexOf('</html>');
+  if (endIdx > 0 && endIdx + 7 < h.length) {
+    const after = h.substring(endIdx + 7).trim();
+    if (after.length > 0 && !after.startsWith('<')) h = h.substring(0, endIdx + 7);
+  }
+  return h;
 }
 
 // Format AI-generated code as a chat message with proper output
@@ -9032,7 +9343,7 @@ function isResponseComplete(text) {
   return true;
 }
 
-// Fix incomplete code or text using Pollinations AI
+// Fix incomplete code or text using available AI APIs (tries multiple)
 let _pollinationsFixing = false;
 async function fixWithPollinations(content, type, description) {
   if (_pollinationsFixing) return null; // prevent re-entrant fixes
@@ -9041,11 +9352,24 @@ async function fixWithPollinations(content, type, description) {
     let messages;
     if (type === 'code') {
       messages = [
-        { role: 'system', content: `You are an expert code fixer. You will receive INCOMPLETE or BROKEN HTML code. Your job is to COMPLETE it and make it fully functional.\n\nRULES:\n1. Output ONLY the complete, fixed HTML code — no explanations, no markdown fences.\n2. Keep ALL existing code that works. Only add what's missing.\n3. Close all unclosed tags, functions, and blocks.\n4. If the code was cut off mid-function, complete the function logically.\n5. Make sure the result is a COMPLETE, WORKING HTML file.\n6. Start with <!DOCTYPE html> and end with </html>.\n7. Ensure all <script> blocks are properly closed with working JavaScript.\n8. Ensure all CSS is valid and complete.\n9. The output must actually work when loaded in a browser.` },
-        { role: 'user', content: `The user wanted: "${description || 'a web app'}"\n\nThis code was generated but is INCOMPLETE or BROKEN. Please COMPLETE and FIX it so it works:\n\n${content}` }
+        { role: 'system', content: `You are an expert code completion engine. You will receive INCOMPLETE HTML code that was cut off mid-generation. Your ONLY job is to output the COMPLETE, FIXED, WORKING version.
+
+ABSOLUTE RULES:
+1. Output ONLY the complete HTML code. Start with <!DOCTYPE html>, end with </html>.
+2. NO markdown fences (\`\`\`), NO explanations, NO text before or after the code.
+3. Keep ALL existing code that works — only fix/complete what's broken or missing.
+4. Close all unclosed HTML tags, JavaScript functions, braces, and blocks.
+5. If code was cut off mid-function, complete the function with logical working code.
+6. Ensure ALL <script> and <style> blocks are properly opened AND closed.
+7. Ensure all JavaScript has balanced { } braces and is syntactically valid.
+8. The output must actually work when loaded in a browser iframe.
+9. If the code is severely broken, rewrite the broken parts while keeping the user's intent.
+10. Add window.onerror handler for debugging.
+
+START YOUR RESPONSE WITH <!DOCTYPE html> IMMEDIATELY.` },
+        { role: 'user', content: `The user wanted: "${description || 'a web app'}"\n\nThis code is INCOMPLETE/BROKEN. Output the COMPLETE fixed version:\n\n${content}` }
       ];
     } else {
-      // type === 'text' — complete a truncated sentence/response
       messages = [
         { role: 'system', content: `You are continuing a response that was cut off. Complete the response naturally. Output ONLY the completion — the part that comes AFTER what was already written. Do NOT repeat what was already said. Write a natural continuation that finishes the thought, then stop. Keep the same tone and style.` },
         { role: 'user', content: `This AI response was cut off. Complete it naturally (output ONLY the missing continuation):\n\n${content}` }
@@ -9053,48 +9377,82 @@ async function fixWithPollinations(content, type, description) {
     }
 
     const maxTokens = type === 'code' ? 4096 : 1024;
-    console.log(`[fixWithPollinations] Attempting ${type} fix via Pollinations...`);
+    console.log(`[fixCode] Attempting ${type} fix...`);
 
-    const resp = await fetch(POLLINATIONS_FALLBACK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'openai', messages, max_tokens: maxTokens })
-    });
-
-    if (!resp.ok) {
-      console.warn('[fixWithPollinations] Pollinations returned', resp.status);
-      return null;
+    // Try GitHub API first (if available)
+    if (githubToken) {
+      try {
+        const resp = await fetch(COPILOT_API_URL, {
+          method: 'POST',
+          headers: getCopilotHeaders(),
+          body: JSON.stringify({ model: getCopilotModel(), messages, temperature: 0.3, max_tokens: maxTokens })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          const result = data?.choices?.[0]?.message?.content;
+          if (result) {
+            apiCallCount++; updateRealAIStatus();
+            const processed = _processFixResult(result, type);
+            if (processed) return processed;
+          }
+        }
+      } catch(e) { console.warn('[fixCode] GitHub API failed:', e); }
     }
 
-    const data = await resp.json();
-    let result = data?.choices?.[0]?.message?.content || null;
-    if (!result) return null;
-
-    apiCallCount++;
-    const tokens = data?.usage?.total_tokens || Math.ceil(result.length / 4);
-    apiTokenCount += tokens;
-    try { localStorage.setItem('ai_hub_api_calls', apiCallCount); localStorage.setItem('ai_hub_api_tokens', apiTokenCount); } catch(e) {}
-    updateRealAIStatus();
-
-    if (type === 'code') {
-      // Extract the HTML from the fix response
-      const fixed = extractHTMLCode(result);
-      if (fixed && isCodeComplete(fixed)) {
-        console.log('[fixWithPollinations] Code successfully fixed!');
-        return fixed;
+    // Try Pollinations
+    try {
+      const resp = await fetch(POLLINATIONS_FALLBACK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'openai', messages, max_tokens: maxTokens })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const result = data?.choices?.[0]?.message?.content;
+        if (result) {
+          apiCallCount++; updateRealAIStatus();
+          const processed = _processFixResult(result, type);
+          if (processed) return processed;
+        }
       }
-      // If extraction failed but result looks like HTML, return it
-      if (result.includes('</html>') && result.includes('<body')) return result.trim();
-      return null;
-    } else {
-      // For text, return the continuation
-      return result.trim();
+    } catch(e) { console.warn('[fixCode] Pollinations failed:', e); }
+
+    // Try Claude backup
+    if (claudeBackupUnlocked && claudeBackupEnabled) {
+      try {
+        const result = await callClaudeBackup(messages, maxTokens);
+        if (result) {
+          const processed = _processFixResult(result, type);
+          if (processed) return processed;
+        }
+      } catch(e) { console.warn('[fixCode] Claude failed:', e); }
     }
+
+    return null;
   } catch(e) {
-    console.warn('[fixWithPollinations] Error:', e);
+    console.warn('[fixCode] Error:', e);
     return null;
   } finally {
     _pollinationsFixing = false;
+  }
+}
+
+function _processFixResult(result, type) {
+  if (!result) return null;
+  if (type === 'code') {
+    const fixed = extractHTMLCode(result);
+    if (fixed && isCodeComplete(fixed)) {
+      console.log('[fixCode] Code successfully fixed! (' + fixed.length + ' chars)');
+      return fixed;
+    }
+    // If extraction failed but result looks like HTML, try cleaning it
+    if (result.includes('</html>') && result.includes('<body')) {
+      const cleaned = _cleanExtractedHTML(result.trim());
+      if (cleaned && isCodeComplete(cleaned)) return cleaned;
+    }
+    return null;
+  } else {
+    return result.trim();
   }
 }
 
