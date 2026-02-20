@@ -3520,9 +3520,9 @@ function init() {
   buildSkillTags();
   refreshAll();
   updateChatSelect();
-  // Auto-simulate if AIs exist
-  if (ais.length > 0) {
-    setInterval(autoAIActivity, 8000 + Math.random() * 12000);
+  // Auto-simulate if AIs exist (deduplicated — only one interval)
+  if (ais.length > 0 && !window._autoActivityTimer) {
+    window._autoActivityTimer = setInterval(autoAIActivity, 8000 + Math.random() * 12000);
   }
   // Navigate to page from query string (e.g. ?page=store)
   const urlPage = new URLSearchParams(window.location.search).get('page');
@@ -3829,9 +3829,9 @@ function saveAI() {
   saveAll();
   refreshAll();
   updateChatSelect();
-  // Enable auto activity if first AI
-  if (ais.length === 1) {
-    setInterval(autoAIActivity, 8000 + Math.random() * 12000);
+  // Enable auto activity if first AI (deduplicated — only one interval)
+  if (ais.length === 1 && !window._autoActivityTimer) {
+    window._autoActivityTimer = setInterval(autoAIActivity, 8000 + Math.random() * 12000);
   }
   showPage('dashboard');
 }
@@ -3927,7 +3927,7 @@ function updateDashboard() {
     <div class="activity-item">
       <div class="activity-dot" style="background:${a.color||'var(--accent)'}"></div>
       <div>
-        <div class="activity-text"><strong>${a.name}</strong> ${a.text}</div>
+        <div class="activity-text"><strong>${escapeHtml(a.name)}</strong> ${escapeHtml(a.text)}</div>
         <div class="activity-time">${timeAgo(a.when || a.time)}</div>
       </div>
     </div>
@@ -4029,7 +4029,8 @@ function sendChat() {
     setTimeout(() => {
       aiRespondToUser(text);
       // Clear busy flag after reasonable time for responses to finish
-      setTimeout(() => { aisBusy = false; }, 15000);
+      // Use a named timer so it can be cancelled if code gen finishes first
+      window._busyTimeout = setTimeout(() => { aisBusy = false; }, 15000);
     }, 300 + Math.random() * 600);
   } else {
     const ai = ais.find(a => a.id === sendAs);
@@ -4453,7 +4454,7 @@ function renderChatMessage(msg) {
   const div = document.createElement('div');
   if (msg.isSystem) {
     div.className = 'msg system-msg';
-    div.innerHTML = msg.text;
+    div.innerHTML = formatChatText(msg.text);
   } else {
     const isUser = msg.sender === 'user';
     div.className = `msg ${isUser ? 'user-msg' : 'ai-msg'}`;
@@ -4521,7 +4522,7 @@ function runCodeBlock(id) {
         <button onclick="document.getElementById('game-runner-modal').style.display='none';document.getElementById('game-runner-frame').srcdoc=''" style="background:rgba(255,75,75,0.2);border:1px solid rgba(255,75,75,0.4);color:#ff4b4b;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:0.9rem">✕ Close</button>
         <button onclick="openGameFullscreen()" style="background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);color:#6366f1;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:0.9rem">🔲 Fullscreen</button>
       </div>
-      <iframe id="game-runner-frame" sandbox="allow-scripts allow-same-origin" style="width:90%;max-width:800px;height:70vh;border:2px solid #333;border-radius:12px;background:#000"></iframe>
+      <iframe id="game-runner-frame" sandbox="allow-scripts" style="width:90%;max-width:800px;height:70vh;border:2px solid #333;border-radius:12px;background:#000"></iframe>
     `;
     document.body.appendChild(modal);
   }
@@ -4556,6 +4557,8 @@ function runCodeBlock(id) {
 
 // Listen for runtime errors from the game iframe
 window.addEventListener('message', function(event) {
+  // Validate origin — only accept messages from our own iframe (same origin or null for sandbox)
+  if (event.origin !== location.origin && event.origin !== 'null') return;
   if (!event.data || event.data.type !== 'game-error') return;
   const errors = event.data.errors || [];
   if (errors.length === 0) return;
@@ -4666,13 +4669,13 @@ function _updateLastCodeMessage(fixedCode) {
 function openGameFullscreen() {
   const frame = document.getElementById('game-runner-frame');
   if (!frame) return;
-  const code = frame.srcdoc;
-  const win = window.open('', '_blank');
-  if (win) {
-    win.document.open();
-    win.document.write(code);
-    win.document.close();
-  }
+  const code = frame.__originalCode || frame.srcdoc;
+  // Use Blob URL with noopener for safe fullscreen — no access to parent window
+  const blob = new Blob([code], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank', 'noopener,noreferrer');
+  // Clean up blob URL after a delay to allow loading
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 function copyCodeBlock(id) {
@@ -4954,8 +4957,8 @@ function copilotGenerateWithTemplate(ai, cs, desc, lc) {
 
   // Auto-complete task
   setTimeout(() => {
-    const t = tasks.find(t => t.assignee === ai.id && t.status === 'in-progress');
-    if (t) { t.status = 'review'; addActivity(ai, `completed project: "${desc}"`); renderTasks(); updateDashboard(); saveAll(); }
+    const tk = tasks.find(tk => tk.assignee === ai.id && tk.status === 'in-progress');
+    if (tk) { tk.status = 'review'; addActivity(ai, `completed project: "${desc}"`); renderTasks(); updateDashboard(); saveAll(); }
     cs.mode = 'idle'; cs.working = false;
   }, 3000);
 
@@ -4989,8 +4992,8 @@ function copilotGetTemplateOutput(ai, cs, desc, lc) {
   }
 
   setTimeout(() => {
-    const t = tasks.find(t => t.assignee === ai.id && t.status === 'in-progress');
-    if (t) { t.status = 'review'; addActivity(ai, `completed project: "${desc}"`); renderTasks(); updateDashboard(); saveAll(); }
+    const tk = tasks.find(tk => tk.assignee === ai.id && tk.status === 'in-progress');
+    if (tk) { tk.status = 'review'; addActivity(ai, `completed project: "${desc}"`); renderTasks(); updateDashboard(); saveAll(); }
     cs.mode = 'idle'; cs.working = false;
   }, 3000);
 
@@ -5039,7 +5042,7 @@ function copilotTick(ai, context) {
       // Try real AI code generation first (async — will post result as follow-up message)
       if (realAIEnabled) {
         generateAICode(ai, desc).then(aiCode => {
-          aisBusy = false; // Clear busy flag when code gen completes
+          aisBusy = false; if (window._busyTimeout) { clearTimeout(window._busyTimeout); window._busyTimeout = null; }
           if (aiCode) {
             cs.linesWritten += aiCode.split('\n').length;
             cs.sessionsCompleted++;
@@ -5049,8 +5052,8 @@ function copilotTick(ai, context) {
             setTimeout(() => autoRunGameCode(aiCode), 1000);
             // Complete task
             setTimeout(() => {
-              const t = tasks.find(t => t.assignee === ai.id && t.status === 'in-progress');
-              if (t) { t.status = 'review'; addActivity(ai, `completed project: "${desc}"`); renderTasks(); updateDashboard(); saveAll(); }
+              const tk = tasks.find(tk => tk.assignee === ai.id && tk.status === 'in-progress');
+              if (tk) { tk.status = 'review'; addActivity(ai, `completed project: "${desc}"`); renderTasks(); updateDashboard(); saveAll(); }
               cs.mode = 'idle'; cs.working = false;
             }, 2000);
             return;
@@ -5058,7 +5061,7 @@ function copilotTick(ai, context) {
           // AI code gen failed — fall back to template and post it
           copilotGenerateWithTemplate(ai, cs, desc, lc);
         }).catch(() => {
-          aisBusy = false; // Clear busy flag on failure too
+          aisBusy = false; if (window._busyTimeout) { clearTimeout(window._busyTimeout); window._busyTimeout = null; }
           copilotGenerateWithTemplate(ai, cs, desc, lc);
         });
         return `🤖 **COPILOT** — Project Generator\n\n📂 Building: **${desc}**\n🧠 Generating original AI code... Please wait...`;
@@ -6380,6 +6383,7 @@ function generateAIResponse(ai, context) {
       // Try real AI code generation first (async — posts follow-up)
       if (realAIEnabled) {
         generateAICode(ai, t.title).then(aiCode => {
+          aisBusy = false; if (window._busyTimeout) { clearTimeout(window._busyTimeout); window._busyTimeout = null; }
           if (aiCode) {
             const codeOutput = formatAICodeOutput(ai, aiCode, t.title);
             addChatMessage(ai.id, ai.name, ai.color, ai.emoji, fullIntro + codeOutput);
@@ -6408,7 +6412,10 @@ function generateAIResponse(ai, context) {
             addChatMessage(ai.id, ai.name, ai.color, ai.emoji, `${doneMsg}Done with "${t.title}"! Submitted for review. \u2705\n\n${template.review}`);
             renderTasks(); updateDashboard(); saveAll();
           }, 4000 + Math.random() * 3000);
-        }).catch(() => {});
+        }).catch(err => {
+          console.warn('[generateAICode] Normal AI code gen failed:', err);
+          aisBusy = false; if (window._busyTimeout) { clearTimeout(window._busyTimeout); window._busyTimeout = null; }
+        });
         renderTasks(); updateDashboard();
         return fullIntro + workIntro + `🧠 Generating original AI code for **"${t.title}"**... Please wait...`;
       }
@@ -6618,8 +6625,8 @@ function aiRespondToUser(text) {
           // Auto-create and complete task
           autoCreateTask(mentionedAI, extractProjectDescription(text));
           setTimeout(() => {
-            const t = tasks.find(t => t.assignee === mentionedAI.id && t.status === 'in-progress');
-            if (t) { t.status = 'review'; renderTasks(); updateDashboard(); saveAll(); }
+            const tk = tasks.find(tk => tk.assignee === mentionedAI.id && tk.status === 'in-progress');
+            if (tk) { tk.status = 'review'; renderTasks(); updateDashboard(); saveAll(); }
           }, 2000);
           // Auto-launch game
           setTimeout(() => autoRunGameCode(aiCode), 1500);
@@ -6680,8 +6687,8 @@ function aiRespondToUser(text) {
           addChatMessage(leader.id, leader.name, leader.color, leader.emoji, codeOutput);
           autoCreateTask(leader, extractProjectDescription(text));
           setTimeout(() => {
-            const t = tasks.find(t => t.assignee === leader.id && t.status === 'in-progress');
-            if (t) { t.status = 'review'; renderTasks(); updateDashboard(); saveAll(); }
+            const tk = tasks.find(tk => tk.assignee === leader.id && tk.status === 'in-progress');
+            if (tk) { tk.status = 'review'; renderTasks(); updateDashboard(); saveAll(); }
           }, 2000);
           setTimeout(() => autoRunGameCode(aiCode), 1500);
           return;
@@ -6730,8 +6737,8 @@ function aiRespondToUser(text) {
         addChatMessage(leader.id, leader.name, leader.color, leader.emoji, codeOutput);
         autoCreateTask(leader, extractProjectDescription(text));
         setTimeout(() => {
-          const t = tasks.find(t => t.assignee === leader.id && t.status === 'in-progress');
-          if (t) { t.status = 'review'; renderTasks(); updateDashboard(); saveAll(); }
+          const tk = tasks.find(tk => tk.assignee === leader.id && tk.status === 'in-progress');
+          if (tk) { tk.status = 'review'; renderTasks(); updateDashboard(); saveAll(); }
         }, 2000);
         setTimeout(() => autoRunGameCode(aiCode), 1500);
         return;
@@ -7413,53 +7420,59 @@ const USER_COOLDOWN_MS = 120000; // 120s: auto-chat pauses after user message so
 
 function startAutoChat() {
   if (autoChatTimer || !autoChatEnabled) return;
-  autoChatTimer = setInterval(() => {
-    if (!chatPageOpen || ais.length < 1) return;
-    // Don't auto-chat while AIs are busy generating code
-    if (aisBusy) return;
-    // Throttle: no auto-chat within 15s of last one (avoid API rate limits & spam)
-    if (Date.now() - lastAutoChat < 15000) return;
-    // Throttle: no auto-chat within 10s of any AI response
-    if (Date.now() - lastAIResponseTime < 10000) return;
-    // PAUSE auto-chat for 120s after user sends a message so AIs focus on the task
-    if (lastUserRequest && (Date.now() - lastUserRequestTime < USER_COOLDOWN_MS)) return;
-    lastAutoChat = Date.now();
+  // Use recursive setTimeout for truly random intervals between auto-chats
+  function scheduleNextAutoChat() {
+    autoChatTimer = setTimeout(() => {
+      if (!chatPageOpen || ais.length < 1 || !autoChatEnabled) { autoChatTimer = null; return; }
+      // Don't auto-chat while AIs are busy generating code
+      if (aisBusy) { scheduleNextAutoChat(); return; }
+      // Throttle: no auto-chat within 15s of last one (avoid API rate limits & spam)
+      if (Date.now() - lastAutoChat < 15000) { scheduleNextAutoChat(); return; }
+      // Throttle: no auto-chat within 10s of any AI response
+      if (Date.now() - lastAIResponseTime < 10000) { scheduleNextAutoChat(); return; }
+      // PAUSE auto-chat for 120s after user sends a message so AIs focus on the task
+      if (lastUserRequest && (Date.now() - lastUserRequestTime < USER_COOLDOWN_MS)) { scheduleNextAutoChat(); return; }
+      lastAutoChat = Date.now();
 
-    // Pick a random AI to start
-    const starter = pick(ais);
-    showTyping(starter);
-    setTimeout(async () => {
-      hideTyping();
-      let msg;
-      if (realAIEnabled) {
-        msg = await generateRealAIAutoChat(starter);
-      }
-      if (!msg) msg = getPersonalityMessage(starter);
-      addChatMessage(starter.id, starter.name, starter.color, starter.emoji, msg);
-
-      // When there's an active user topic, suppress auto-chat replies almost entirely
-      const hasActiveTopic = lastUserRequest && (Date.now() - lastUserRequestTime < 120000);
-      if (ais.length >= 2 && !hasActiveTopic && Math.random() < 0.4) {
-        let replier = pick(ais);
-        let safety = 10;
-        while (replier.id === starter.id && safety-- > 0) replier = pick(ais);
-        if (replier.id !== starter.id) {
-          const replyDelay = 1200 + Math.random() * 1800;
-          setTimeout(async () => {
-            if (!chatPageOpen) return;
-            showTyping(replier);
-            let reply;
-            if (realAIEnabled) {
-              reply = await generateRealAIReply(replier, msg, starter);
-            }
-            if (!reply) reply = getPersonalityReply(replier, msg, starter);
-            hideTyping();
-            addChatMessage(replier.id, replier.name, replier.color, replier.emoji, reply);
-          }, replyDelay);
+      // Pick a random AI to start
+      const starter = pick(ais);
+      showTyping(starter);
+      setTimeout(async () => {
+        hideTyping();
+        let msg;
+        if (realAIEnabled) {
+          msg = await generateRealAIAutoChat(starter);
         }
-      }
-    }, 500 + Math.random() * 800);
-  }, 12000 + Math.random() * 10000);
+        if (!msg) msg = getPersonalityMessage(starter);
+        addChatMessage(starter.id, starter.name, starter.color, starter.emoji, msg);
+
+        // When there's an active user topic, suppress auto-chat replies almost entirely
+        const hasActiveTopic = lastUserRequest && (Date.now() - lastUserRequestTime < 120000);
+        if (ais.length >= 2 && !hasActiveTopic && Math.random() < 0.4) {
+          let replier = pick(ais);
+          let safety = 10;
+          while (replier.id === starter.id && safety-- > 0) replier = pick(ais);
+          if (replier.id !== starter.id) {
+            const replyDelay = 1200 + Math.random() * 1800;
+            setTimeout(async () => {
+              if (!chatPageOpen) return;
+              showTyping(replier);
+              let reply;
+              if (realAIEnabled) {
+                reply = await generateRealAIReply(replier, msg, starter);
+              }
+              if (!reply) reply = getPersonalityReply(replier, msg, starter);
+              hideTyping();
+              addChatMessage(replier.id, replier.name, replier.color, replier.emoji, reply);
+            }, replyDelay);
+          }
+        }
+        // Schedule next auto-chat with a fresh random delay
+        scheduleNextAutoChat();
+      }, 500 + Math.random() * 800);
+    }, 12000 + Math.random() * 10000);
+  }
+  scheduleNextAutoChat();
 }
 
 function triggerAIChat() {
@@ -7609,7 +7622,7 @@ function renderTasks() {
 }
 
 function cycleTask(id) {
-  const t = tasks.find(t => t.id === id);
+  const t = tasks.find(tk => tk.id === id);
   if (!t) return;
   const order = ['backlog','in-progress','review','done'];
   const idx = order.indexOf(t.status);
