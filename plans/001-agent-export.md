@@ -554,6 +554,15 @@ C:\github\Brain\AIHub\
 - [ ] Do NOT copy game files (Python games, voxel engine, etc.)
 - [ ] Update Brain's `.github\copilot-instructions.md` to reference AIHub
 - [ ] Update global instructions to know about AIHub location
+- [ ] Add `.vscode/extensions.json` recommending Live Preview:
+  ```json
+  {
+    "recommendations": [
+      "ms-vscode.live-server"
+    ]
+  }
+  ```
+- [ ] Verify Live Preview works: open `ai_platform.html` → right-click → "Show Preview"
 
 ### Working with AIHub (instructions to add to Brain repo)
 
@@ -563,8 +572,16 @@ Add to Brain's workspace instructions:
 ## AIHub — Visual Agent & Directive Manager
 
 **Location:** `C:\github\Brain\AIHub\`
-**Launch:** `.\AIHub\scripts\launch.ps1` or `cd AIHub && npx http-server . -p 8765`
+**Launch (option 1):** Right-click `ai_platform.html` → "Show Preview" (Live Preview extension)
+**Launch (option 2):** `.\AIHub\scripts\launch.ps1` (local server + browser)
 **URL:** `http://localhost:8765/ai_platform.html`
+
+### Required VS Code Extension
+- **Live Preview** by Microsoft (`ms-vscode.live-server`)
+  - Serves HTML files with hot reload, no terminal needed
+  - Right-click any `.html` file → "Show Preview" or "Open with Live Server"
+  - Works immediately — no `npx http-server`, no `scripts/launch.ps1` for read-only use
+  - **Note:** Live Preview is read-only (no write API). Use `launch.ps1` when deploying agents to disk.
 
 ### Quick Links
 - Builder: `?page=builder` — create/edit agents with frontmatter preview
