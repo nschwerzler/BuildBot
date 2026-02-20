@@ -50,9 +50,65 @@ BuildBot/
 │           ├── system.md          # GENERATED from all above files
 │           └── templates/         # Task-specific prompt templates
 ├── fleet.json                     # Horde orchestration config
+├── swarms/                        # Agent team definitions
+│   ├── security-team/
+│   │   └── swarm.json             # Team config: members, roles, routing
+│   └── compliance-squad/
+│       └── swarm.json
 └── plans/
     └── 001-agent-export.md        # This plan
 ```
+
+### UI Page Mapping
+
+| Existing Page | Current Purpose | Agent Fleet Purpose |
+|---------------|-----------------|---------------------|
+| **Builder** (`?page=builder`) | Create individual AI with persona, skills, personality sliders, code | **Agent Builder** — scaffolds full agent folder, writes agent.json, seed.md, eval.md |
+| **Find** (`?page=find`) | Search/discover AIs by name, role, skill | **Agent Browser** — browse agents from disk, view knowledge files, health status |
+| **Craft AI** (`?page=craftai`) | Randomize and batch-create AIs | **Template Stamper** — stamp out agents from templates with randomized personas |
+| **Free Mode** (`?page=freemode`) | Watch AIs interact autonomously | **Swarm Simulator** — watch agent teams collaborate, route messages |
+| **Fusion Lab** (`?page=fusion`) | Merge AIs into hybrids | **Swarm Builder** — compose agent teams, assign roles, define routing |
+| **Chat** (`?page=chat`) | Chat with AIs | **Agent Console** — send commands to agents, view responses |
+| **NEW: Fleet** | — | **Fleet Dashboard** — all agents, health, last runs, knowledge stats |
+
+### Swarm Builder (Fusion Lab → repurposed)
+
+The Fusion Lab page becomes the Swarm Builder. Instead of merging AIs into one, you compose teams:
+
+```json
+// swarms/security-team/swarm.json
+{
+  "id": "security-team",
+  "name": "Security Strike Force",
+  "emoji": "🛡️",
+  "description": "Coordinated security scanning and response",
+  "members": [
+    { "agent": "binskim-signatures", "role": "scanner", "order": 1 },
+    { "agent": "cve-tracker", "role": "tracker", "order": 2 },
+    { "agent": "compliance-checker", "role": "validator", "order": 3 }
+  ],
+  "routing": {
+    "pattern": "pipeline",
+    "rules": [
+      { "from": "binskim-signatures", "to": "cve-tracker", "on": "new-signature" },
+      { "from": "cve-tracker", "to": "compliance-checker", "on": "cve-matched" }
+    ]
+  },
+  "concurrency": { "max_parallel": 3 },
+  "schedule": "daily",
+  "triggers": ["on-push", "manual"]
+}
+```
+
+#### Routing Patterns
+
+| Pattern | Flow | Use Case |
+|---------|------|----------|
+| `pipeline` | A → B → C (sequential) | Scan → Validate → Report |
+| `fan-out` | A → [B, C, D] (parallel) | Dispatch to all specialists |
+| `fan-in` | [B, C, D] → A (collect) | Gather results from scouts |
+| `round-robin` | A → B, A → C, A → B... | Load balance across workers |
+| `pub-sub` | A publishes, subscribers react | Knowledge sharing, alerts |
 
 ### Key Rule
 > **If a human might read it, debug it, or review it → markdown/json file.**
@@ -123,6 +179,25 @@ BuildBot/
 - [ ] Edit learned.md, corrections.md, patterns.md directly in browser
 - [ ] Show inbox/outbox messages between agents
 
+## Phase 5b: UI — Swarm Builder (repurpose Fusion Lab)
+- [ ] Redesign Fusion Lab page → Swarm Builder
+- [ ] Left panel: drag agents from agent list into swarm
+- [ ] Right panel: visual team composition with role assignment
+- [ ] Role picker per member: scanner, tracker, validator, reporter, leader
+- [ ] Routing pattern selector: pipeline, fan-out, fan-in, round-robin, pub-sub
+- [ ] Visual flow diagram showing message routing between agents
+- [ ] Concurrency config (max parallel, per-group limits)
+- [ ] Schedule picker (manual, daily, on-push, cron)
+- [ ] "Deploy Swarm" button → writes swarms/{name}/swarm.json via API
+- [ ] Swarm templates: Security Team, Compliance Squad, Build Pipeline, Data Ingest
+
+## Phase 5c: UI — Find Page Enhancement
+- [ ] Find page reads agents from disk (GET /api/agents) not just localStorage
+- [ ] Filter by: template type, domain, health status, last run date
+- [ ] Show knowledge stats per agent (facts learned, corrections, patterns)
+- [ ] "Add to Swarm" button on each agent card
+- [ ] Show which swarms each agent belongs to
+
 ## Phase 6: Load Agents from Disk
 - [ ] On init, call `GET /api/agents` to discover existing agent folders
 - [ ] Parse agent.json → merge into AI Hub's agent list
@@ -142,6 +217,8 @@ BuildBot/
 - [ ] Fleet dashboard shows pending messages
 - [ ] Accept/reject messages from inbox → merge into knowledge
 - [ ] Fleet.json orchestration: parallel groups, concurrency limits
+- [ ] Swarm routing engine: execute swarm.json pipeline/fan-out/fan-in patterns
+- [ ] Swarm run history: track which agents ran, outputs, messages routed
 
 ---
 
