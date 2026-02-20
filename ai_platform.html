@@ -5115,7 +5115,14 @@ function copilotTick(ai, context) {
 function isWorkCommand(text) {
   const lc = text.toLowerCase();
   const workWords = ['work','start','do it','go','begin','execute','run','hunt','just do','stop procrastinat','get to work','stop chat','stop talk','hurry','now','please work','build it','code it','make it','finish'];
-  return workWords.some(w => lc.includes(w));
+  if (workWords.some(w => lc.includes(w))) return true;
+  // Also match "make/build/create a [thing]" patterns so game/app requests trigger work mode
+  if (lc.match(/\b(make|build|create|develop|code|generate|design|implement)\s+(a |an |the |me |us )?\w/)) {
+    if (lc.match(/\b(game|app|website|page|tool|project|program|dashboard|site|platform|clicker|shooter|rpg|platformer|simulator|animation|effect|demo|player|editor|builder|manager|tracker|system|engine|bot|clone)\b/)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function isStatusCommand(text) {
@@ -5335,6 +5342,12 @@ function parseUserIntent(text) {
   // Status
   if (lc.match(/\bstatus\b|\bprogress\b|\bwhat.*working\s+on\b|\bupdate\b/)) {
     return { type: 'status', raw: text };
+  }
+
+  // Project / build intent — user wants to create something (check BEFORE chat to prevent "game" false match)
+  if (lc.match(/\b(make|build|create|develop|code|generate|design|implement)\b/) &&
+      lc.match(/\b(game|app|website|page|tool|project|program|dashboard|site|platform|clicker|shooter|rpg|platformer|simulator|visuali[sz]|animation|effect|demo|player|editor|builder|manager|tracker|system|engine|bot|clone|replica)\b/)) {
+    return { type: 'project', raw: text };
   }
 
   // Casual / conversational (chat, play, fun, jokes, opinions)
@@ -5888,6 +5901,7 @@ function generateSmartResponse(ai, context) {
     case 'question':return handleQuestionIntent(ai, context);
     case 'greeting': return pick(v.greet) + ` I'm ${ai.name}, a ${ai.role} AI. ${pick(['What can I help you with?','What are we working on?','Ready to help!','Give me a task!'])}`;
     case 'thanks':  return pick(['You\u2019re welcome!','Happy to help! \ud83d\ude4c','Anytime!','No problem at all.','Glad I could help!']);
+    case 'project': return null; // Fall through to work command / project builder in generateAIResponse
     case 'chat':    return handleChatIntent(ai, context);
     case 'status': {
       const myTasks = tasks.filter(t => t.assignee === ai.id);
@@ -9053,7 +9067,26 @@ async function generateAICode(ai, description) {
 
   let specificRules = '';
   if (isGame) {
-    specificRules = `\nGAME-SPECIFIC REQUIREMENTS:\n- Use HTML5 Canvas with requestAnimationFrame game loop\n- Include player controls: Arrow keys AND WASD for movement\n- Add a visible HUD with Score, Lives/Health, and Level\n- Implement collision detection that actually works\n- Add game over screen with final score and "Press R to Restart"\n- Include at least 3 levels of difficulty progression\n- Add particle effects or visual feedback on hits/scores\n- Include sound effects using AudioContext (beeps/boops)\n- Make the game actually FUN — good physics, satisfying feedback, increasing challenge\n- Canvas should be at least 600x400 pixels\n- Add a start screen with instructions before the game begins`;
+    specificRules = `\nGAME-SPECIFIC REQUIREMENTS (CRITICAL — follow ALL of these):
+- Use HTML5 Canvas with requestAnimationFrame game loop at 60fps
+- Canvas size: at least 600x500 pixels, centered on page
+- Include player controls: Arrow keys AND WASD for movement, Space for action/jump
+- Add a prominent HUD overlay showing: Score, Lives/Health bar, Level/Wave number
+- Implement REAL collision detection using bounding box or distance checks
+- Add a START SCREEN with game title, instructions, and "Click or Press Enter to Start"
+- Add a GAME OVER screen with final score, stats summary, and "Press R to Restart"
+- Include at least 3-5 types of enemies/obstacles with different behaviors
+- Implement difficulty progression: enemies get faster/more frequent every level
+- Add particle effects on: explosions, pickups, player damage, level completion
+- Include sound effects using AudioContext (at least: shoot, hit, pickup, death, level-up)
+- Add power-ups or collectibles that change gameplay (shield, speed boost, double score, etc.)
+- Include a combo/streak system or score multiplier
+- Add screen shake or flash effects on big events
+- Make the player character visually interesting (not just a plain rectangle)
+- Add background elements: scrolling stars, parallax layers, or animated scenery
+- Minimum 250 lines of well-structured code
+- The game must be genuinely FUN with satisfying physics and escalating challenge
+- NO trivial clicker games — even if "clicker" is mentioned, make it a full arcade game with real gameplay mechanics, upgrades, and visual polish`;
   } else if (isApp) {
     specificRules = `\nAPP-SPECIFIC REQUIREMENTS:\n- Include a polished, professional UI with proper layout\n- Add localStorage persistence so data survives page reload\n- Include input validation and helpful error messages\n- Add keyboard shortcuts where appropriate\n- Include undo/redo or confirmation dialogs for destructive actions\n- Make buttons and inputs have hover/focus states\n- Include loading states and smooth transitions\n- Add a header/toolbar with the app name and key actions\n- Make it responsive (works on mobile too)`;
   } else if (isAnimation) {
