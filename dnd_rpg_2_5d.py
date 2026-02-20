@@ -511,6 +511,277 @@ def make_character_sprite(char_class, palette, w=24, h=32, is_enemy=False):
             py2 = random.randint(body_top - 5, body_bot)
             pygame.draw.circle(surf, (120, 80, 200, 150), (px2, py2), 1)
 
+    elif char_class == 'zombie':
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 60), (w // 2 - 8, h - 5, 16, 5))
+        # Tattered body
+        pygame.draw.rect(surf, (70, 90, 50), (w // 2 - 5, body_top, 10, body_bot - body_top))
+        # Torn shirt
+        pygame.draw.rect(surf, (80, 70, 50), (w // 2 - 5, body_top + 2, 10, 6))
+        pygame.draw.rect(surf, (60, 50, 35), (w // 2 + 2, body_top + 4, 4, 8))  # hole
+        # Green-gray head
+        pygame.draw.circle(surf, (90, 110, 70), (head_cx, head_cy), head_r)
+        # Sunken eyes
+        pygame.draw.rect(surf, (40, 20, 20), (head_cx - 3, eye_y - 1, 2, 3))
+        pygame.draw.rect(surf, (40, 20, 20), (head_cx + 1, eye_y - 1, 2, 3))
+        # Open mouth
+        pygame.draw.rect(surf, (30, 10, 10), (head_cx - 2, head_cy + 3, 4, 2))
+        # Arms reaching forward
+        pygame.draw.rect(surf, (70, 90, 50), (w // 2 - 8, body_top + 3, 3, 10))
+        pygame.draw.rect(surf, (70, 90, 50), (w // 2 + 5, body_top + 3, 3, 10))
+        # Legs dragging
+        pygame.draw.rect(surf, (60, 80, 45), (w // 2 - 4, body_bot, 3, 6))
+        pygame.draw.rect(surf, (60, 80, 45), (w // 2 + 1, body_bot, 3, 5))
+
+    elif char_class == 'spider':
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 50), (w // 2 - 8, h - 3, 16, 4))
+        # Body (abdomen)
+        pygame.draw.ellipse(surf, (50, 30, 20), (w // 2 - 6, h // 2 + 2, 12, 10))
+        # Cephalothorax
+        pygame.draw.ellipse(surf, (60, 40, 25), (w // 2 - 4, h // 2 - 3, 8, 7))
+        # Red markings
+        pygame.draw.ellipse(surf, (180, 30, 20), (w // 2 - 2, h // 2 + 5, 4, 4))
+        # Eyes (8 of them)
+        for dx in [-3, -1, 1, 3]:
+            pygame.draw.circle(surf, (255, 0, 0), (w // 2 + dx, h // 2 - 3), 1)
+        for dx in [-2, 2]:
+            pygame.draw.circle(surf, (255, 50, 0), (w // 2 + dx, h // 2 - 5), 1)
+        # Legs (8)
+        for side in [-1, 1]:
+            for i in range(4):
+                lx = w // 2 + side * (3 + i)
+                ly = h // 2 + i - 1
+                pygame.draw.line(surf, (40, 25, 15), (w // 2 + side * 3, h // 2 + 1), (lx + side * 4, ly + 4), 1)
+        # Fangs
+        pygame.draw.line(surf, (200, 200, 180), (w // 2 - 1, h // 2 - 1), (w // 2 - 2, h // 2 + 2), 1)
+        pygame.draw.line(surf, (200, 200, 180), (w // 2 + 1, h // 2 - 1), (w // 2 + 2, h // 2 + 2), 1)
+
+    elif char_class == 'mimic':
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 60), (w // 2 - 8, h - 4, 16, 4))
+        # Chest body
+        pygame.draw.rect(surf, (130, 80, 25), (w // 2 - 8, h // 2 - 2, 16, 14))
+        pygame.draw.rect(surf, (100, 60, 15), (w // 2 - 8, h // 2 - 2, 16, 14), 1)
+        # Open lid with teeth
+        pygame.draw.rect(surf, (140, 90, 30), (w // 2 - 9, h // 2 - 6, 18, 5))
+        # Teeth along opening
+        for i in range(6):
+            tx2 = w // 2 - 7 + i * 3
+            pygame.draw.polygon(surf, (240, 230, 210), [(tx2, h // 2 - 2), (tx2 + 1, h // 2 + 2), (tx2 + 2, h // 2 - 2)])
+        # Tongue
+        pygame.draw.arc(surf, (200, 50, 60), (w // 2 - 3, h // 2 - 1, 6, 8), 3.14, 6.28, 2)
+        # Eye inside
+        pygame.draw.circle(surf, (255, 220, 0), (w // 2, h // 2 - 4), 3)
+        pygame.draw.circle(surf, C_BLACK, (w // 2, h // 2 - 4), 1)
+        # Metal bands
+        pygame.draw.rect(surf, (180, 170, 50), (w // 2 - 8, h // 2 + 2, 16, 2))
+        pygame.draw.rect(surf, (180, 170, 50), (w // 2 - 8, h // 2 + 8, 16, 2))
+
+    elif char_class == 'bat_swarm':
+        surf.fill((0, 0, 0, 0))
+        # Multiple small bats
+        for bx, by in [(0, 0), (-5, 3), (5, -2), (-3, -4), (4, 5)]:
+            cx2 = w // 2 + bx
+            cy2 = h // 2 + by
+            # Body
+            pygame.draw.ellipse(surf, (40, 30, 50), (cx2 - 2, cy2 - 1, 4, 3))
+            # Wings
+            pygame.draw.polygon(surf, (50, 35, 60), [(cx2, cy2), (cx2 - 5, cy2 - 3), (cx2 - 3, cy2 + 1)])
+            pygame.draw.polygon(surf, (50, 35, 60), [(cx2, cy2), (cx2 + 5, cy2 - 3), (cx2 + 3, cy2 + 1)])
+            # Eyes
+            pygame.draw.circle(surf, (255, 50, 50), (cx2 - 1, cy2 - 1), 1)
+            pygame.draw.circle(surf, (255, 50, 50), (cx2 + 1, cy2 - 1), 1)
+
+    elif char_class == 'wraith':
+        surf.fill((0, 0, 0, 0))
+        # Ghostly body (translucent)
+        ghost_col = (80, 60, 120, 160)
+        # Flowing robes
+        pts = [(w // 2, body_top - 5), (w // 2 - 8, h - 4), (w // 2 - 3, h - 7),
+               (w // 2, h - 3), (w // 2 + 3, h - 7), (w // 2 + 8, h - 4)]
+        gs = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.polygon(gs, ghost_col, pts)
+        surf.blit(gs, (0, 0))
+        # Hooded head
+        pygame.draw.circle(surf, (60, 45, 100, 180), (head_cx, head_cy - 2), 6)
+        pygame.draw.arc(surf, (40, 30, 70), (head_cx - 6, head_cy - 8, 12, 10), 0, 3.14, 3)
+        # Glowing red eyes
+        pygame.draw.circle(surf, (255, 50, 50), (head_cx - 2, head_cy - 2), 2)
+        pygame.draw.circle(surf, (255, 50, 50), (head_cx + 2, head_cy - 2), 2)
+        pygame.draw.circle(surf, (255, 120, 120), (head_cx - 2, head_cy - 2), 1)
+        pygame.draw.circle(surf, (255, 120, 120), (head_cx + 2, head_cy - 2), 1)
+        # Wispy trail particles
+        for i in range(5):
+            px2 = w // 2 + random.randint(-8, 8)
+            py2 = h - 4 + random.randint(-2, 4)
+            pygame.draw.circle(surf, (80, 60, 120, 80), (px2, min(h - 1, py2)), 2)
+
+    elif char_class == 'troll':
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 70), (w // 2 - 9, h - 5, 18, 5))
+        # Big hunched body
+        pygame.draw.rect(surf, (50, 80, 40), (w // 2 - 7, body_top - 2, 14, body_bot - body_top + 6))
+        pygame.draw.ellipse(surf, (55, 85, 45), (w // 2 - 8, body_top - 4, 16, 12))
+        # Small head
+        pygame.draw.circle(surf, (60, 95, 50), (head_cx, head_cy + 1), 5)
+        # Beady eyes
+        pygame.draw.circle(surf, (255, 200, 0), (head_cx - 2, head_cy), 2)
+        pygame.draw.circle(surf, (255, 200, 0), (head_cx + 2, head_cy), 2)
+        pygame.draw.circle(surf, C_BLACK, (head_cx - 2, head_cy), 1)
+        pygame.draw.circle(surf, C_BLACK, (head_cx + 2, head_cy), 1)
+        # Big nose
+        pygame.draw.circle(surf, (70, 100, 55), (head_cx, head_cy + 2), 2)
+        # Long arms with claws
+        pygame.draw.rect(surf, (50, 80, 40), (w // 2 - 10, body_top + 1, 4, 16))
+        pygame.draw.rect(surf, (50, 80, 40), (w // 2 + 6, body_top + 1, 4, 16))
+        # Claws
+        for side in [-1, 1]:
+            cx2 = w // 2 + side * 8 + (1 if side == 1 else -3)
+            for ci in range(3):
+                pygame.draw.line(surf, (200, 190, 160), (cx2 + ci, body_top + 16), (cx2 + ci + side, body_top + 19), 1)
+        # Legs
+        pygame.draw.rect(surf, (45, 75, 38), (w // 2 - 5, body_bot + 2, 4, 5))
+        pygame.draw.rect(surf, (45, 75, 38), (w // 2 + 1, body_bot + 2, 4, 5))
+
+    elif char_class == 'beholder':
+        surf.fill((0, 0, 0, 0))
+        # Floating orb body
+        pygame.draw.circle(surf, primary, (w // 2, h // 2 + 2), 10)
+        pygame.draw.circle(surf, (min(255, primary[0] + 30), min(255, primary[1] + 30), min(255, primary[2] + 30)), (w // 2 - 3, h // 2 - 2), 4)
+        # Central eye
+        pygame.draw.circle(surf, (240, 240, 200), (w // 2, h // 2 + 2), 5)
+        pygame.draw.circle(surf, (200, 50, 50), (w // 2, h // 2 + 2), 3)
+        pygame.draw.circle(surf, C_BLACK, (w // 2, h // 2 + 2), 1)
+        # Eye stalks
+        stalk_positions = [(-6, -8), (-3, -10), (0, -11), (3, -10), (6, -8)]
+        for sx2, sy2 in stalk_positions:
+            ex2 = w // 2 + sx2
+            ey2 = h // 2 + sy2
+            pygame.draw.line(surf, (min(255, primary[0] + 10), min(255, primary[1] + 10), primary[2]), (w // 2 + sx2 // 2, h // 2 - 6), (ex2, ey2), 1)
+            pygame.draw.circle(surf, (255, 255, 100), (ex2, ey2), 2)
+            pygame.draw.circle(surf, C_BLACK, (ex2, ey2), 1)
+        # Mouth
+        pygame.draw.arc(surf, (150, 40, 40), (w // 2 - 4, h // 2 + 5, 8, 5), 3.14, 6.28, 1)
+        # Teeth
+        for ti in range(4):
+            pygame.draw.line(surf, (220, 210, 190), (w // 2 - 3 + ti * 2, h // 2 + 7), (w // 2 - 3 + ti * 2, h // 2 + 9), 1)
+
+    elif char_class == 'gelatinous_cube':
+        surf.fill((0, 0, 0, 0))
+        # Translucent cube
+        gc = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(gc, (100, 200, 100, 80), (w // 2 - 10, h // 4, 20, 20))
+        pygame.draw.rect(gc, (120, 220, 120, 120), (w // 2 - 10, h // 4, 20, 20), 1)
+        # Things floating inside
+        pygame.draw.rect(gc, (180, 170, 150, 100), (w // 2 - 3, h // 2 - 2, 4, 3))  # bone
+        pygame.draw.circle(gc, (200, 200, 60, 100), (w // 2 + 4, h // 2 + 2), 2)  # coin
+        pygame.draw.rect(gc, (120, 70, 30, 90), (w // 2 - 6, h // 2 + 3, 3, 5))  # sword handle
+        # Highlight
+        pygame.draw.line(gc, (180, 255, 180, 60), (w // 2 - 8, h // 4 + 2), (w // 2 - 6, h // 4 + 8), 2)
+        surf.blit(gc, (0, 0))
+
+    elif char_class == 'kobold':
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 50), (w // 2 - 6, h - 4, 12, 4))
+        oy = h - 22
+        # Small reptilian body
+        pygame.draw.rect(surf, (140, 90, 50), (w // 2 - 4, oy + 6, 8, 10))
+        # Scaly head (pointy snout)
+        pygame.draw.circle(surf, (150, 100, 55), (w // 2, oy + 4), 5)
+        pygame.draw.ellipse(surf, (150, 100, 55), (w // 2 + 2, oy + 2, 5, 3))  # snout
+        # Orange eyes
+        pygame.draw.circle(surf, (255, 180, 0), (w // 2 - 2, oy + 3), 2)
+        pygame.draw.circle(surf, C_BLACK, (w // 2 - 2, oy + 3), 1)
+        # Horns
+        pygame.draw.line(surf, (180, 150, 100), (w // 2 - 4, oy + 1), (w // 2 - 6, oy - 3), 1)
+        pygame.draw.line(surf, (180, 150, 100), (w // 2 + 1, oy + 1), (w // 2 + 3, oy - 3), 1)
+        # Tail
+        pygame.draw.arc(surf, (140, 90, 50), (w // 2 + 2, oy + 10, 8, 8), 1.5, 4, 1)
+        # Legs
+        pygame.draw.rect(surf, (130, 85, 45), (w // 2 - 3, oy + 15, 2, 4))
+        pygame.draw.rect(surf, (130, 85, 45), (w // 2 + 1, oy + 15, 2, 4))
+        # Tiny spear
+        pygame.draw.rect(surf, (100, 80, 40), (w // 2 + 5, oy, 1, 14))
+        pygame.draw.polygon(surf, (180, 180, 190), [(w // 2 + 4, oy), (w // 2 + 6, oy), (w // 2 + 5, oy - 3)])
+
+    elif char_class == 'mind_flayer':
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 70), (w // 2 - 8, h - 5, 16, 5))
+        # Robed body
+        pygame.draw.polygon(surf, (60, 20, 80), [(w // 2, body_top - 1), (w // 2 - 7, h - 6), (w // 2 + 7, h - 6)])
+        # Bulbous head
+        pygame.draw.ellipse(surf, (140, 100, 160), (head_cx - 6, head_cy - 8, 12, 10))
+        # White pupil-less eyes
+        pygame.draw.circle(surf, (255, 255, 255), (head_cx - 2, head_cy - 4), 2)
+        pygame.draw.circle(surf, (255, 255, 255), (head_cx + 2, head_cy - 4), 2)
+        # Tentacles (face)
+        for ti in range(4):
+            tx2 = head_cx - 3 + ti * 2
+            for seg in range(4):
+                ty2 = head_cy + seg * 2
+                wobble = int(math.sin(ti + seg * 0.8) * 1)
+                pygame.draw.rect(surf, (130, 90, 150), (tx2 + wobble, ty2, 2, 2))
+        # Psychic aura
+        aura = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(aura, (180, 100, 255, 30), (w // 2, h // 2 - 2), 14)
+        surf.blit(aura, (0, 0))
+
+    elif char_class == 'minotaur':
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 70), (w // 2 - 9, h - 5, 18, 5))
+        # Muscular body
+        pygame.draw.rect(surf, (120, 70, 40), (w // 2 - 7, body_top - 2, 14, body_bot - body_top + 4))
+        # Bull head
+        pygame.draw.circle(surf, (130, 80, 45), (head_cx, head_cy), 6)
+        pygame.draw.ellipse(surf, (130, 80, 45), (head_cx - 3, head_cy + 2, 6, 4))  # snout
+        # Horns
+        pygame.draw.polygon(surf, (220, 210, 180), [(head_cx - 5, head_cy - 2), (head_cx - 9, head_cy - 9), (head_cx - 3, head_cy - 4)])
+        pygame.draw.polygon(surf, (220, 210, 180), [(head_cx + 5, head_cy - 2), (head_cx + 9, head_cy - 9), (head_cx + 3, head_cy - 4)])
+        # Red eyes
+        pygame.draw.circle(surf, (255, 40, 40), (head_cx - 3, head_cy - 1), 2)
+        pygame.draw.circle(surf, (255, 40, 40), (head_cx + 3, head_cy - 1), 2)
+        # Nose ring
+        pygame.draw.circle(surf, C_GOLD, (head_cx, head_cy + 4), 2, 1)
+        # Big arms
+        pygame.draw.rect(surf, (120, 70, 40), (w // 2 - 10, body_top, 4, 14))
+        pygame.draw.rect(surf, (120, 70, 40), (w // 2 + 6, body_top, 4, 14))
+        # Great axe
+        pygame.draw.rect(surf, (80, 60, 30), (w // 2 + 9, body_top - 8, 2, 20))
+        pygame.draw.polygon(surf, (170, 170, 180), [(w // 2 + 8, body_top - 8), (w // 2 + 15, body_top - 5), (w // 2 + 8, body_top - 2)])
+        pygame.draw.polygon(surf, (170, 170, 180), [(w // 2 + 8, body_top - 2), (w // 2 + 15, body_top + 1), (w // 2 + 8, body_top + 4)])
+        # Hooves
+        pygame.draw.rect(surf, (60, 40, 20), (w // 2 - 5, body_bot + 3, 4, 4))
+        pygame.draw.rect(surf, (60, 40, 20), (w // 2 + 1, body_bot + 3, 4, 4))
+
+    elif char_class == 'dark_knight':
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 70), (w // 2 - 8, h - 5, 16, 5))
+        # Dark armor body
+        pygame.draw.rect(surf, (30, 25, 35), (w // 2 - 5, body_top, 10, body_bot - body_top))
+        pygame.draw.rect(surf, (50, 40, 55), (w // 2 - 5, body_top, 10, body_bot - body_top), 1)
+        # Shoulders
+        pygame.draw.rect(surf, (40, 30, 45), (w // 2 - 8, body_top, 4, 4))
+        pygame.draw.rect(surf, (40, 30, 45), (w // 2 + 4, body_top, 4, 4))
+        # Spike on shoulders
+        pygame.draw.polygon(surf, (60, 45, 65), [(w // 2 - 8, body_top), (w // 2 - 6, body_top - 4), (w // 2 - 4, body_top)])
+        pygame.draw.polygon(surf, (60, 45, 65), [(w // 2 + 4, body_top), (w // 2 + 6, body_top - 4), (w // 2 + 8, body_top)])
+        # Full helm
+        pygame.draw.circle(surf, (35, 28, 40), (head_cx, head_cy), head_r + 1)
+        pygame.draw.rect(surf, (35, 28, 40), (head_cx - 5, head_cy - 6, 10, 4))
+        # Glowing visor slit
+        pygame.draw.rect(surf, (255, 40, 40), (head_cx - 3, head_cy - 1, 6, 2))
+        # Dark sword
+        pygame.draw.rect(surf, (50, 40, 60), (w // 2 + 5, body_top - 4, 3, 18))
+        pygame.draw.rect(surf, (80, 60, 90), (w // 2 + 3, body_top + 12, 7, 3))
+        # Legs
+        pygame.draw.rect(surf, (28, 22, 32), (w // 2 - 4, body_bot, 3, 6))
+        pygame.draw.rect(surf, (28, 22, 32), (w // 2 + 1, body_bot, 3, 6))
+        # Dark aura
+        aura = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(aura, (80, 0, 120, 25), (w // 2, h // 2), 14)
+        surf.blit(aura, (0, 0))
+
     _tex_cache[key] = surf
     return surf
 
@@ -842,12 +1113,34 @@ class Enemy(Entity):
     TYPES = {
         'slime': {'hp': 8, 'ac': 8, 'atk': '1d4', 'xp': 15, 'gold': (2, 8),
                   'palette': [(60, 180, 60), (80, 200, 80), (40, 140, 40)]},
+        'kobold': {'hp': 10, 'ac': 10, 'atk': '1d4+1', 'xp': 20, 'gold': (3, 10),
+                   'palette': [(150, 100, 55), (140, 90, 50), (130, 85, 45)]},
+        'bat_swarm': {'hp': 10, 'ac': 12, 'atk': '1d4', 'xp': 18, 'gold': (1, 5),
+                      'palette': [(50, 35, 60), (40, 30, 50), (60, 40, 70)]},
         'goblin': {'hp': 12, 'ac': 11, 'atk': '1d6', 'xp': 25, 'gold': (5, 15),
                    'palette': [(80, 150, 50), (100, 70, 30), (60, 40, 20)]},
+        'zombie': {'hp': 16, 'ac': 9, 'atk': '1d6+1', 'xp': 30, 'gold': (2, 8),
+                   'palette': [(90, 110, 70), (80, 70, 50), (60, 50, 35)]},
+        'spider': {'hp': 14, 'ac': 12, 'atk': '1d6', 'xp': 28, 'gold': (3, 10),
+                   'palette': [(50, 30, 20), (60, 40, 25), (40, 25, 15)]},
         'skeleton': {'hp': 18, 'ac': 12, 'atk': '1d8', 'xp': 40, 'gold': (3, 12),
                      'palette': [(220, 210, 190), (180, 170, 150), (140, 130, 110)]},
+        'mimic': {'hp': 25, 'ac': 13, 'atk': '1d8+2', 'xp': 55, 'gold': (20, 50),
+                  'palette': [(130, 80, 25), (140, 90, 30), (100, 60, 15)]},
         'orc': {'hp': 30, 'ac': 13, 'atk': '1d10', 'xp': 60, 'gold': (10, 30),
                 'palette': [(60, 110, 45), (80, 50, 20), (40, 30, 15)]},
+        'wraith': {'hp': 28, 'ac': 14, 'atk': '1d8+2', 'xp': 65, 'gold': (8, 25),
+                   'palette': [(80, 60, 120), (60, 45, 100), (100, 80, 140)]},
+        'troll': {'hp': 45, 'ac': 13, 'atk': '1d10+2', 'xp': 80, 'gold': (15, 40),
+                  'palette': [(50, 80, 40), (55, 85, 45), (45, 75, 38)]},
+        'minotaur': {'hp': 50, 'ac': 14, 'atk': '2d6+2', 'xp': 90, 'gold': (20, 50),
+                     'palette': [(120, 70, 40), (130, 80, 45), (100, 60, 30)]},
+        'gelatinous_cube': {'hp': 40, 'ac': 8, 'atk': '1d10+3', 'xp': 70, 'gold': (15, 60),
+                            'palette': [(100, 200, 100), (120, 220, 120), (80, 180, 80)]},
+        'mind_flayer': {'hp': 55, 'ac': 15, 'atk': '2d6+3', 'xp': 120, 'gold': (30, 80),
+                        'palette': [(140, 100, 160), (130, 90, 150), (120, 80, 140)]},
+        'dark_knight': {'hp': 60, 'ac': 16, 'atk': '2d6+4', 'xp': 130, 'gold': (25, 70),
+                        'palette': [(30, 25, 35), (40, 30, 45), (50, 40, 55)]},
         'dragon': {'hp': 80, 'ac': 16, 'atk': '2d8', 'xp': 200, 'gold': (50, 150),
                    'palette': [(180, 40, 40), (140, 30, 30), (100, 20, 20)]},
         'boss_lich': {'hp': 120, 'ac': 17, 'atk': '2d10', 'xp': 500, 'gold': (100, 300),
@@ -914,8 +1207,12 @@ def generate_loot(level, enemy_type='normal'):
     loot = []
     # Gold
     gold = random.randint(5, 15) * level
-    if enemy_type in ('dragon', 'boss_lich'):
+    if enemy_type in ('dragon', 'boss_lich', 'mind_flayer'):
         gold *= 5
+    elif enemy_type in ('minotaur', 'dark_knight', 'troll'):
+        gold *= 3
+    elif enemy_type == 'mimic':
+        gold *= 4  # Mimics are treasure
 
     # Items (chance-based)
     roll_val = random.random()
@@ -1464,13 +1761,18 @@ class Game:
 
         # Spawn enemies
         enemy_types_by_floor = {
-            1: ['slime', 'goblin'],
-            2: ['goblin', 'skeleton'],
-            3: ['skeleton', 'orc'],
-            4: ['orc', 'skeleton', 'goblin'],
-            5: ['orc', 'dragon'],
+            1: ['slime', 'kobold', 'bat_swarm'],
+            2: ['goblin', 'kobold', 'spider'],
+            3: ['goblin', 'zombie', 'skeleton'],
+            4: ['skeleton', 'spider', 'mimic'],
+            5: ['orc', 'wraith', 'skeleton'],
+            6: ['orc', 'troll', 'gelatinous_cube'],
+            7: ['troll', 'minotaur', 'wraith'],
+            8: ['minotaur', 'mind_flayer', 'dark_knight'],
+            9: ['mind_flayer', 'dark_knight', 'dragon'],
+            10: ['dragon', 'dark_knight', 'mind_flayer'],
         }
-        available_types = enemy_types_by_floor.get(min(self.floor_num, 5), ['orc', 'dragon'])
+        available_types = enemy_types_by_floor.get(min(self.floor_num, 10), ['dragon', 'mind_flayer', 'dark_knight'])
 
         for ex, ey in self.dungeon.enemy_spawns:
             etype = random.choice(available_types)
@@ -1482,10 +1784,28 @@ class Game:
         # Boss on every 3rd floor
         if self.floor_num % 3 == 0 and self.dungeon.rooms:
             boss_room = self.dungeon.rooms[-2] if len(self.dungeon.rooms) > 2 else self.dungeon.rooms[-1]
-            boss = Enemy('boss_lich', self.floor_num)
+            boss_types = {
+                3: 'minotaur', 6: 'dragon', 9: 'boss_lich',
+            }
+            boss_type = boss_types.get(self.floor_num, 'boss_lich')
+            boss = Enemy(boss_type, self.floor_num + 2)
+            boss.max_hp = int(boss.max_hp * 2.0)
+            boss.hp = boss.max_hp
+            boss.name = f"Boss {boss.name}"
             boss.x = boss_room[0] + boss_room[2] // 2
             boss.y = boss_room[1] + boss_room[3] // 2
             self.enemies.append(boss)
+
+        # Mimic hidden in a random chest position
+        if self.floor_num >= 3 and random.random() < 0.25:
+            walkable_spots = [(x, y) for y in range(self.dungeon.height) for x in range(self.dungeon.width)
+                              if self.dungeon.tiles[y][x] == TileType.FLOOR and (x, y) != self.dungeon.spawn_point]
+            if walkable_spots:
+                mx2, my2 = random.choice(walkable_spots)
+                mimic = Enemy('mimic', self.floor_num)
+                mimic.x = mx2
+                mimic.y = my2
+                self.enemies.append(mimic)
 
         self.dungeon.reveal_around(sx, sy)
         self.add_message(f"\n📍 Floor {self.floor_num} — The dungeon deepens...", C_GOLD)
