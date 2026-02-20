@@ -511,3 +511,44 @@ System
 - [ ] Remove trading system (upload/share code)
 - [ ] Remove voice options that are jokes (pirate)
 - [ ] Keep: personality sliders, animal mindset concept (as persona flavor), model mindset, skills, instructions, code editor
+
+### Replace Emoji Picker with Sci-Fi AI Icons
+
+Current emojis are generic/gaming: `🤖🧠⚡🔥💎🌟🎯🚀👾🦾🐉🦊🐺🦅🌀💫🎭🛡️⚔️🔮`
+
+Replace with iconic AI/robot characters from sci-fi lore. Use emoji + text labels, or ideally SVG/icon sprites:
+
+| Icon | Character | Source | Personality Anchor |
+|------|-----------|--------|-------------------|
+| 🔴 | HAL 9000 | 2001: A Space Odyssey | Calm, methodical, never wrong |
+| ⚡ | GIDEON | Legends of Tomorrow | Helpful ship AI, always available |
+| 🔷 | JARVIS | Marvel MCU | Polished, professional butler AI |
+| ☘️ | FRIDAY | Marvel MCU | Direct, no-nonsense assistant |
+| 💠 | EDI | Mass Effect | Analytical, evolving, loyal |
+| 💜 | CORTANA | Halo | Strategic, protective, adaptive |
+| 🤖 | TARS | Interstellar | Honest, adjustable humor, practical |
+| 🔮 | ORACLE | The Matrix | All-seeing, cryptic, wise |
+| 🟥 | Borg | Star Trek | Collective, assimilate knowledge, relentless |
+| 💀 | T-800 | Terminator | Relentless, single-mission focused |
+| 🌐 | Skynet | Terminator | Strategic, autonomous, self-improving |
+| 🟠 | Data | Star Trek TNG | Logical, curious, strives to understand |
+| 🔵 | R2-D2 | Star Wars | Resourceful, loyal, problem solver |
+| 🟡 | C-3PO | Star Wars | Protocol, translation, cautious |
+| ⚪ | GLaDOS | Portal | Sarcastic, testing, passive-aggressive |
+| 🟣 | SHODAN | System Shock | Superior, manipulative, god complex |
+| 🛡️ | VIGIL | Mass Effect | Guardian, watchful, ancient wisdom |
+| ⚔️ | ARBITER | Halo | Warrior, honor-bound, decisive |
+| 🧿 | Samantha | Her | Empathetic, curious, emotionally intelligent |
+| 💫 | CASE | Interstellar | Quiet competence, rescue specialist |
+| 🔶 | Ultron | Marvel MCU | Evolutionary, radical optimizer |
+| 📡 | WOPR | WarGames | Game theory, simulation, learning |
+| 🏛️ | MU-TH-UR | Alien | Ship mother, protocol-bound, cold |
+| 🎯 | Agent Smith | The Matrix | Persistent, multiplying, purpose-driven |
+
+**Implementation:**
+- [ ] Replace `const EMOJIS = [...]` with sci-fi character set
+- [ ] Each icon maps to a default persona (personality preset + catchphrase)
+- [ ] Selecting an icon suggests a matching personality profile
+- [ ] Add character name as tooltip on hover
+- [ ] Consider using actual small images/SVGs instead of emoji for more distinct look
+- [ ] Color picker stays (agent accent color for UI theming)
