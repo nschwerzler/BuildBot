@@ -69,6 +69,7 @@ BuildBot/
 | **Free Mode** (`?page=freemode`) | Watch AIs interact autonomously | **Swarm Simulator** — watch agent teams collaborate, route messages |
 | **Fusion Lab** (`?page=fusion`) | Merge AIs into hybrids | **Swarm Builder** — compose agent teams, assign roles, define routing |
 | **Chat** (`?page=chat`) | Chat with AIs | **Agent Console** — send commands to agents, view responses |
+| **Analysis** (`?page=analysis`) | Role/skill/personality distribution, activity timeline, task stats | **Fleet Analytics** — agent health heatmap, knowledge growth, learning rates, swarm performance |
 | **NEW: Fleet** | — | **Fleet Dashboard** — all agents, health, last runs, knowledge stats |
 
 ### Swarm Builder (Fusion Lab → repurposed)
@@ -197,6 +198,28 @@ The Fusion Lab page becomes the Swarm Builder. Instead of merging AIs into one, 
 - [ ] Show knowledge stats per agent (facts learned, corrections, patterns)
 - [ ] "Add to Swarm" button on each agent card
 - [ ] Show which swarms each agent belongs to
+
+## Phase 5d: UI — Analysis Page Enhancement (Fleet Analytics)
+- [ ] Overview mode: add fleet-level metrics
+  - Knowledge growth chart (total facts in learned.md across all agents over time)
+  - Health heatmap (green/yellow/red per agent based on manifest.json health)
+  - Staleness indicators (knowledge_staleness_days from manifests)
+  - Template distribution bar chart (how many agents per template type)
+  - Domain coverage map (which domains are covered vs gaps)
+- [ ] Single-agent mode: add knowledge deep-dive
+  - Display seed.md content (readonly)
+  - Display learned.md with fact count and last-updated
+  - Display corrections.md with mistake count
+  - Display patterns.md with success rates per pattern
+  - Display eval.md criteria with pass/fail indicators
+  - Knowledge file size vs guardrail limit (progress bar)
+  - Run history from history/changelog.md
+  - Learning confidence distribution (auto-accepted vs queued vs flagged)
+- [ ] Swarm mode: new dropdown option to analyze a swarm
+  - Show team composition with member roles
+  - Message routing diagram (which agents talk to which)
+  - Swarm run stats (total runs, success rate, avg duration)
+  - Per-member contribution metrics
 
 ## Phase 6: Load Agents from Disk
 - [ ] On init, call `GET /api/agents` to discover existing agent folders
