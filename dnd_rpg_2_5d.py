@@ -1500,8 +1500,9 @@ def generate_loot(level, enemy_type='normal'):
     if roll_val < 0.15:
         loot.append(dict(ITEM_TEMPLATES['mana_potion']))
 
-    # Equipment drop chance
-    if random.random() < 0.1 + level * 0.02:
+    # Equipment drop chance (boosted for early game)
+    equip_chance = 0.30 if level <= 2 else (0.20 + level * 0.02)
+    if random.random() < equip_chance:
         equip_pool = ['iron_sword', 'leather_armor']
         if level >= 3:
             equip_pool.extend(['steel_sword', 'chain_mail', 'magic_staff'])
@@ -2176,6 +2177,27 @@ class Game:
         self.party = [self.player]
         self.gold = 50
 
+        # Starter gear based on class
+        starter_gear = {
+            'warrior': ['iron_sword', 'leather_armor'],
+            'mage': ['magic_staff'],
+            'rogue': ['iron_sword'],
+            'cleric': ['leather_armor'],
+            'ranger': ['iron_sword', 'leather_armor'],
+        }
+        for item_key in starter_gear.get(char_class, []):
+            item = dict(ITEM_TEMPLATES[item_key])
+            self.player.inventory.append(item)
+            # Auto-equip starter gear
+            if item['type'] == 'weapon':
+                self.player.equipment['weapon'] = item
+            elif item['type'] == 'armor':
+                self.player.equipment['armor'] = item
+
+        # Give 2 starting health potions
+        for _ in range(2):
+            self.player.inventory.append(dict(ITEM_TEMPLATES['health_potion']))
+
         # Add AI companions (one of each remaining class)
         available_classes = [c for c in DnDClass.CLASSES.keys() if c != char_class]
         random.shuffle(available_classes)
@@ -2337,6 +2359,7 @@ class Game:
             self.add_message(f"⚠️ Trap! {self.player.name} takes {trap_dmg} damage!", C_RED)
             spawn_particles(nx * TILE_W + TILE_W // 2, ny * TILE_H, (255, 150, 0), 10, 2, 25)
             if not self.player.alive:
+                self.save_game()
                 self.state = GameState.GAME_OVER
                 return
 
@@ -2345,6 +2368,7 @@ class Game:
             self.player.take_damage(lava_dmg)
             self.add_message(f"🔥 Lava burns! {lava_dmg} damage!", C_RED)
             if not self.player.alive:
+                self.save_game()
                 self.state = GameState.GAME_OVER
                 return
 
@@ -2500,6 +2524,7 @@ class Game:
             elif self.combat.phase == 'victory':
                 self._handle_victory()
             elif self.combat.phase == 'defeat':
+                self.save_game()
                 self.state = GameState.GAME_OVER
 
     def _handle_victory(self):
@@ -3640,7 +3665,7 @@ class Game:
 
         # Retry
         pulse = int(math.sin(self.anim_tick * 0.06) * 20 + 235)
-        retry = self.font_md.render("Press ENTER to try again or ESC for title", True, (pulse, pulse - 20, 100))
+        retry = self.font_md.render("Press ENTER to continue (progress saved!) or ESC for title", True, (pulse, pulse - 20, 100))
         screen.blit(retry, (SCREEN_W // 2 - retry.get_width() // 2, SCREEN_H // 2 + 120))
 
 
@@ -3841,7 +3866,10 @@ def main():
                 # ─── GAME OVER ───
                 elif game.state == GameState.GAME_OVER:
                     if event.key == pygame.K_RETURN:
-                        game.state = GameState.CLASS_SELECT
+                        if os.path.exists(SAVE_FILE):
+                            game.load_game()
+                        else:
+                            game.state = GameState.CLASS_SELECT
                     elif event.key == pygame.K_ESCAPE:
                         game.state = GameState.TITLE
 
