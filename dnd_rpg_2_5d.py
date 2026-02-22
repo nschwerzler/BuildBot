@@ -1504,13 +1504,15 @@ def generate_loot(level, enemy_type='normal'):
 
     # Items (chance-based)
     roll_val = random.random()
-    if roll_val < 0.3:
+    if roll_val < 0.45:
         loot.append(dict(ITEM_TEMPLATES['health_potion']))
-    if roll_val < 0.15:
+    if roll_val < 0.25:
         loot.append(dict(ITEM_TEMPLATES['mana_potion']))
+    if random.random() < 0.15:
+        loot.append(dict(ITEM_TEMPLATES['scroll_fireball']))
 
     # Equipment drop chance (boosted for early game)
-    equip_chance = 0.30 if level <= 2 else (0.20 + level * 0.02)
+    equip_chance = 0.40 if level <= 2 else (0.25 + level * 0.03)
     if random.random() < equip_chance:
         equip_pool = ['iron_sword', 'leather_armor']
         if level >= 3:
@@ -2507,12 +2509,21 @@ class Game:
         elif item['type'] in ('weapon', 'armor', 'accessory'):
             slot = item['type'] if item['type'] != 'weapon' else 'weapon'
             old = self.player.equipment.get(slot)
+            # Remove old item bonuses
             if old:
+                if 'ac_bonus' in old:
+                    self.player.ac -= old['ac_bonus']
+                if 'stat_bonus' in old:
+                    for stat, val in old['stat_bonus'].items():
+                        self.player.stats[stat] -= val
+                if 'hp_bonus' in old:
+                    self.player.max_hp -= old['hp_bonus']
+                    self.player.hp = min(self.player.hp, self.player.max_hp)
                 self.player.inventory.append(old)
             self.player.equipment[slot] = item
             self.player.inventory.pop(item_idx)
             self.add_message(f"⚔️ Equipped {item['name']}!", C_GOLD)
-            # Apply bonuses
+            # Apply new item bonuses
             if 'ac_bonus' in item:
                 self.player.ac += item['ac_bonus']
             if 'stat_bonus' in item:
