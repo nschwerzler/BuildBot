@@ -2673,6 +2673,12 @@ class Game:
             self.gold = data.get('gold', 50)
             self.floor_num = data.get('floor_num', 1)
 
+            # Revive all party members to full HP/MP (respawn after death)
+            for member in self.party:
+                member.alive = True
+                member.hp = member.max_hp
+                member.mp = member.max_mp
+
             # Generate a fresh floor with saved progress
             self.generate_floor()
             self.state = GameState.EXPLORING
