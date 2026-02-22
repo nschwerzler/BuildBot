@@ -2618,15 +2618,15 @@ class Game:
         # Boss rewards: bonus levels + guaranteed accessory
         BOSS_REWARDS = {
             'minotaur':       {'levels': 2, 'accessory': 'minotaur_horn'},
-            'mind_flayer':    {'levels': 2, 'accessory': 'mind_crystal'},
-            'dark_knight':    {'levels': 2, 'accessory': 'dark_sigil'},
-            'dragon':         {'levels': 3, 'accessory': 'dragon_scale'},
-            'boss_lich':      {'levels': 3, 'accessory': 'lich_phylactery'},
-            'vecna':          {'levels': 4, 'accessory': 'eye_of_vecna'},
-            'demogorgon':     {'levels': 4, 'accessory': 'demogorgon_fang'},
-            'st_vecna':       {'levels': 3, 'accessory': 'eye_of_vecna'},
-            'st_demogorgon':  {'levels': 3, 'accessory': 'demogorgon_fang'},
-            'st_mind_flayer': {'levels': 4, 'accessory': 'shadow_heart'},
+            'mind_flayer':    {'levels': 3, 'accessory': 'mind_crystal'},
+            'dark_knight':    {'levels': 3, 'accessory': 'dark_sigil'},
+            'dragon':         {'levels': 5, 'accessory': 'dragon_scale'},
+            'boss_lich':      {'levels': 5, 'accessory': 'lich_phylactery'},
+            'vecna':          {'levels': 7, 'accessory': 'eye_of_vecna'},
+            'demogorgon':     {'levels': 7, 'accessory': 'demogorgon_fang'},
+            'st_vecna':       {'levels': 5, 'accessory': 'eye_of_vecna'},
+            'st_demogorgon':  {'levels': 5, 'accessory': 'demogorgon_fang'},
+            'st_mind_flayer': {'levels': 8, 'accessory': 'shadow_heart'},
         }
         for enemy in self.combat.enemies:
             reward = BOSS_REWARDS.get(enemy.enemy_type)
