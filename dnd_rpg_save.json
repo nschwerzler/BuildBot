@@ -2,22 +2,22 @@
   "version": 2,
   "player": {
     "name": "Hero",
-    "char_class": "rogue",
+    "char_class": "warrior",
     "level": 1,
     "xp": 0,
     "xp_to_level": 100,
-    "hp": 3,
-    "max_hp": 6,
-    "mp": 11,
-    "max_mp": 11,
-    "ac": 16,
+    "hp": 11,
+    "max_hp": 11,
+    "mp": 9,
+    "max_mp": 9,
+    "ac": 14,
     "stats": {
       "STR": 14,
-      "DEX": 18,
-      "CON": 7,
-      "INT": 10,
-      "WIS": 13,
-      "CHA": 11
+      "DEX": 10,
+      "CON": 13,
+      "INT": 9,
+      "WIS": 12,
+      "CHA": 13
     },
     "skill_points": 0,
     "skill_tree": {},
@@ -31,31 +31,12 @@
         "desc": "+1 attack damage"
       },
       {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
       },
       {
         "name": "Health Potion",
@@ -85,37 +66,81 @@
         "price": 50,
         "desc": "+1 attack damage"
       },
-      "armor": null,
+      "armor": {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
       "accessory": null
     },
     "skills": [
-      "Backstab",
-      "Smoke Bomb",
-      "Steal"
+      "Power Strike",
+      "Shield Bash",
+      "Rally"
     ],
-    "attack_dice": "1d6",
+    "attack_dice": "1d8",
     "is_ai": false,
     "alive": true,
-    "ai_personality": "cautious"
+    "ai_personality": "witty"
   },
   "companions": [
     {
-      "name": "Ironheart",
-      "char_class": "warrior",
+      "name": "Willow",
+      "char_class": "ranger",
       "level": 1,
-      "xp": 59,
+      "xp": 0,
       "xp_to_level": 100,
-      "hp": 11,
-      "max_hp": 11,
-      "mp": 6,
-      "max_mp": 11,
-      "ac": 16,
+      "hp": 6,
+      "max_hp": 6,
+      "mp": 9,
+      "max_mp": 9,
+      "ac": 15,
       "stats": {
-        "STR": 18,
-        "DEX": 15,
-        "CON": 12,
+        "STR": 6,
+        "DEX": 18,
+        "CON": 6,
         "INT": 8,
-        "WIS": 16,
+        "WIS": 12,
+        "CHA": 10
+      },
+      "skill_points": 0,
+      "skill_tree": {},
+      "inventory": [],
+      "equipment": {
+        "weapon": null,
+        "armor": null,
+        "accessory": null
+      },
+      "skills": [
+        "Arrow Rain",
+        "Trap",
+        "Nature's Blessing"
+      ],
+      "attack_dice": "1d8",
+      "is_ai": true,
+      "alive": true,
+      "ai_personality": "cautious"
+    },
+    {
+      "name": "Zephyr",
+      "char_class": "mage",
+      "level": 1,
+      "xp": 0,
+      "xp_to_level": 100,
+      "hp": 7,
+      "max_hp": 7,
+      "mp": 17,
+      "max_mp": 17,
+      "ac": 13,
+      "stats": {
+        "STR": 10,
+        "DEX": 16,
+        "CON": 12,
+        "INT": 14,
+        "WIS": 17,
         "CHA": 13
       },
       "skill_points": 0,
@@ -127,53 +152,16 @@
         "accessory": null
       },
       "skills": [
-        "Power Strike",
-        "Shield Bash",
-        "Rally"
+        "Fireball",
+        "Ice Shard",
+        "Arcane Shield"
       ],
-      "attack_dice": "1d8",
-      "is_ai": true,
-      "alive": true,
-      "ai_personality": "fierce"
-    },
-    {
-      "name": "Lumina",
-      "char_class": "cleric",
-      "level": 1,
-      "xp": 59,
-      "xp_to_level": 100,
-      "hp": 8,
-      "max_hp": 8,
-      "mp": 14,
-      "max_mp": 16,
-      "ac": 15,
-      "stats": {
-        "STR": 11,
-        "DEX": 14,
-        "CON": 10,
-        "INT": 15,
-        "WIS": 14,
-        "CHA": 16
-      },
-      "skill_points": 0,
-      "skill_tree": {},
-      "inventory": [],
-      "equipment": {
-        "weapon": null,
-        "armor": null,
-        "accessory": null
-      },
-      "skills": [
-        "Heal",
-        "Smite",
-        "Bless"
-      ],
-      "attack_dice": "1d6",
+      "attack_dice": "1d4",
       "is_ai": true,
       "alive": true,
       "ai_personality": "fierce"
     }
   ],
-  "gold": 71,
-  "floor_num": 2
+  "gold": 50,
+  "floor_num": 1
 }

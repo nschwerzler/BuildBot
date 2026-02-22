@@ -2172,14 +2172,45 @@ class Game:
             self.message_log = self.message_log[-100:]
 
     def new_game(self, char_class):
-        """Start a new game with the selected class."""
-        # Clear old save when starting fresh
+        """Start a new game with the selected class, carrying over saved levels."""
+        # Load saved level/XP if a save exists (carry over progression)
+        saved_level = 1
+        saved_xp = 0
+        saved_xp_to_level = 100
+        saved_skill_points = 0
+        saved_skill_tree = {}
         if os.path.exists(SAVE_FILE):
-            os.remove(SAVE_FILE)
+            try:
+                with open(SAVE_FILE, 'r') as f:
+                    old_data = json.load(f)
+                p = old_data.get('player', {})
+                saved_level = p.get('level', 1)
+                saved_xp = p.get('xp', 0)
+                saved_xp_to_level = p.get('xp_to_level', 100)
+                saved_skill_points = p.get('skill_points', 0)
+                saved_skill_tree = p.get('skill_tree', {})
+            except Exception:
+                pass
 
         self.player = Entity("Hero", char_class)
         self.party = [self.player]
         self.gold = 50
+
+        # Apply carried-over levels
+        if saved_level > 1:
+            self.player.level = saved_level
+            self.player.xp = saved_xp
+            self.player.xp_to_level = saved_xp_to_level
+            self.player.skill_points = saved_skill_points
+            self.player.skill_tree = saved_skill_tree
+            # Scale HP/MP for level
+            cls_data = DnDClass.CLASSES.get(char_class, DnDClass.CLASSES['warrior'])
+            for _ in range(saved_level - 1):
+                hp_gain = cls_data['hp_die'] // 2 + 1 + modifier(self.player.stats['CON'])
+                self.player.max_hp += max(1, hp_gain)
+                self.player.max_mp += 2 + modifier(self.player.stats['INT'])
+            self.player.hp = self.player.max_hp
+            self.player.mp = self.player.max_mp
 
         # Starter gear based on class
         starter_gear = {
