@@ -1,0 +1,154 @@
+{
+  "version": 2,
+  "player": {
+    "name": "Hero",
+    "char_class": "warrior",
+    "level": 1,
+    "xp": 59,
+    "xp_to_level": 100,
+    "hp": 11,
+    "max_hp": 11,
+    "mp": 16,
+    "max_mp": 16,
+    "ac": 18,
+    "stats": {
+      "STR": 14,
+      "DEX": 15,
+      "CON": 13,
+      "INT": 16,
+      "WIS": 10,
+      "CHA": 16
+    },
+    "skill_points": 0,
+    "skill_tree": {},
+    "inventory": [
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      }
+    ],
+    "equipment": {
+      "weapon": null,
+      "armor": null,
+      "accessory": null
+    },
+    "skills": [
+      "Power Strike",
+      "Shield Bash",
+      "Rally"
+    ],
+    "attack_dice": "1d8",
+    "is_ai": false,
+    "alive": true,
+    "ai_personality": "witty"
+  },
+  "companions": [
+    {
+      "name": "Nyx",
+      "char_class": "rogue",
+      "level": 1,
+      "xp": 16,
+      "xp_to_level": 100,
+      "hp": 0,
+      "max_hp": 8,
+      "mp": 3,
+      "max_mp": 8,
+      "ac": 16,
+      "stats": {
+        "STR": 8,
+        "DEX": 18,
+        "CON": 11,
+        "INT": 11,
+        "WIS": 7,
+        "CHA": 12
+      },
+      "skill_points": 0,
+      "skill_tree": {},
+      "inventory": [],
+      "equipment": {
+        "weapon": null,
+        "armor": null,
+        "accessory": null
+      },
+      "skills": [
+        "Backstab",
+        "Smoke Bomb",
+        "Steal"
+      ],
+      "attack_dice": "1d6",
+      "is_ai": true,
+      "alive": false,
+      "ai_personality": "brave"
+    },
+    {
+      "name": "Fern",
+      "char_class": "ranger",
+      "level": 1,
+      "xp": 59,
+      "xp_to_level": 100,
+      "hp": 2,
+      "max_hp": 8,
+      "mp": 9,
+      "max_mp": 14,
+      "ac": 13,
+      "stats": {
+        "STR": 11,
+        "DEX": 14,
+        "CON": 10,
+        "INT": 13,
+        "WIS": 15,
+        "CHA": 12
+      },
+      "skill_points": 0,
+      "skill_tree": {},
+      "inventory": [],
+      "equipment": {
+        "weapon": null,
+        "armor": null,
+        "accessory": null
+      },
+      "skills": [
+        "Arrow Rain",
+        "Trap",
+        "Nature's Blessing"
+      ],
+      "attack_dice": "1d8",
+      "is_ai": true,
+      "alive": true,
+      "ai_personality": "wise"
+    }
+  ],
+  "gold": 82,
+  "floor_num": 1
+}

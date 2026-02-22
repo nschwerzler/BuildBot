@@ -727,6 +727,49 @@ def make_character_sprite(char_class, palette, w=24, h=32, is_enemy=False):
         pygame.draw.circle(aura, (180, 100, 255, 30), (w // 2, h // 2 - 2), 14)
         surf.blit(aura, (0, 0))
 
+    elif char_class == 'st_mind_flayer':
+        # Stranger Things Mind Flayer - massive shadow spider entity
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 70), (w // 2 - 10, h - 5, 20, 5))
+        # Semi-transparent smoky body (darker, more monstrous)
+        pygame.draw.polygon(surf, (25, 15, 30), [(w // 2, body_top - 4), (w // 2 - 9, body_bot + 2), (w // 2 + 9, body_bot + 2)])
+        # Shadow tendrils/spider legs extending outward
+        for i in range(6):
+            angle = math.pi * 0.3 + (i / 5) * math.pi * 0.4
+            lx = w // 2 + int(math.cos(angle + math.pi) * (8 + i % 3))
+            ly = body_top + 3 + i * 2
+            ex = w // 2 + int(math.cos(angle + math.pi) * (14 + i % 2 * 3))
+            ey = ly + random.randint(-2, 3)
+            pygame.draw.line(surf, (40, 20, 50), (lx, ly), (ex, ey), 2)
+        for i in range(6):
+            angle = math.pi * 0.3 + (i / 5) * math.pi * 0.4
+            lx = w // 2 - int(math.cos(angle + math.pi) * (8 + i % 3))
+            ly = body_top + 3 + i * 2
+            ex = w // 2 - int(math.cos(angle + math.pi) * (14 + i % 2 * 3))
+            ey = ly + random.randint(-2, 3)
+            pygame.draw.line(surf, (40, 20, 50), (lx, ly), (ex, ey), 2)
+        # Head - elongated spider-like with split jaw
+        pygame.draw.ellipse(surf, (30, 18, 40), (head_cx - 7, head_cy - 6, 14, 10))
+        # Glowing red eyes (many, spider-like)
+        for ex2, ey2 in [(head_cx - 4, head_cy - 3), (head_cx + 4, head_cy - 3),
+                         (head_cx - 2, head_cy - 5), (head_cx + 2, head_cy - 5)]:
+            pygame.draw.circle(surf, (255, 60, 60), (ex2, ey2), 1)
+        # Lower jaw split
+        pygame.draw.line(surf, (50, 25, 60), (head_cx - 3, head_cy + 2), (head_cx - 5, head_cy + 6), 1)
+        pygame.draw.line(surf, (50, 25, 60), (head_cx + 3, head_cy + 2), (head_cx + 5, head_cy + 6), 1)
+        pygame.draw.line(surf, (50, 25, 60), (head_cx, head_cy + 2), (head_cx, head_cy + 5), 1)
+        # Legs (digitigrade)
+        pygame.draw.rect(surf, (25, 15, 30), (w // 2 - 5, body_bot, 3, 6))
+        pygame.draw.rect(surf, (25, 15, 30), (w // 2 + 2, body_bot, 3, 6))
+        # Red storm / Upside Down aura
+        aura = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(aura, (200, 30, 30, 25), (w // 2, h // 2 - 2), 16)
+        for i in range(6):
+            px2 = w // 2 + random.randint(-12, 12)
+            py2 = random.randint(body_top - 6, body_bot + 4)
+            pygame.draw.circle(aura, (255, 40, 40, 80), (px2, py2), 1)
+        surf.blit(aura, (0, 0))
+
     elif char_class == 'minotaur':
         surf.fill((0, 0, 0, 0))
         pygame.draw.ellipse(surf, (0, 0, 0, 70), (w // 2 - 9, h - 5, 18, 5))
@@ -1096,6 +1139,8 @@ class Entity:
         self.alive = True
         self.xp = 0
         self.xp_to_level = 100
+        self.skill_points = 0
+        self.skill_tree = {}  # {node_id: rank}
 
         # Generate stats
         cls_data = DnDClass.CLASSES.get(char_class, DnDClass.CLASSES['warrior'])
@@ -1154,7 +1199,9 @@ class Entity:
     def get_attack_bonus(self):
         cls = DnDClass.CLASSES.get(self.char_class, {})
         primary = cls.get('primary', 'STR')
-        return modifier(self.stats[primary]) + (self.level - 1) // 2
+        base = modifier(self.stats[primary]) + (self.level - 1) // 2
+        base += get_skill_tree_bonus(self, 'attack_bonus')
+        return base
 
     def attack_roll(self):
         """Roll d20 + attack bonus."""
@@ -1166,7 +1213,14 @@ class Entity:
         base = roll(self.attack_dice)
         cls = DnDClass.CLASSES.get(self.char_class, {})
         primary = cls.get('primary', 'STR')
-        return max(1, base + modifier(self.stats[primary]))
+        dmg = max(1, base + modifier(self.stats[primary]))
+        # Skill tree damage bonuses
+        dmg_pct = get_skill_tree_bonus(self, 'damage_pct')
+        crit_pct = get_skill_tree_bonus(self, 'crit_damage_pct')
+        magic_pct = get_skill_tree_bonus(self, 'magic_damage_pct')
+        total_pct = dmg_pct + (magic_pct if self.char_class == 'mage' else 0)
+        dmg = int(dmg * (1 + total_pct / 100))
+        return max(1, dmg)
 
     def take_damage(self, dmg):
         self.hp = max(0, self.hp - dmg)
@@ -1178,6 +1232,9 @@ class Entity:
         self.hp = min(self.max_hp, self.hp + amount)
 
     def gain_xp(self, amount):
+        # Apply XP bonus from skill tree
+        xp_bonus = get_skill_tree_bonus(self, 'xp_pct')
+        amount = int(amount * (1 + xp_bonus / 100))
         self.xp += amount
         leveled = False
         while self.xp >= self.xp_to_level:
@@ -1191,6 +1248,7 @@ class Entity:
             self.hp = self.max_hp
             self.max_mp += 2 + modifier(self.stats['INT'])
             self.mp = self.max_mp
+            self.skill_points += 2  # 2 skill tree points per level
             leveled = True
         return leveled
 
@@ -1199,15 +1257,20 @@ class Entity:
         if skill_idx >= len(self.skills):
             return False, "No such skill!", 0
         skill = self.skills[skill_idx]
-        cost = 3 + skill_idx * 2
+        cost = max(1, 3 + skill_idx * 2 - get_skill_tree_bonus(self, 'mp_cost_reduction'))
 
         if self.mp < cost:
             return False, f"Not enough MP! ({cost} needed)", 0
 
         self.mp -= cost
+        # Skill tree multipliers
+        _skill_pct = get_skill_tree_bonus(self, 'skill_power_pct')
+        _heal_pct = get_skill_tree_bonus(self, 'heal_power_pct')
+        _smite_pct = get_skill_tree_bonus(self, 'smite_damage_pct')
 
         if skill == 'Power Strike':
             dmg = roll('2d8') + modifier(self.stats['STR']) + self.level
+            dmg = int(dmg * (1 + _skill_pct / 100))
             return True, f"{self.name} unleashes a POWER STRIKE!", dmg
         elif skill == 'Shield Bash':
             dmg = roll('1d6') + modifier(self.stats['STR'])
@@ -1221,9 +1284,11 @@ class Entity:
             return True, f"{self.name} rallies the party! Everyone heals {heal_amt // 2} HP!", 0
         elif skill == 'Fireball':
             dmg = roll('3d6') + modifier(self.stats['INT']) + self.level
+            dmg = int(dmg * (1 + _skill_pct / 100))
             return True, f"{self.name} hurls a FIREBALL! 🔥", dmg
         elif skill == 'Ice Shard':
             dmg = roll('2d6') + modifier(self.stats['INT'])
+            dmg = int(dmg * (1 + _skill_pct / 100))
             return True, f"{self.name} launches ICE SHARDS! ❄️", dmg
         elif skill == 'Arcane Shield':
             if allies:
@@ -1233,6 +1298,7 @@ class Entity:
             return True, f"{self.name} raises an ARCANE SHIELD! Party AC +2!", 0
         elif skill == 'Backstab':
             dmg = roll('3d6') + modifier(self.stats['DEX']) + self.level * 2
+            dmg = int(dmg * (1 + _skill_pct / 100))
             return True, f"{self.name} strikes from the shadows! BACKSTAB! 🗡️", dmg
         elif skill == 'Smoke Bomb':
             return True, f"{self.name} throws a smoke bomb! Party evasion UP!", 0
@@ -1241,11 +1307,13 @@ class Entity:
             return True, f"{self.name} steals {gold} gold!", 0
         elif skill == 'Heal':
             heal_amt = roll('2d8') + modifier(self.stats['WIS']) + self.level
+            heal_amt = int(heal_amt * (1 + _heal_pct / 100))
             if target and target.alive:
                 target.heal(heal_amt)
             return True, f"{self.name} channels divine light! Heals {heal_amt} HP! ✨", 0
         elif skill == 'Smite':
             dmg = roll('2d8') + modifier(self.stats['WIS']) + self.level
+            dmg = int(dmg * (1 + _smite_pct / 100 + _skill_pct / 100))
             return True, f"{self.name} calls down DIVINE SMITE! ⚡", dmg
         elif skill == 'Bless':
             if allies:
@@ -1256,9 +1324,11 @@ class Entity:
             return True, f"{self.name} blesses the party! Stats UP! 🙏", 0
         elif skill == 'Arrow Rain':
             dmg = roll('2d6') + modifier(self.stats['DEX']) + self.level
+            dmg = int(dmg * (1 + _skill_pct / 100))
             return True, f"{self.name} rains arrows from above! 🏹", dmg
         elif skill == 'Trap':
             dmg = roll('1d8') + modifier(self.stats['DEX'])
+            dmg = int(dmg * (1 + _skill_pct / 100))
             return True, f"{self.name} sets a cunning trap! 🪤", dmg
         elif skill == "Nature's Blessing":
             heal_amt = roll('1d8') + modifier(self.stats['WIS'])
@@ -1318,6 +1388,9 @@ class Enemy(Entity):
         # Stranger Things Demogorgon (faceless predator)
         'st_demogorgon': {'hp': 130, 'ac': 16, 'atk': '2d8+4', 'xp': 600, 'gold': (100, 300),
                           'palette': [(90, 60, 50), (70, 45, 35), (110, 70, 55)]},
+        # Stranger Things Mind Flayer (shadow spider entity)
+        'st_mind_flayer': {'hp': 160, 'ac': 18, 'atk': '2d10+4', 'xp': 750, 'gold': (150, 400),
+                           'palette': [(30, 18, 40), (25, 15, 30), (50, 25, 60)]},
     }
 
     def __init__(self, enemy_type, level=1):
@@ -1373,6 +1446,12 @@ class Enemy(Entity):
             dmg = roll('2d8') + 3
             return target, f"opens its petal-mouth and lunges at {target.name}! {dmg} damage!", dmg
 
+        if self.enemy_type == 'st_mind_flayer' and random.random() < 0.4:
+            # ST Mind Flayer's shadow storm - hits random target with massive psychic shadow damage
+            target = random.choice(alive_targets)
+            dmg = roll('3d8') + 4
+            return target, f"summons a SHADOW STORM engulfing {target.name}! {dmg} shadow damage!", dmg
+
         # Default: Target lowest HP
         target = min(alive_targets, key=lambda t: t.hp)
         d20, attack_total = self.attack_roll()
@@ -1399,6 +1478,7 @@ ITEM_TEMPLATES = {
     'ring_of_power': {'name': 'Ring of Power', 'type': 'accessory', 'icon': '💍', 'stat_bonus': {'STR': 2, 'INT': 2}, 'price': 200, 'desc': '+2 STR, +2 INT'},
     'amulet_of_life': {'name': 'Amulet of Life', 'type': 'accessory', 'icon': '📿', 'hp_bonus': 20, 'price': 150, 'desc': '+20 Max HP'},
     'scroll_fireball': {'name': 'Scroll of Fireball', 'type': 'consumable', 'icon': '📜', 'effect': 'fireball', 'value': 30, 'price': 60, 'desc': 'Deals 3d6 fire damage'},
+    'revive_potion': {'name': 'Potion of Revive', 'type': 'consumable', 'icon': '💖', 'effect': 'revive', 'value': 0, 'price': 200, 'desc': 'Revives a fallen party member with 50% HP'},
 }
 
 def generate_loot(level, enemy_type='normal'):
@@ -1408,7 +1488,7 @@ def generate_loot(level, enemy_type='normal'):
     gold = random.randint(5, 15) * level
     if enemy_type in ('dragon', 'boss_lich', 'mind_flayer', 'vecna', 'demogorgon'):
         gold *= 5
-    elif enemy_type in ('minotaur', 'dark_knight', 'troll', 'st_vecna', 'st_demogorgon'):
+    elif enemy_type in ('minotaur', 'dark_knight', 'troll', 'st_vecna', 'st_demogorgon', 'st_mind_flayer'):
         gold *= 3
     elif enemy_type == 'mimic':
         gold *= 4  # Mimics are treasure
@@ -1428,6 +1508,10 @@ def generate_loot(level, enemy_type='normal'):
         if level >= 5:
             equip_pool.extend(['ring_of_power', 'amulet_of_life'])
         loot.append(dict(ITEM_TEMPLATES[random.choice(equip_pool)]))
+
+    # Potion of Revive — 1 in 10 chance
+    if random.random() < 0.10:
+        loot.append(dict(ITEM_TEMPLATES['revive_potion']))
 
     return gold, loot
 
@@ -1860,6 +1944,170 @@ class CombatState:
 # ════════════════════════════════════════════════════════════
 # GAME STATE MANAGER
 # ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════
+# SKILL TREES (per class)
+# ════════════════════════════════════════════════════════════
+SKILL_TREES = {
+    'warrior': [
+        {'id': 'fortitude',    'name': 'Fortitude',      'icon': '❤️',  'desc': '+10% Max HP per rank',          'max_rank': 3, 'row': 0, 'col': 1, 'requires': []},
+        {'id': 'iron_will',    'name': 'Iron Will',      'icon': '🛡️',  'desc': '+1 AC per rank',                'max_rank': 3, 'row': 1, 'col': 0, 'requires': ['fortitude']},
+        {'id': 'berserker',    'name': 'Berserker',      'icon': '🔥',  'desc': '+15% weapon damage per rank',   'max_rank': 3, 'row': 1, 'col': 2, 'requires': ['fortitude']},
+        {'id': 'cleave',       'name': 'Cleave',         'icon': '⚔️',  'desc': '+20% skill power per rank',     'max_rank': 3, 'row': 2, 'col': 0, 'requires': ['iron_will']},
+        {'id': 'titans_grip',  'name': "Titan's Grip",   'icon': '💪',  'desc': '+2 STR per rank',               'max_rank': 3, 'row': 2, 'col': 2, 'requires': ['berserker']},
+        {'id': 'warlord',      'name': 'Warlord',        'icon': '👑',  'desc': '+3 all stats per rank',         'max_rank': 2, 'row': 3, 'col': 1, 'requires': ['cleave', 'titans_grip']},
+    ],
+    'mage': [
+        {'id': 'arcane_mind',  'name': 'Arcane Mind',    'icon': '🧠',  'desc': '+20% Max MP per rank',          'max_rank': 3, 'row': 0, 'col': 1, 'requires': []},
+        {'id': 'spell_power',  'name': 'Spell Power',    'icon': '✨',  'desc': '+15% magic damage per rank',    'max_rank': 3, 'row': 1, 'col': 0, 'requires': ['arcane_mind']},
+        {'id': 'quick_cast',   'name': 'Quick Cast',     'icon': '⚡',  'desc': '-1 MP cost per rank',           'max_rank': 3, 'row': 1, 'col': 2, 'requires': ['arcane_mind']},
+        {'id': 'elem_focus',   'name': 'Elemental Focus','icon': '🌀',  'desc': '+20% skill power per rank',     'max_rank': 3, 'row': 2, 'col': 0, 'requires': ['spell_power']},
+        {'id': 'int_mastery',  'name': 'INT Mastery',    'icon': '📚',  'desc': '+2 INT per rank',               'max_rank': 3, 'row': 2, 'col': 2, 'requires': ['quick_cast']},
+        {'id': 'archmage',     'name': 'Archmage',       'icon': '🌟',  'desc': '+3 all stats per rank',         'max_rank': 2, 'row': 3, 'col': 1, 'requires': ['elem_focus', 'int_mastery']},
+    ],
+    'rogue': [
+        {'id': 'shadow_step',  'name': 'Shadow Step',    'icon': '👤',  'desc': '+2 DEX per rank',               'max_rank': 3, 'row': 0, 'col': 1, 'requires': []},
+        {'id': 'lethal_edge',  'name': 'Lethal Edge',    'icon': '🗡️',  'desc': '+15% crit damage per rank',     'max_rank': 3, 'row': 1, 'col': 0, 'requires': ['shadow_step']},
+        {'id': 'evasion',      'name': 'Evasion',        'icon': '💨',  'desc': '+2 AC per rank',                'max_rank': 3, 'row': 1, 'col': 2, 'requires': ['shadow_step']},
+        {'id': 'poison_tips',  'name': 'Poison Tips',    'icon': '☠️',  'desc': '+10% damage per rank',          'max_rank': 3, 'row': 2, 'col': 0, 'requires': ['lethal_edge']},
+        {'id': 'nimble',       'name': 'Nimble Fingers', 'icon': '🪙',  'desc': '+20% gold found per rank',      'max_rank': 3, 'row': 2, 'col': 2, 'requires': ['evasion']},
+        {'id': 'assassin',     'name': 'Assassin',       'icon': '🥷',  'desc': '+3 all stats per rank',         'max_rank': 2, 'row': 3, 'col': 1, 'requires': ['poison_tips', 'nimble']},
+    ],
+    'cleric': [
+        {'id': 'divine_grace', 'name': 'Divine Grace',   'icon': '🙏',  'desc': '+25% heal power per rank',      'max_rank': 3, 'row': 0, 'col': 1, 'requires': []},
+        {'id': 'holy_shield',  'name': 'Holy Shield',    'icon': '🛡️',  'desc': '+2 AC per rank',                'max_rank': 3, 'row': 1, 'col': 0, 'requires': ['divine_grace']},
+        {'id': 'blessed_hp',   'name': 'Blessed Vitality','icon': '💛', 'desc': '+15% Max HP per rank',          'max_rank': 3, 'row': 1, 'col': 2, 'requires': ['divine_grace']},
+        {'id': 'smite_power',  'name': 'Smite Power',    'icon': '⚡',  'desc': '+15% smite damage per rank',    'max_rank': 3, 'row': 2, 'col': 0, 'requires': ['holy_shield']},
+        {'id': 'wis_mastery',  'name': 'WIS Mastery',    'icon': '📿',  'desc': '+2 WIS per rank',               'max_rank': 3, 'row': 2, 'col': 2, 'requires': ['blessed_hp']},
+        {'id': 'high_priest',  'name': 'High Priest',    'icon': '✝️',  'desc': '+3 all stats per rank',         'max_rank': 2, 'row': 3, 'col': 1, 'requires': ['smite_power', 'wis_mastery']},
+    ],
+    'ranger': [
+        {'id': 'eagle_eye',    'name': 'Eagle Eye',      'icon': '🦅',  'desc': '+2 attack bonus per rank',      'max_rank': 3, 'row': 0, 'col': 1, 'requires': []},
+        {'id': 'swift_quiver', 'name': 'Swift Quiver',   'icon': '🏹',  'desc': '+10% damage per rank',          'max_rank': 3, 'row': 1, 'col': 0, 'requires': ['eagle_eye']},
+        {'id': 'natures_ward', 'name': "Nature's Ward",  'icon': '🌿',  'desc': '+10% Max HP per rank',          'max_rank': 3, 'row': 1, 'col': 2, 'requires': ['eagle_eye']},
+        {'id': 'beast_lore',   'name': 'Beast Lore',     'icon': '🐾',  'desc': '+15% XP gained per rank',       'max_rank': 3, 'row': 2, 'col': 0, 'requires': ['swift_quiver']},
+        {'id': 'dex_mastery',  'name': 'DEX Mastery',    'icon': '🎯',  'desc': '+2 DEX per rank',               'max_rank': 3, 'row': 2, 'col': 2, 'requires': ['natures_ward']},
+        {'id': 'beastmaster',  'name': 'Beastmaster',    'icon': '🐺',  'desc': '+3 all stats per rank',         'max_rank': 2, 'row': 3, 'col': 1, 'requires': ['beast_lore', 'dex_mastery']},
+    ],
+}
+
+# Mapping: node_id → {bonus_type: value_per_rank}
+SKILL_NODE_BONUSES = {
+    # Warrior
+    'fortitude':    {'max_hp_pct': 10},
+    'iron_will':    {'ac': 1},
+    'berserker':    {'damage_pct': 15},
+    'cleave':       {'skill_power_pct': 20},
+    'titans_grip':  {'str': 2},
+    'warlord':      {'all_stats': 3},
+    # Mage
+    'arcane_mind':  {'max_mp_pct': 20},
+    'spell_power':  {'magic_damage_pct': 15},
+    'quick_cast':   {'mp_cost_reduction': 1},
+    'elem_focus':   {'skill_power_pct': 20},
+    'int_mastery':  {'int': 2},
+    'archmage':     {'all_stats': 3},
+    # Rogue
+    'shadow_step':  {'dex': 2},
+    'lethal_edge':  {'crit_damage_pct': 15},
+    'evasion':      {'ac': 2},
+    'poison_tips':  {'damage_pct': 10},
+    'nimble':       {'gold_pct': 20},
+    'assassin':     {'all_stats': 3},
+    # Cleric
+    'divine_grace': {'heal_power_pct': 25},
+    'holy_shield':  {'ac': 2},
+    'blessed_hp':   {'max_hp_pct': 15},
+    'smite_power':  {'smite_damage_pct': 15},
+    'wis_mastery':  {'wis': 2},
+    'high_priest':  {'all_stats': 3},
+    # Ranger
+    'eagle_eye':    {'attack_bonus': 2},
+    'swift_quiver': {'damage_pct': 10},
+    'natures_ward': {'max_hp_pct': 10},
+    'beast_lore':   {'xp_pct': 15},
+    'dex_mastery':  {'dex': 2},
+    'beastmaster':  {'all_stats': 3},
+}
+
+def get_skill_tree_bonus(entity, bonus_type):
+    """Get total bonus from skill tree upgrades for a given bonus_type."""
+    if not hasattr(entity, 'skill_tree'):
+        return 0
+    total = 0
+    for node_id, rank in entity.skill_tree.items():
+        if rank <= 0:
+            continue
+        bonuses = SKILL_NODE_BONUSES.get(node_id, {})
+        if bonus_type in bonuses:
+            total += bonuses[bonus_type] * rank
+        # 'all_stats' contributes to individual stat queries
+        if bonus_type in ('str', 'dex', 'int', 'wis', 'con', 'cha') and 'all_stats' in bonuses:
+            total += bonuses['all_stats'] * rank
+    return total
+
+def apply_skill_tree_stats(entity):
+    """Recalculate HP/MP/AC with skill tree bonuses. Call after loading or spending points."""
+    hp_pct = get_skill_tree_bonus(entity, 'max_hp_pct')
+    mp_pct = get_skill_tree_bonus(entity, 'max_mp_pct')
+    ac_bonus = get_skill_tree_bonus(entity, 'ac')
+
+    # Recalculate base HP/MP from class + level
+    cls_data = DnDClass.CLASSES.get(entity.char_class, DnDClass.CLASSES['warrior'])
+    base_hp = cls_data['hp_die'] + modifier(entity.stats['CON']) + (entity.level - 1) * (cls_data['hp_die'] // 2 + modifier(entity.stats['CON']))
+    base_mp = 10 + modifier(entity.stats['INT']) * 2 + modifier(entity.stats['WIS'])
+    base_mp += (entity.level - 1) * (2 + modifier(entity.stats['INT']))
+
+    # Apply % bonuses
+    entity.max_hp = max(1, int(base_hp * (1 + hp_pct / 100)))
+    entity.max_mp = max(1, int(base_mp * (1 + mp_pct / 100)))
+    entity.hp = min(entity.hp, entity.max_hp)
+    entity.mp = min(entity.mp, entity.max_mp)
+
+    # AC: base 10 + DEX + class armor + skill tree
+    base_ac = 10 + modifier(entity.stats['DEX'])
+    if entity.char_class == 'warrior': base_ac += 4
+    elif entity.char_class == 'rogue': base_ac += 2
+    elif entity.char_class == 'cleric': base_ac += 3
+    elif entity.char_class == 'ranger': base_ac += 1
+    # Re-add equipment AC
+    if entity.equipment.get('armor') and 'ac_bonus' in entity.equipment['armor']:
+        base_ac += entity.equipment['armor']['ac_bonus']
+    entity.ac = base_ac + ac_bonus
+
+def can_upgrade_node(entity, node_id):
+    """Check if an entity can upgrade a skill tree node."""
+    tree = SKILL_TREES.get(entity.char_class, [])
+    node = next((n for n in tree if n['id'] == node_id), None)
+    if not node:
+        return False
+    current_rank = entity.skill_tree.get(node_id, 0)
+    if current_rank >= node['max_rank']:
+        return False
+    if entity.skill_points <= 0:
+        return False
+    # Check prerequisites
+    for req_id in node['requires']:
+        if entity.skill_tree.get(req_id, 0) <= 0:
+            return False
+    return True
+
+def upgrade_node(entity, node_id):
+    """Spend a skill point to upgrade a node. Returns True on success."""
+    if not can_upgrade_node(entity, node_id):
+        return False
+    entity.skill_tree[node_id] = entity.skill_tree.get(node_id, 0) + 1
+    entity.skill_points -= 1
+    # Apply stat bonuses immediately
+    bonuses = SKILL_NODE_BONUSES.get(node_id, {})
+    for stat in ('str', 'dex', 'int', 'wis', 'con', 'cha'):
+        if stat in bonuses:
+            entity.stats[stat.upper()] += bonuses[stat]
+        if 'all_stats' in bonuses:
+            entity.stats[stat.upper()] += bonuses['all_stats']
+    apply_skill_tree_stats(entity)
+    return True
+
+
 class GameState(Enum):
     TITLE = 'title'
     CLASS_SELECT = 'class_select'
@@ -1870,6 +2118,7 @@ class GameState(Enum):
     VICTORY = 'victory'
     LEVEL_UP = 'level_up'
     SHOP = 'shop'
+    SKILL_TREE = 'skill_tree'
 
 
 class Game:
@@ -1897,6 +2146,9 @@ class Game:
         self.anim_tick = 0
         self.title_anim = 0
         self.move_cooldown = 0  # Frame counter for held-key movement
+        self.skill_tree_member_idx = 0  # Which party member's tree to view
+        self.skill_tree_selected = 0  # Currently highlighted node index
+        self._title_opts = []  # Title screen options
 
         # Fonts
         self.font_lg = pygame.font.SysFont('Segoe UI', 32, bold=True)
@@ -1974,10 +2226,10 @@ class Game:
             4: ['skeleton', 'spider', 'mimic'],
             5: ['orc', 'wraith', 'skeleton', 'st_demogorgon'],
             6: ['orc', 'troll', 'gelatinous_cube', 'st_demogorgon'],
-            7: ['troll', 'minotaur', 'wraith', 'st_vecna'],
-            8: ['minotaur', 'mind_flayer', 'dark_knight', 'st_vecna'],
+            7: ['troll', 'minotaur', 'wraith', 'st_vecna', 'st_mind_flayer'],
+            8: ['minotaur', 'mind_flayer', 'dark_knight', 'st_vecna', 'st_mind_flayer'],
             9: ['mind_flayer', 'dark_knight', 'dragon', 'demogorgon'],
-            10: ['dragon', 'dark_knight', 'vecna', 'demogorgon'],
+            10: ['dragon', 'dark_knight', 'vecna', 'demogorgon', 'st_mind_flayer'],
         }
         available_types = enemy_types_by_floor.get(min(self.floor_num, 10), ['dragon', 'mind_flayer', 'dark_knight'])
 
@@ -2074,6 +2326,7 @@ class Game:
 
         elif tile == TileType.STAIRS:
             self.floor_num += 1
+            self.save_game()
             self.generate_floor()
             return
 
@@ -2152,6 +2405,17 @@ class Game:
                 self.add_message(f"💧 Used {item['name']}! Restored {mana_amt} MP!", C_BLUE)
             elif item.get('effect') == 'fireball':
                 self.add_message(f"📜 Used {item['name']}! (Use in combat for 3d6 damage)", C_PURPLE)
+            elif item.get('effect') == 'revive':
+                dead_members = [m for m in self.party if not m.alive]
+                if dead_members:
+                    target = dead_members[0]
+                    target.alive = True
+                    target.hp = target.max_hp // 2
+                    self.add_message(f"💖 {target.name} has been revived with {target.hp} HP!", C_GOLD)
+                    spawn_particles(target.x * TILE_W + TILE_W // 2, target.y * TILE_H, C_GOLD, 20, 3, 40)
+                else:
+                    self.add_message(f"💖 No one needs reviving right now!", (150, 150, 150))
+                    return  # Don't consume the potion
             self.player.inventory.pop(item_idx)
 
         elif item['type'] in ('weapon', 'armor', 'accessory'):
@@ -2242,6 +2506,9 @@ class Game:
         """Handle combat victory: XP, loot, etc."""
         total_xp = sum(e.xp_reward for e in self.combat.enemies)
         total_gold = sum(random.randint(*e.gold_range) for e in self.combat.enemies)
+        # Apply gold bonus from skill tree
+        gold_pct = get_skill_tree_bonus(self.player, 'gold_pct')
+        total_gold = int(total_gold * (1 + gold_pct / 100))
         self.gold += total_gold
         self.add_message(f"\n🏆 Victory! Earned {total_xp} XP and {total_gold} gold!", C_GOLD)
 
@@ -2255,7 +2522,7 @@ class Game:
             if member.alive:
                 leveled = member.gain_xp(total_xp // max(1, len([p for p in self.party if p.alive])))
                 if leveled:
-                    self.add_message(f"🎉 {member.name} leveled up to {member.level}!", C_GOLD)
+                    self.add_message(f"🎉 {member.name} leveled up to {member.level}! (+2 skill points)", C_GOLD)
                     if member.is_ai:
                         line = ai_companion_say(member, 'level_up')
                         self.add_message(f"  💬 {member.name}: \"{line}\"", (150, 200, 255))
@@ -2267,6 +2534,22 @@ class Game:
             for item in loot:
                 self.player.inventory.append(item)
                 self.add_message(f"  {item.get('icon', '📦')} Found: {item['name']}", C_GREEN)
+
+        # Auto-revive: if a revive potion was obtained and someone is dead, auto-use it
+        dead_members = [m for m in self.party if not m.alive]
+        if dead_members:
+            revive_idx = None
+            for i, item in enumerate(self.player.inventory):
+                if item.get('effect') == 'revive':
+                    revive_idx = i
+                    break
+            if revive_idx is not None:
+                target = dead_members[0]
+                target.alive = True
+                target.hp = target.max_hp // 2
+                self.player.inventory.pop(revive_idx)
+                self.add_message(f"💖 Potion of Revive auto-used! {target.name} is back with {target.hp} HP!", C_GOLD)
+                spawn_particles(target.x * TILE_W + TILE_W // 2, target.y * TILE_H, (255, 100, 200), 20, 3, 40)
 
         # AI victory chat
         for companion in self.party[1:]:
@@ -2280,8 +2563,100 @@ class Game:
                 member.heal(member.max_hp // 10)
                 member.mp = min(member.max_mp, member.mp + 3)
 
+        # Auto-save progress
+        self.save_game()
+
         self.combat = None
         self.state = GameState.EXPLORING
+
+    def save_game(self):
+        """Save player progress to disk."""
+        if not self.player:
+            return
+        try:
+            def serialize_entity(e):
+                return {
+                    'name': e.name,
+                    'char_class': e.char_class,
+                    'level': e.level,
+                    'xp': e.xp,
+                    'xp_to_level': e.xp_to_level,
+                    'hp': e.hp,
+                    'max_hp': e.max_hp,
+                    'mp': e.mp,
+                    'max_mp': e.max_mp,
+                    'ac': e.ac,
+                    'stats': dict(e.stats),
+                    'skill_points': e.skill_points,
+                    'skill_tree': dict(e.skill_tree),
+                    'inventory': list(e.inventory),
+                    'equipment': {k: (dict(v) if v else None) for k, v in e.equipment.items()},
+                    'skills': list(e.skills),
+                    'attack_dice': e.attack_dice,
+                    'is_ai': e.is_ai,
+                    'alive': e.alive,
+                    'ai_personality': getattr(e, 'ai_personality', 'brave'),
+                }
+
+            data = {
+                'version': 2,
+                'player': serialize_entity(self.player),
+                'companions': [serialize_entity(c) for c in self.party[1:]],
+                'gold': self.gold,
+                'floor_num': self.floor_num,
+            }
+            with open(SAVE_FILE, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            self.add_message(f"⚠️ Save failed: {e}", C_RED)
+
+    def load_game(self):
+        """Load saved progress and start on a fresh floor with saved stats."""
+        if not os.path.exists(SAVE_FILE):
+            return False
+        try:
+            with open(SAVE_FILE, 'r') as f:
+                data = json.load(f)
+
+            def deserialize_entity(d, is_ai=False):
+                ent = Entity(d['name'], d['char_class'], level=d.get('level', 1), is_ai=is_ai)
+                ent.xp = d.get('xp', 0)
+                ent.xp_to_level = d.get('xp_to_level', 100)
+                ent.stats = d.get('stats', ent.stats)
+                ent.max_hp = d.get('max_hp', ent.max_hp)
+                ent.hp = d.get('hp', ent.max_hp)
+                ent.max_mp = d.get('max_mp', ent.max_mp)
+                ent.mp = d.get('mp', ent.max_mp)
+                ent.ac = d.get('ac', ent.ac)
+                ent.skill_points = d.get('skill_points', 0)
+                ent.skill_tree = d.get('skill_tree', {})
+                ent.inventory = d.get('inventory', [])
+                ent.equipment = {k: (dict(v) if v else None) for k, v in d.get('equipment', {}).items()}
+                ent.skills = d.get('skills', ent.skills)
+                ent.attack_dice = d.get('attack_dice', ent.attack_dice)
+                ent.alive = d.get('alive', True)
+                ent.ai_personality = d.get('ai_personality', 'brave')
+                ent.level = d.get('level', 1)
+                return ent
+
+            self.player = deserialize_entity(data['player'], is_ai=False)
+            self.party = [self.player]
+            for cd in data.get('companions', []):
+                companion = deserialize_entity(cd, is_ai=True)
+                self.party.append(companion)
+
+            self.gold = data.get('gold', 50)
+            self.floor_num = data.get('floor_num', 1)
+
+            # Generate a fresh floor with saved progress
+            self.generate_floor()
+            self.state = GameState.EXPLORING
+            self.add_message(f"💾 Save loaded! {self.player.name} the {self.player.char_class.title()} — Level {self.player.level}", C_GOLD)
+            self.add_message(f"📍 Floor {self.floor_num} — Continuing adventure...", C_GOLD)
+            return True
+        except Exception as e:
+            self.add_message(f"⚠️ Load failed: {e}", C_RED)
+            return False
 
     # ════════════════════════════════════════════════════════
     # RENDERING
@@ -2299,6 +2674,8 @@ class Game:
             self.draw_combat()
         elif self.state == GameState.INVENTORY:
             self.draw_inventory()
+        elif self.state == GameState.SKILL_TREE:
+            self.draw_skill_tree()
         elif self.state == GameState.GAME_OVER:
             self.draw_game_over()
 
@@ -2332,13 +2709,16 @@ class Game:
 
         # Menu options
         pulse = int(math.sin(self.title_anim * 0.06) * 20 + 235)
-        opts = [
-            ("⚔️  New Adventure", (pulse, pulse - 20, 100)),
-            ("📖  How to Play", (150, 180, 200)),
-            ("🚪  Quit", (180, 150, 150)),
-        ]
+        has_save = os.path.exists(SAVE_FILE)
+        opts = []
+        if has_save:
+            opts.append(("💾  Continue", (100, pulse, 100)))
+        opts.append(("⚔️  New Adventure", (pulse, pulse - 20, 100)))
+        opts.append(("📖  How to Play", (150, 180, 200)))
+        opts.append(("🚪  Quit", (180, 150, 150)))
+        self._title_opts = opts  # Store for click handling
         for i, (text, col) in enumerate(opts):
-            y = 360 + i * 55
+            y = 340 + i * 50
             t = self.font_md.render(text, True, col)
             screen.blit(t, (SCREEN_W // 2 - t.get_width() // 2, y))
             # Hover hint
@@ -2347,7 +2727,7 @@ class Game:
                 pygame.draw.rect(screen, C_GOLD, (SCREEN_W // 2 - 125, y - 3, 250, 32), 1, border_radius=6)
 
         # Version
-        v = self.font_xs.render("v1.0 — Procedural Dungeons • AI Party • DnD Rules", True, (80, 70, 100))
+        v = self.font_xs.render("v2.0 — Skill Trees • Save/Load • Revive Potions • AI Party", True, (80, 70, 100))
         screen.blit(v, (SCREEN_W // 2 - v.get_width() // 2, SCREEN_H - 40))
 
         # Animated torches on sides
@@ -2650,8 +3030,14 @@ class Game:
         screen.blit(gold_t, (SCREEN_W - gold_t.get_width() - 15, SCREEN_H - 30))
 
         # Controls hint
-        ctrl = self.font_xs.render("WASD:Move  I:Inventory  M:Map  1-3:Skills  ESC:Menu", True, (100, 90, 120))
+        ctrl = self.font_xs.render("WASD:Move  I:Inventory  T:Skills  M:Map  1-3:Skills  ESC:Menu", True, (100, 90, 120))
         screen.blit(ctrl, (SCREEN_W - ctrl.get_width() - 15, SCREEN_H - 50))
+
+        # Skill points notification
+        total_sp = sum(m.skill_points for m in self.party)
+        if total_sp > 0:
+            sp_note = self.font_sm.render(f"🌟 {total_sp} skill point{'s' if total_sp != 1 else ''} available! (T)", True, C_GOLD)
+            screen.blit(sp_note, (SCREEN_W - sp_note.get_width() - 15, SCREEN_H - 68))
 
     def draw_message_log(self):
         """Draw the scrolling message log."""
@@ -3050,8 +3436,187 @@ class Game:
             screen.blit(mt, (items_x + 20, y))
 
         # Instructions
-        inst = self.font_sm.render("Press I or ESC to close | Click items to use/equip", True, (100, 90, 120))
+        inst = self.font_sm.render("Press I or ESC to close | Click items to use/equip | T for Skill Tree", True, (100, 90, 120))
         screen.blit(inst, (SCREEN_W // 2 - inst.get_width() // 2, SCREEN_H - 30))
+
+    def draw_skill_tree(self):
+        """Draw the skill tree screen for the currently selected party member."""
+        screen.fill(C_DARK)
+
+        # Get current member
+        member_idx = self.skill_tree_member_idx % len(self.party)
+        member = self.party[member_idx]
+        tree = SKILL_TREES.get(member.char_class, [])
+
+        # Title bar
+        title_text = f"🌳 Skill Tree — {member.name} ({member.char_class.title()}) — Level {member.level}"
+        t = self.font_lg.render(title_text, True, C_GOLD)
+        screen.blit(t, (SCREEN_W // 2 - t.get_width() // 2, 15))
+
+        # Skill points display
+        sp_col = C_GOLD if member.skill_points > 0 else (100, 90, 110)
+        sp_text = f"✨ Skill Points: {member.skill_points}"
+        sp = self.font_md.render(sp_text, True, sp_col)
+        screen.blit(sp, (SCREEN_W // 2 - sp.get_width() // 2, 55))
+
+        # Party member tabs
+        tab_y = 85
+        tab_x_start = 50
+        for i, m in enumerate(self.party):
+            col = C_GOLD if i == member_idx else (100, 90, 110)
+            bg = (50, 40, 65) if i == member_idx else C_DARK2
+            tab_w = 200
+            tx = tab_x_start + i * (tab_w + 10)
+            pygame.draw.rect(screen, bg, (tx, tab_y, tab_w, 30), border_radius=6)
+            pygame.draw.rect(screen, col, (tx, tab_y, tab_w, 30), 1, border_radius=6)
+            status = "" if m.alive else " 💀"
+            pts = f" ({m.skill_points}pts)" if m.skill_points > 0 else ""
+            tab_label = f"{'👤' if not m.is_ai else '🤖'} {m.name}{pts}{status}"
+            tt = self.font_sm.render(tab_label, True, col)
+            screen.blit(tt, (tx + 10, tab_y + 7))
+
+        # Draw skill tree nodes
+        tree_area_x = 100
+        tree_area_y = 140
+        node_w = 220
+        node_h = 65
+        col_spacing = 260
+        row_spacing = 100
+
+        mx, my = pygame.mouse.get_pos()
+
+        # Draw connection lines first
+        for node in tree:
+            if not node['requires']:
+                continue
+            nx = tree_area_x + node['col'] * col_spacing + node_w // 2
+            ny = tree_area_y + node['row'] * row_spacing + node_h // 2
+            for req_id in node['requires']:
+                req_node = next((n for n in tree if n['id'] == req_id), None)
+                if req_node:
+                    rx = tree_area_x + req_node['col'] * col_spacing + node_w // 2
+                    ry = tree_area_y + req_node['row'] * row_spacing + node_h // 2
+                    req_rank = member.skill_tree.get(req_id, 0)
+                    line_col = (80, 180, 80) if req_rank > 0 else (60, 50, 70)
+                    pygame.draw.line(screen, line_col, (rx, ry), (nx, ny), 2)
+
+        # Draw nodes
+        for i, node in enumerate(tree):
+            nx = tree_area_x + node['col'] * col_spacing
+            ny = tree_area_y + node['row'] * row_spacing
+            rank = member.skill_tree.get(node['id'], 0)
+            can_up = can_upgrade_node(member, node['id'])
+            is_selected = (i == self.skill_tree_selected)
+            is_hovered = nx <= mx <= nx + node_w and ny <= my <= ny + node_h
+
+            # Node color
+            if rank >= node['max_rank']:
+                bg_col = (30, 70, 30)  # Maxed — green
+                border_col = (80, 200, 80)
+            elif rank > 0:
+                bg_col = (40, 50, 70)  # Partially filled — blue
+                border_col = (100, 150, 220)
+            elif can_up:
+                bg_col = (55, 45, 35)  # Available — warm
+                border_col = C_GOLD
+            else:
+                bg_col = (30, 28, 35)  # Locked — dim
+                border_col = (60, 55, 70)
+
+            if is_selected or is_hovered:
+                bg_col = tuple(min(255, c + 20) for c in bg_col)
+                border_col = C_WHITE
+
+            pygame.draw.rect(screen, bg_col, (nx, ny, node_w, node_h), border_radius=8)
+            pygame.draw.rect(screen, border_col, (nx, ny, node_w, node_h), 2, border_radius=8)
+
+            # Icon + name
+            icon_name = f"{node['icon']} {node['name']}"
+            nt = self.font_sm.render(icon_name, True, C_WHITE if rank > 0 or can_up else (120, 110, 130))
+            screen.blit(nt, (nx + 10, ny + 8))
+
+            # Rank
+            rank_text = f"{rank}/{node['max_rank']}"
+            rank_col = C_GREEN if rank >= node['max_rank'] else (C_GOLD if rank > 0 else (100, 90, 110))
+            rt = self.font_sm.render(rank_text, True, rank_col)
+            screen.blit(rt, (nx + node_w - 40, ny + 8))
+
+            # Description
+            dt = self.font_xs.render(node['desc'], True, (160, 150, 175))
+            screen.blit(dt, (nx + 10, ny + 30))
+
+            # Upgrade hint
+            if can_up and (is_selected or is_hovered):
+                hint = self.font_xs.render("[Click or ENTER to upgrade]", True, C_GOLD)
+                screen.blit(hint, (nx + 10, ny + 48))
+
+        # Stats summary on the right
+        stats_x = SCREEN_W - 350
+        stats_y = tree_area_y
+        pygame.draw.rect(screen, C_DARK2, (stats_x, stats_y, 320, 420), border_radius=10)
+        pygame.draw.rect(screen, C_PANEL_BORDER, (stats_x, stats_y, 320, 420), 1, border_radius=10)
+        sh = self.font_md.render("📊 Skill Tree Bonuses", True, C_GOLD)
+        screen.blit(sh, (stats_x + 15, stats_y + 10))
+
+        bonus_lines = []
+        hp_pct = get_skill_tree_bonus(member, 'max_hp_pct')
+        mp_pct = get_skill_tree_bonus(member, 'max_mp_pct')
+        ac = get_skill_tree_bonus(member, 'ac')
+        dmg = get_skill_tree_bonus(member, 'damage_pct')
+        skill_pwr = get_skill_tree_bonus(member, 'skill_power_pct')
+        magic_dmg = get_skill_tree_bonus(member, 'magic_damage_pct')
+        heal_pwr = get_skill_tree_bonus(member, 'heal_power_pct')
+        mp_red = get_skill_tree_bonus(member, 'mp_cost_reduction')
+        crit_dmg = get_skill_tree_bonus(member, 'crit_damage_pct')
+        gold_b = get_skill_tree_bonus(member, 'gold_pct')
+        xp_b = get_skill_tree_bonus(member, 'xp_pct')
+        atk_b = get_skill_tree_bonus(member, 'attack_bonus')
+
+        if hp_pct: bonus_lines.append(f"❤️ Max HP: +{hp_pct}%")
+        if mp_pct: bonus_lines.append(f"💧 Max MP: +{mp_pct}%")
+        if ac: bonus_lines.append(f"🛡️ AC: +{ac}")
+        if dmg: bonus_lines.append(f"⚔️ Damage: +{dmg}%")
+        if skill_pwr: bonus_lines.append(f"✨ Skill Power: +{skill_pwr}%")
+        if magic_dmg: bonus_lines.append(f"🔮 Magic Damage: +{magic_dmg}%")
+        if heal_pwr: bonus_lines.append(f"🙏 Heal Power: +{heal_pwr}%")
+        if mp_red: bonus_lines.append(f"⚡ MP Cost: -{mp_red}")
+        if crit_dmg: bonus_lines.append(f"🗡️ Crit Damage: +{crit_dmg}%")
+        if gold_b: bonus_lines.append(f"🪙 Gold Found: +{gold_b}%")
+        if xp_b: bonus_lines.append(f"📈 XP Gained: +{xp_b}%")
+        if atk_b: bonus_lines.append(f"🎯 Attack Bonus: +{atk_b}")
+
+        # Stat bonuses
+        for stat in ('STR', 'DEX', 'INT', 'WIS', 'CON', 'CHA'):
+            st_bonus = get_skill_tree_bonus(member, stat.lower())
+            if st_bonus: bonus_lines.append(f"📊 {stat}: +{st_bonus}")
+
+        if not bonus_lines:
+            bonus_lines.append("No skills upgraded yet")
+
+        for i, line in enumerate(bonus_lines):
+            col = C_WHITE if "No skills" not in line else (100, 90, 110)
+            bt = self.font_sm.render(line, True, col)
+            screen.blit(bt, (stats_x + 20, stats_y + 40 + i * 22))
+
+        # Member stats summary
+        ms_y = stats_y + 40 + max(len(bonus_lines), 1) * 22 + 15
+        ms_lines = [
+            f"Level {member.level} {member.char_class.title()}",
+            f"HP: {member.hp}/{member.max_hp}  MP: {member.mp}/{member.max_mp}",
+            f"AC: {member.ac}  XP: {member.xp}/{member.xp_to_level}",
+        ]
+        for i, line in enumerate(ms_lines):
+            mst = self.font_sm.render(line, True, (160, 150, 175))
+            screen.blit(mst, (stats_x + 20, ms_y + i * 20))
+
+        # Instructions
+        inst_lines = [
+            "← → Switch party member | ↑ ↓ Select node | ENTER Upgrade",
+            "T or ESC to close | Numbers 1-6 to upgrade nodes directly",
+        ]
+        for i, line in enumerate(inst_lines):
+            inst = self.font_sm.render(line, True, (100, 90, 120))
+            screen.blit(inst, (SCREEN_W // 2 - inst.get_width() // 2, SCREEN_H - 50 + i * 20))
 
     def draw_game_over(self):
         # Fade overlay
@@ -3097,6 +3662,11 @@ def main():
                 # ─── TITLE SCREEN ───
                 if game.state == GameState.TITLE:
                     if event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                        if os.path.exists(SAVE_FILE):
+                            game.load_game()
+                        else:
+                            game.state = GameState.CLASS_SELECT
+                    elif event.key == pygame.K_n:
                         game.state = GameState.CLASS_SELECT
                     elif event.key == pygame.K_ESCAPE:
                         pygame.quit()
@@ -3122,6 +3692,10 @@ def main():
                 elif game.state == GameState.EXPLORING:
                     if event.key == pygame.K_i:
                         game.state = GameState.INVENTORY
+                    elif event.key == pygame.K_t:
+                        game.skill_tree_member_idx = 0
+                        game.skill_tree_selected = 0
+                        game.state = GameState.SKILL_TREE
                     elif event.key == pygame.K_m:
                         game.minimap_open = not game.minimap_open
                     elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3):
@@ -3229,6 +3803,40 @@ def main():
                 elif game.state == GameState.INVENTORY:
                     if event.key in (pygame.K_i, pygame.K_ESCAPE):
                         game.state = GameState.EXPLORING
+                    elif event.key == pygame.K_t:
+                        game.skill_tree_member_idx = 0
+                        game.skill_tree_selected = 0
+                        game.state = GameState.SKILL_TREE
+
+                # ─── SKILL TREE ───
+                elif game.state == GameState.SKILL_TREE:
+                    member = game.party[game.skill_tree_member_idx % len(game.party)]
+                    tree = SKILL_TREES.get(member.char_class, [])
+                    if event.key in (pygame.K_t, pygame.K_ESCAPE):
+                        game.state = GameState.EXPLORING
+                    elif event.key == pygame.K_LEFT:
+                        game.skill_tree_member_idx = (game.skill_tree_member_idx - 1) % len(game.party)
+                        game.skill_tree_selected = 0
+                    elif event.key == pygame.K_RIGHT:
+                        game.skill_tree_member_idx = (game.skill_tree_member_idx + 1) % len(game.party)
+                        game.skill_tree_selected = 0
+                    elif event.key == pygame.K_UP:
+                        game.skill_tree_selected = (game.skill_tree_selected - 1) % max(1, len(tree))
+                    elif event.key == pygame.K_DOWN:
+                        game.skill_tree_selected = (game.skill_tree_selected + 1) % max(1, len(tree))
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        if tree and game.skill_tree_selected < len(tree):
+                            node_id = tree[game.skill_tree_selected]['id']
+                            if upgrade_node(member, node_id):
+                                game.add_message(f"🌟 {member.name} upgraded {tree[game.skill_tree_selected]['name']}!", C_GOLD)
+                                game.save_game()
+                    elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6):
+                        idx = event.key - pygame.K_1
+                        if idx < len(tree):
+                            node_id = tree[idx]['id']
+                            if upgrade_node(member, node_id):
+                                game.add_message(f"🌟 {member.name} upgraded {tree[idx]['name']}!", C_GOLD)
+                                game.save_game()
 
                 # ─── GAME OVER ───
                 elif game.state == GameState.GAME_OVER:
@@ -3242,14 +3850,18 @@ def main():
                 mx, my = event.pos
 
                 if game.state == GameState.TITLE:
-                    for i, (_, _) in enumerate([("New Adventure", None), ("How to Play", None), ("Quit", None)]):
-                        y = 360 + i * 55
+                    title_opts = getattr(game, '_title_opts', [])
+                    for i, (label, _) in enumerate(title_opts):
+                        y = 340 + i * 50
                         if SCREEN_W // 2 - 120 < mx < SCREEN_W // 2 + 120 and y - 5 < my < y + 30:
-                            if i == 0:
+                            if 'Continue' in label:
+                                game.load_game()
+                            elif 'New Adventure' in label:
                                 game.state = GameState.CLASS_SELECT
-                            elif i == 2:
+                            elif 'Quit' in label:
                                 pygame.quit()
                                 sys.exit()
+                            break
 
                 elif game.state == GameState.CLASS_SELECT:
                     classes = list(DnDClass.CLASSES.keys())
@@ -3271,6 +3883,37 @@ def main():
                         if items_x + 10 <= mx <= items_x + 440 and y <= my <= y + 28:
                             game.use_item(i)
                             break
+
+                elif game.state == GameState.SKILL_TREE:
+                    # Click party member tabs
+                    tab_y = 85
+                    tab_x_start = 50
+                    tab_w = 200
+                    for i in range(len(game.party)):
+                        tx = tab_x_start + i * (tab_w + 10)
+                        if tx <= mx <= tx + tab_w and tab_y <= my <= tab_y + 30:
+                            game.skill_tree_member_idx = i
+                            game.skill_tree_selected = 0
+                            break
+                    else:
+                        # Click skill tree nodes
+                        member = game.party[game.skill_tree_member_idx % len(game.party)]
+                        tree = SKILL_TREES.get(member.char_class, [])
+                        tree_area_x = 100
+                        tree_area_y = 140
+                        node_w = 220
+                        node_h = 65
+                        col_spacing = 260
+                        row_spacing = 100
+                        for i, node in enumerate(tree):
+                            nx = tree_area_x + node['col'] * col_spacing
+                            ny = tree_area_y + node['row'] * row_spacing
+                            if nx <= mx <= nx + node_w and ny <= my <= ny + node_h:
+                                game.skill_tree_selected = i
+                                if upgrade_node(member, node['id']):
+                                    game.add_message(f"🌟 {member.name} upgraded {node['name']}!", C_GOLD)
+                                    game.save_game()
+                                break
 
                 elif game.state == GameState.COMBAT and game.combat and game.combat.phase == 'player_turn':
                     current = game.combat.get_current()
