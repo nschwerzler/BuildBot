@@ -2179,6 +2179,7 @@ class Game:
         saved_xp_to_level = 100
         saved_skill_points = 0
         saved_skill_tree = {}
+        saved_companions = []
         if os.path.exists(SAVE_FILE):
             try:
                 with open(SAVE_FILE, 'r') as f:
@@ -2189,6 +2190,7 @@ class Game:
                 saved_xp_to_level = p.get('xp_to_level', 100)
                 saved_skill_points = p.get('skill_points', 0)
                 saved_skill_tree = p.get('skill_tree', {})
+                saved_companions = old_data.get('companions', [])
             except Exception:
                 pass
 
@@ -2196,7 +2198,7 @@ class Game:
         self.party = [self.player]
         self.gold = 50
 
-        # Apply carried-over levels
+        # Apply carried-over levels to player
         if saved_level > 1:
             self.player.level = saved_level
             self.player.xp = saved_xp
@@ -2233,13 +2235,26 @@ class Game:
         for _ in range(2):
             self.player.inventory.append(dict(ITEM_TEMPLATES['health_potion']))
 
-        # Add AI companions (one of each remaining class)
+        # Add AI companions (carry over saved levels)
         available_classes = [c for c in DnDClass.CLASSES.keys() if c != char_class]
         random.shuffle(available_classes)
+        # Find max saved companion level to apply to new companions
+        comp_level = max((c.get('level', 1) for c in saved_companions), default=1) if saved_companions else saved_level
         for i, cls in enumerate(available_classes[:2]):
             name = random.choice(AI_NAMES.get(cls, ['Companion']))
             companion = Entity(name, cls, is_ai=True)
-            companion.level = 1
+            if comp_level > 1:
+                companion.level = comp_level
+                companion.xp = 0
+                companion.xp_to_level = int(100 * (1.5 ** (comp_level - 1)))
+                companion.skill_points = 2 * (comp_level - 1)
+                cls_data = DnDClass.CLASSES.get(cls, DnDClass.CLASSES['warrior'])
+                for _ in range(comp_level - 1):
+                    hp_gain = cls_data['hp_die'] // 2 + 1 + modifier(companion.stats['CON'])
+                    companion.max_hp += max(1, hp_gain)
+                    companion.max_mp += 2 + modifier(companion.stats['INT'])
+                companion.hp = companion.max_hp
+                companion.mp = companion.max_mp
             self.party.append(companion)
 
         self.floor_num = 1

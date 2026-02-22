@@ -2,24 +2,24 @@
   "version": 2,
   "player": {
     "name": "Hero",
-    "char_class": "warrior",
-    "level": 1,
-    "xp": 0,
-    "xp_to_level": 100,
+    "char_class": "rogue",
+    "level": 2,
+    "xp": 10,
+    "xp_to_level": 150,
     "hp": 11,
     "max_hp": 11,
-    "mp": 9,
-    "max_mp": 9,
-    "ac": 14,
+    "mp": 14,
+    "max_mp": 14,
+    "ac": 16,
     "stats": {
       "STR": 14,
-      "DEX": 10,
-      "CON": 13,
-      "INT": 9,
-      "WIS": 12,
-      "CHA": 13
+      "DEX": 18,
+      "CON": 7,
+      "INT": 10,
+      "WIS": 13,
+      "CHA": 11
     },
-    "skill_points": 0,
+    "skill_points": 2,
     "skill_tree": {},
     "inventory": [
       {
@@ -31,12 +31,22 @@
         "desc": "+1 attack damage"
       },
       {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
       },
       {
         "name": "Health Potion",
@@ -55,6 +65,51 @@
         "value": 20,
         "price": 15,
         "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
       }
     ],
     "equipment": {
@@ -66,47 +121,40 @@
         "price": 50,
         "desc": "+1 attack damage"
       },
-      "armor": {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
+      "armor": null,
       "accessory": null
     },
     "skills": [
-      "Power Strike",
-      "Shield Bash",
-      "Rally"
+      "Backstab",
+      "Smoke Bomb",
+      "Steal"
     ],
-    "attack_dice": "1d8",
+    "attack_dice": "1d6",
     "is_ai": false,
     "alive": true,
-    "ai_personality": "witty"
+    "ai_personality": "cautious"
   },
   "companions": [
     {
-      "name": "Willow",
-      "char_class": "ranger",
-      "level": 1,
+      "name": "Ironheart",
+      "char_class": "warrior",
+      "level": 2,
       "xp": 0,
-      "xp_to_level": 100,
-      "hp": 6,
-      "max_hp": 6,
-      "mp": 9,
-      "max_mp": 9,
-      "ac": 15,
+      "xp_to_level": 150,
+      "hp": 16,
+      "max_hp": 16,
+      "mp": 14,
+      "max_mp": 14,
+      "ac": 16,
       "stats": {
-        "STR": 6,
-        "DEX": 18,
-        "CON": 6,
+        "STR": 18,
+        "DEX": 15,
+        "CON": 12,
         "INT": 8,
-        "WIS": 12,
-        "CHA": 10
+        "WIS": 16,
+        "CHA": 13
       },
-      "skill_points": 0,
+      "skill_points": 2,
       "skill_tree": {},
       "inventory": [],
       "equipment": {
@@ -115,35 +163,35 @@
         "accessory": null
       },
       "skills": [
-        "Arrow Rain",
-        "Trap",
-        "Nature's Blessing"
+        "Power Strike",
+        "Shield Bash",
+        "Rally"
       ],
       "attack_dice": "1d8",
       "is_ai": true,
       "alive": true,
-      "ai_personality": "cautious"
+      "ai_personality": "fierce"
     },
     {
-      "name": "Zephyr",
-      "char_class": "mage",
-      "level": 1,
+      "name": "Lumina",
+      "char_class": "cleric",
+      "level": 2,
       "xp": 0,
-      "xp_to_level": 100,
-      "hp": 7,
-      "max_hp": 7,
-      "mp": 17,
-      "max_mp": 17,
-      "ac": 13,
+      "xp_to_level": 150,
+      "hp": 13,
+      "max_hp": 13,
+      "mp": 19,
+      "max_mp": 19,
+      "ac": 15,
       "stats": {
-        "STR": 10,
-        "DEX": 16,
-        "CON": 12,
-        "INT": 14,
-        "WIS": 17,
-        "CHA": 13
+        "STR": 11,
+        "DEX": 14,
+        "CON": 10,
+        "INT": 15,
+        "WIS": 14,
+        "CHA": 16
       },
-      "skill_points": 0,
+      "skill_points": 2,
       "skill_tree": {},
       "inventory": [],
       "equipment": {
@@ -152,16 +200,16 @@
         "accessory": null
       },
       "skills": [
-        "Fireball",
-        "Ice Shard",
-        "Arcane Shield"
+        "Heal",
+        "Smite",
+        "Bless"
       ],
-      "attack_dice": "1d4",
+      "attack_dice": "1d6",
       "is_ai": true,
       "alive": true,
       "ai_personality": "fierce"
     }
   ],
-  "gold": 50,
-  "floor_num": 1
+  "gold": 97,
+  "floor_num": 2
 }
