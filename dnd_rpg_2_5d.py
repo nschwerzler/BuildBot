@@ -19,6 +19,7 @@ SCREEN_W, SCREEN_H = 1280, 800
 TILE_W, TILE_H = 64, 32  # Isometric tile dimensions
 FPS = 60
 SAVE_FILE = "dnd_rpg_save.json"
+MAX_INVENTORY = 40  # Maximum inventory capacity
 
 # Colors
 C_BLACK = (0, 0, 0)
@@ -2279,6 +2280,9 @@ class Game:
         self._title_opts = []  # Title screen options
         self.in_upside_down = False  # Whether current floor is an Upside Down version
         self.st_portal_announced = False  # Whether AI has reacted to portal
+        self.inv_scroll = 0  # Inventory scroll offset
+        self.inv_sort_mode = 0  # 0=type, 1=name, 2=rarity
+        self.inv_selected = -1  # Currently selected item index (-1 = none)
 
         # Fonts
         self.font_lg = pygame.font.SysFont('Segoe UI', 32, bold=True)
@@ -2575,7 +2579,8 @@ class Game:
             self.gold += g
             self.add_message(f"📦 Opened chest! Found {g} gold!", C_GOLD)
             for item in loot:
-                self.player.inventory.append(item)
+                if not self.try_add_item(item):
+                    break  # Inventory full
                 self.add_message(f"  {item.get('icon', '📦')} {item['name']}", C_GREEN)
             spawn_particles(nx * TILE_W + TILE_W // 2, ny * TILE_H, C_GOLD, 15, 3, 40)
 
@@ -2748,6 +2753,47 @@ class Game:
                 self.player.max_hp += item['hp_bonus']
                 self.player.hp += item['hp_bonus']
 
+    def can_pickup(self):
+        """Check if player has room in inventory."""
+        return len(self.player.inventory) < MAX_INVENTORY
+
+    def try_add_item(self, item):
+        """Try to add an item to inventory. Returns True if successful."""
+        if self.can_pickup():
+            self.player.inventory.append(item)
+            return True
+        else:
+            self.add_message(f"🎒 Inventory full! ({MAX_INVENTORY}/{MAX_INVENTORY}) — Drop items to make room!", C_RED)
+            return False
+
+    def drop_item(self, item_idx):
+        """Drop an item from inventory."""
+        if 0 <= item_idx < len(self.player.inventory):
+            item = self.player.inventory[item_idx]
+            self.player.inventory.pop(item_idx)
+            self.add_message(f"🗑️ Dropped {item.get('icon', '📦')} {item['name']}", (180, 120, 120))
+            # Adjust scroll if needed
+            self.inv_scroll = max(0, min(self.inv_scroll, max(0, len(self.player.inventory) - 14)))
+            if self.inv_selected >= len(self.player.inventory):
+                self.inv_selected = len(self.player.inventory) - 1
+
+    def get_sorted_inventory(self):
+        """Return inventory sorted by current sort mode. Returns list of (original_idx, item) tuples."""
+        if not self.player or not self.player.inventory:
+            return []
+        TYPE_ORDER = {'weapon': 0, 'armor': 1, 'accessory': 2, 'consumable': 3}
+        RARITY_ORDER = {'legendary': 0, 'epic': 1, 'rare': 2, 'uncommon': 3, 'common': 4}
+        indexed = list(enumerate(self.player.inventory))
+        if self.inv_sort_mode == 0:  # Sort by type
+            indexed.sort(key=lambda x: (TYPE_ORDER.get(x[1].get('type', ''), 9), x[1].get('name', '')))
+        elif self.inv_sort_mode == 1:  # Sort by name
+            indexed.sort(key=lambda x: x[1].get('name', '').lower())
+        elif self.inv_sort_mode == 2:  # Sort by rarity/value
+            indexed.sort(key=lambda x: (RARITY_ORDER.get(x[1].get('rarity', 'common'), 4), x[1].get('name', '')))
+        return indexed
+
+    SORT_MODE_NAMES = ['Type', 'Name', 'Rarity']
+
     def update(self):
         self.anim_tick += 1
         self.title_anim += 1
@@ -2864,7 +2910,7 @@ class Game:
                 bonus_lvls = reward['levels']
                 acc_key = reward['accessory']
                 acc_item = dict(ITEM_TEMPLATES[acc_key])
-                self.player.inventory.append(acc_item)
+                self.try_add_item(acc_item)
                 self.add_message(f"🏅 BOSS DEFEATED! +{bonus_lvls} bonus levels!", (255, 215, 0))
                 self.add_message(f"  {acc_item['icon']} Boss drop: {acc_item['name']}!", (255, 215, 0))
                 # Grant bonus levels to all party members
@@ -2878,8 +2924,8 @@ class Game:
         for enemy in self.combat.enemies:
             _, loot = generate_loot(self.player.level, enemy.enemy_type)
             for item in loot:
-                self.player.inventory.append(item)
-                self.add_message(f"  {item.get('icon', '📦')} Found: {item['name']}", C_GREEN)
+                if self.try_add_item(item):
+                    self.add_message(f"  {item.get('icon', '📦')} Found: {item['name']}", C_GREEN)
 
         # Auto-revive: if a revive potion was obtained and someone is dead, auto-use it
         dead_members = [m for m in self.party if not m.alive]
@@ -3722,12 +3768,26 @@ class Game:
             screen.blit(hint, (25, panel_y + 150))
 
     def draw_inventory(self):
-        """Draw the inventory screen."""
+        """Draw the inventory screen with sorting, scrolling, capacity."""
         screen.fill(C_DARK)
 
-        # Title
+        # Title with capacity
+        inv_count = len(self.player.inventory)
+        cap_col = C_RED if inv_count >= MAX_INVENTORY else C_GOLD if inv_count >= MAX_INVENTORY - 5 else C_WHITE
         t = self.font_lg.render("📦 Inventory", True, C_GOLD)
-        screen.blit(t, (SCREEN_W // 2 - t.get_width() // 2, 20))
+        screen.blit(t, (SCREEN_W // 2 - t.get_width() // 2 - 60, 20))
+        cap_t = self.font_md.render(f"[{inv_count}/{MAX_INVENTORY}]", True, cap_col)
+        screen.blit(cap_t, (SCREEN_W // 2 + t.get_width() // 2 - 40, 28))
+
+        # Capacity bar
+        bar_x = SCREEN_W // 2 - 100
+        bar_w = 200
+        bar_h = 6
+        bar_y = 55
+        fill_pct = min(1.0, inv_count / MAX_INVENTORY)
+        bar_col = C_RED if fill_pct >= 1.0 else C_GOLD if fill_pct >= 0.85 else C_GREEN
+        pygame.draw.rect(screen, C_DARK3, (bar_x, bar_y, bar_w, bar_h), border_radius=3)
+        pygame.draw.rect(screen, bar_col, (bar_x, bar_y, int(bar_w * fill_pct), bar_h), border_radius=3)
 
         # Stats panel
         stats_x = 50
@@ -3769,40 +3829,110 @@ class Game:
             et = self.font_sm.render(f"{slot.title()}: {item_name}", True, C_WHITE if item else (100, 90, 110))
             screen.blit(et, (equip_x + 10, equip_y + 25 + i * 20))
 
-        # Items list
+        # Items list panel
         items_x = 400
         items_y = 80
-        pygame.draw.rect(screen, C_DARK2, (items_x, items_y, 450, 500), border_radius=10)
-        pygame.draw.rect(screen, C_PANEL_BORDER, (items_x, items_y, 450, 500), 1, border_radius=10)
+        panel_w = 450
+        panel_h = 530
+        pygame.draw.rect(screen, C_DARK2, (items_x, items_y, panel_w, panel_h), border_radius=10)
+        pygame.draw.rect(screen, C_PANEL_BORDER, (items_x, items_y, panel_w, panel_h), 1, border_radius=10)
 
+        # Header row: Items label + Sort button
         il = self.font_md.render("🎒 Items", True, C_GOLD)
-        screen.blit(il, (items_x + 15, items_y + 15))
+        screen.blit(il, (items_x + 15, items_y + 10))
+        sort_name = self.SORT_MODE_NAMES[self.inv_sort_mode]
+        sort_btn_x = items_x + panel_w - 140
+        sort_btn_y = items_y + 8
+        sort_btn_w = 125
+        sort_btn_h = 24
+        pygame.draw.rect(screen, (60, 50, 80), (sort_btn_x, sort_btn_y, sort_btn_w, sort_btn_h), border_radius=5)
+        pygame.draw.rect(screen, C_PANEL_BORDER, (sort_btn_x, sort_btn_y, sort_btn_w, sort_btn_h), 1, border_radius=5)
+        sort_t = self.font_sm.render(f"Sort: {sort_name} [S]", True, (180, 170, 200))
+        screen.blit(sort_t, (sort_btn_x + 8, sort_btn_y + 5))
+
+        # Type category headers color map
+        TYPE_COLORS = {
+            'weapon': (220, 120, 80),
+            'armor': (100, 160, 220),
+            'accessory': (200, 160, 255),
+            'consumable': (100, 200, 100),
+        }
 
         mx, my = pygame.mouse.get_pos()
 
+        # Item list area with scroll
+        list_top = items_y + 38
+        list_bottom = items_y + panel_h - 10
+        item_h = 30
+        max_visible = (list_bottom - list_top) // item_h  # ~16 items visible
+
+        sorted_items = self.get_sorted_inventory()
+        total_items = len(sorted_items)
+        max_scroll = max(0, total_items - max_visible)
+        self.inv_scroll = max(0, min(self.inv_scroll, max_scroll))
+
         if not self.player.inventory:
             empty = self.font_sm.render("No items. Explore dungeons to find loot!", True, (100, 90, 110))
-            screen.blit(empty, (items_x + 20, items_y + 50))
+            screen.blit(empty, (items_x + 20, list_top + 15))
         else:
-            for i, item in enumerate(self.player.inventory):
-                y = items_y + 45 + i * 30
-                is_hov = items_x + 10 <= mx <= items_x + 440 and y <= my <= y + 28
+            # Clip rendering to panel area
+            visible_start = self.inv_scroll
+            visible_end = min(total_items, visible_start + max_visible)
 
-                bg = (50, 40, 65) if is_hov else C_DARK3
-                pygame.draw.rect(screen, bg, (items_x + 10, y, 430, 26), border_radius=5)
+            # Track prev type for category separators when sorting by type
+            prev_type = None
+
+            for vi, idx in enumerate(range(visible_start, visible_end)):
+                orig_idx, item = sorted_items[idx]
+                y = list_top + vi * item_h
+                item_type = item.get('type', '')
+
+                # Category separator line when sorting by type
+                if self.inv_sort_mode == 0 and item_type != prev_type:
+                    type_label = item_type.title() + 's'
+                    type_col = TYPE_COLORS.get(item_type, (150, 140, 160))
+                    sep_t = self.font_xs.render(f"── {type_label} ──", True, type_col)
+                    screen.blit(sep_t, (items_x + 15, y + 2))
+                    prev_type = item_type
+
+                is_sel = self.inv_selected == idx
+                is_hov = items_x + 10 <= mx <= items_x + panel_w - 10 and y <= my <= y + item_h - 2
+
+                bg = (70, 50, 90) if is_sel else (50, 40, 65) if is_hov else C_DARK3
+                border_col = C_GOLD if is_sel else None
+                pygame.draw.rect(screen, bg, (items_x + 10, y, panel_w - 20, item_h - 2), border_radius=5)
+                if border_col:
+                    pygame.draw.rect(screen, border_col, (items_x + 10, y, panel_w - 20, item_h - 2), 1, border_radius=5)
+
+                # Type color indicator dot
+                type_col = TYPE_COLORS.get(item_type, (150, 140, 160))
+                pygame.draw.circle(screen, type_col, (items_x + 22, y + item_h // 2 - 1), 4)
 
                 icon = item.get('icon', '📦')
                 name = item['name']
                 desc = item.get('desc', '')
-                it = self.font_sm.render(f"{icon} {name} — {desc}", True, C_WHITE if is_hov else (170, 165, 180))
-                screen.blit(it, (items_x + 20, y + 5))
+                # Truncate desc if too long
+                display_desc = desc[:30] + '...' if len(desc) > 33 else desc
+                it = self.font_sm.render(f"{icon} {name}", True, C_WHITE if (is_hov or is_sel) else (170, 165, 180))
+                screen.blit(it, (items_x + 32, y + 3))
 
-                if is_hov:
-                    use_t = self.font_xs.render("[Click to Use/Equip]", True, C_GOLD)
-                    screen.blit(use_t, (items_x + 350, y + 7))
+                # Show desc on hover/select
+                if is_hov or is_sel:
+                    desc_t = self.font_xs.render(display_desc, True, (140, 135, 155))
+                    screen.blit(desc_t, (items_x + 32, y + 17))
+                    action_t = self.font_xs.render("[Click:Equip] [D:Drop]", True, C_GOLD)
+                    screen.blit(action_t, (items_x + panel_w - 140, y + 7))
+
+            # Scroll indicator
+            if max_scroll > 0:
+                scroll_track_h = list_bottom - list_top
+                scroll_bar_h = max(20, int(scroll_track_h * max_visible / total_items))
+                scroll_bar_y = list_top + int((scroll_track_h - scroll_bar_h) * (self.inv_scroll / max_scroll))
+                pygame.draw.rect(screen, (60, 50, 75), (items_x + panel_w - 8, list_top, 5, scroll_track_h), border_radius=2)
+                pygame.draw.rect(screen, (120, 110, 140), (items_x + panel_w - 8, scroll_bar_y, 5, scroll_bar_h), border_radius=2)
 
         # Party info
-        party_y = items_y + 520
+        party_y = items_y + panel_h + 15
         pt = self.font_md.render("🤝 Party", True, C_GOLD)
         screen.blit(pt, (items_x + 15, party_y))
         for i, member in enumerate(self.party[1:]):
@@ -3812,7 +3942,7 @@ class Game:
             screen.blit(mt, (items_x + 20, y))
 
         # Instructions
-        inst = self.font_sm.render("Press I or ESC to close | Click items to use/equip | T for Skill Tree", True, (100, 90, 120))
+        inst = self.font_sm.render("I/ESC:Close | Click:Use/Equip | S:Sort | D:Drop | ↑↓/Scroll:Navigate | T:Skill Tree", True, (100, 90, 120))
         screen.blit(inst, (SCREEN_W // 2 - inst.get_width() // 2, SCREEN_H - 30))
 
     def draw_skill_tree(self):
@@ -4179,10 +4309,48 @@ def main():
                 elif game.state == GameState.INVENTORY:
                     if event.key in (pygame.K_i, pygame.K_ESCAPE):
                         game.state = GameState.EXPLORING
+                        game.inv_scroll = 0
+                        game.inv_selected = -1
                     elif event.key == pygame.K_t:
                         game.skill_tree_member_idx = 0
                         game.skill_tree_selected = 0
                         game.state = GameState.SKILL_TREE
+                    elif event.key == pygame.K_s:
+                        game.inv_sort_mode = (game.inv_sort_mode + 1) % 3
+                        game.inv_scroll = 0
+                        game.inv_selected = -1
+                    elif event.key == pygame.K_UP:
+                        if game.inv_selected > 0:
+                            game.inv_selected -= 1
+                        elif game.inv_selected == -1 and game.player.inventory:
+                            game.inv_selected = 0
+                        # Auto-scroll if selection above visible area
+                        if game.inv_selected >= 0 and game.inv_selected < game.inv_scroll:
+                            game.inv_scroll = game.inv_selected
+                    elif event.key == pygame.K_DOWN:
+                        total = len(game.player.inventory)
+                        if game.inv_selected < total - 1:
+                            game.inv_selected += 1
+                        elif game.inv_selected == -1 and game.player.inventory:
+                            game.inv_selected = 0
+                        # Auto-scroll if selection below visible area
+                        max_vis = 16
+                        if game.inv_selected >= game.inv_scroll + max_vis:
+                            game.inv_scroll = game.inv_selected - max_vis + 1
+                    elif event.key == pygame.K_d:
+                        # Drop selected item
+                        if game.inv_selected >= 0:
+                            sorted_inv = game.get_sorted_inventory()
+                            if game.inv_selected < len(sorted_inv):
+                                orig_idx, _ = sorted_inv[game.inv_selected]
+                                game.drop_item(orig_idx)
+                    elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                        # Use/equip selected item
+                        if game.inv_selected >= 0:
+                            sorted_inv = game.get_sorted_inventory()
+                            if game.inv_selected < len(sorted_inv):
+                                orig_idx, _ = sorted_inv[game.inv_selected]
+                                game.use_item(orig_idx)
 
                 # ─── SKILL TREE ───
                 elif game.state == GameState.SKILL_TREE:
@@ -4224,6 +4392,15 @@ def main():
                     elif event.key == pygame.K_ESCAPE:
                         game.state = GameState.TITLE
 
+            # ─── MOUSE WHEEL (Inventory scroll) ───
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
+                if game.state == GameState.INVENTORY:
+                    if event.button == 4:  # Scroll up
+                        game.inv_scroll = max(0, game.inv_scroll - 3)
+                    elif event.button == 5:  # Scroll down
+                        max_scroll = max(0, len(game.player.inventory) - 16)
+                        game.inv_scroll = min(max_scroll, game.inv_scroll + 3)
+
             # ─── MOUSE CLICKS ───
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mx, my = event.pos
@@ -4254,14 +4431,32 @@ def main():
                             break
 
                 elif game.state == GameState.INVENTORY:
-                    # Click items to use
+                    # Click items to use/equip (with scroll offset)
                     items_x = 400
                     items_y = 80
-                    for i in range(len(game.player.inventory)):
-                        y = items_y + 45 + i * 30
-                        if items_x + 10 <= mx <= items_x + 440 and y <= my <= y + 28:
-                            game.use_item(i)
-                            break
+                    list_top = items_y + 38
+                    item_h = 30
+                    panel_w = 450
+                    sorted_inv = game.get_sorted_inventory()
+                    max_visible = 16
+                    visible_start = game.inv_scroll
+                    visible_end = min(len(sorted_inv), visible_start + max_visible)
+
+                    # Sort button click
+                    sort_btn_x = items_x + panel_w - 140
+                    sort_btn_y = items_y + 8
+                    if sort_btn_x <= mx <= sort_btn_x + 125 and sort_btn_y <= my <= sort_btn_y + 24:
+                        game.inv_sort_mode = (game.inv_sort_mode + 1) % 3
+                        game.inv_scroll = 0
+                        game.inv_selected = -1
+                    else:
+                        for vi, idx in enumerate(range(visible_start, visible_end)):
+                            y = list_top + vi * item_h
+                            if items_x + 10 <= mx <= items_x + panel_w - 10 and y <= my <= y + item_h - 2:
+                                orig_idx, _ = sorted_inv[idx]
+                                game.inv_selected = idx
+                                game.use_item(orig_idx)
+                                break
 
                 elif game.state == GameState.SKILL_TREE:
                     # Click party member tabs

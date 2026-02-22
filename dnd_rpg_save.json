@@ -779,6 +779,18 @@
         },
         "price": 300,
         "desc": "+5 STR, +3 CON"
+      },
+      {
+        "name": "Upside Down Vine",
+        "type": "accessory",
+        "icon": "\ud83c\udf3f",
+        "stat_bonus": {
+          "CON": 4,
+          "DEX": 3
+        },
+        "hp_bonus": 15,
+        "price": 350,
+        "desc": "+4 CON, +3 DEX, +15 Max HP"
       }
     ],
     "equipment": {
