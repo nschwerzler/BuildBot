@@ -188,6 +188,40 @@ def make_texture(name, w, h):
             pygame.draw.rect(surf, (shade, shade - 5, shade + 5), (i * 3, yy, w - i * 6, h // 4))
             pygame.draw.rect(surf, (shade - 20, shade - 25, shade - 15), (i * 3, yy, w - i * 6, h // 4), 1)
 
+    elif name == 'st_portal':
+        surf.fill((0, 0, 0, 0))
+        # Dark crimson swirling portal to the Upside Down
+        cx, cy = w // 2, h // 2
+        for y in range(h):
+            for x in range(w):
+                dx = x - cx
+                dy = y - cy
+                dist = math.sqrt(dx * dx + dy * dy)
+                if dist < w // 2:
+                    angle = math.atan2(dy, dx)
+                    swirl = math.sin(angle * 3 + dist * 0.5) * 0.5 + 0.5
+                    r = int(120 + swirl * 80 + _noise(x, y, 66) * 40)
+                    g = int(10 + swirl * 20 + _noise(x, y, 77) * 15)
+                    b = int(30 + swirl * 40 + _noise(x, y, 88) * 30)
+                    a = int(200 - dist * 8)
+                    surf.set_at((x, y), (min(255, r), min(255, g), min(255, b), max(50, a)))
+
+    elif name == 'upside_down_floor':
+        for y in range(h):
+            for x in range(w):
+                base = 20 + int(_noise(x, y, 90) * 15)
+                gx = x % 16
+                gy = y % 16
+                if gx == 0 or gy == 0:
+                    base -= 5
+                # Vine-like tendrils
+                if _noise(x * 3, y * 3, 91) > 0.88:
+                    base += 10
+                r = max(0, min(255, base + int(_noise(x, y, 92) * 15)))
+                g = max(0, min(255, base - 5))
+                b = max(0, min(255, base + int(_noise(x, y, 93) * 20)))
+                surf.set_at((x, y), (r, g, b, 255))
+
     else:
         surf.fill((80, 80, 80, 255))
 
@@ -1382,8 +1416,8 @@ class Enemy(Entity):
         # Classic DnD Demogorgon - two-headed demon prince
         'demogorgon': {'hp': 180, 'ac': 19, 'atk': '2d12+5', 'xp': 800, 'gold': (200, 500),
                        'palette': [(40, 80, 40), (60, 100, 50), (30, 60, 30)]},
-        # Stranger Things Vecna (001/Henry Creel)
-        'st_vecna': {'hp': 140, 'ac': 17, 'atk': '2d10+3', 'xp': 650, 'gold': (120, 350),
+        # Stranger Things Vecna (001/Henry Creel) — THE HARDEST BOSS
+        'st_vecna': {'hp': 350, 'ac': 22, 'atk': '3d12+8', 'xp': 2000, 'gold': (500, 1000),
                      'palette': [(80, 40, 40), (60, 25, 30), (100, 50, 45)]},
         # Stranger Things Demogorgon (faceless predator)
         'st_demogorgon': {'hp': 130, 'ac': 16, 'atk': '2d8+4', 'xp': 600, 'gold': (100, 300),
@@ -1391,6 +1425,22 @@ class Enemy(Entity):
         # Stranger Things Mind Flayer (shadow spider entity)
         'st_mind_flayer': {'hp': 160, 'ac': 18, 'atk': '2d10+4', 'xp': 750, 'gold': (150, 400),
                            'palette': [(30, 18, 40), (25, 15, 30), (50, 25, 60)]},
+        # === SECRET ST ENEMIES (only spawn on Upside Down floors) ===
+        # Demodogs — pack hunters from the Upside Down
+        'demodog': {'hp': 45, 'ac': 14, 'atk': '1d10+3', 'xp': 80, 'gold': (15, 40),
+                    'palette': [(100, 65, 50), (80, 50, 35), (120, 75, 55)]},
+        # Demobats — swarms that attack from above
+        'demobat': {'hp': 25, 'ac': 15, 'atk': '1d8+2', 'xp': 50, 'gold': (10, 25),
+                    'palette': [(70, 40, 50), (55, 30, 40), (85, 50, 60)]},
+        # Flayed — possessed humans with super strength
+        'flayed': {'hp': 55, 'ac': 13, 'atk': '2d6+3', 'xp': 90, 'gold': (20, 50),
+                   'palette': [(160, 120, 100), (130, 90, 70), (100, 60, 45)]},
+        # Shadow Tendril — living vine creature of the Upside Down
+        'shadow_tendril': {'hp': 35, 'ac': 12, 'atk': '1d8+4', 'xp': 60, 'gold': (10, 30),
+                           'palette': [(25, 15, 35), (20, 10, 25), (40, 25, 50)]},
+        # The Creel Phantom — ghostly echo of Vecna's past victims
+        'creel_phantom': {'hp': 70, 'ac': 16, 'atk': '2d8+3', 'xp': 120, 'gold': (30, 70),
+                          'palette': [(150, 150, 170), (120, 120, 145), (180, 180, 200)]},
     }
 
     def __init__(self, enemy_type, level=1):
@@ -1428,11 +1478,26 @@ class Enemy(Entity):
             dmg = roll('3d6') + 4
             return target, f"unleashes Necrotic Grasp on {target.name}! {dmg} necrotic damage!", dmg
 
-        if self.enemy_type == 'st_vecna' and random.random() < 0.35:
-            # ST Vecna's psychic curse - targets strongest party member
-            target = max(alive_targets, key=lambda t: t.max_hp)
-            dmg = roll('2d8') + 3
-            return target, f"invades {target.name}'s mind with psychic terror! {dmg} psychic damage!", dmg
+        if self.enemy_type == 'st_vecna' and random.random() < 0.50:
+            # ST Vecna has multiple devastating abilities
+            ability = random.choice(['psychic', 'curse', 'telekinesis', 'mind_lair'])
+            if ability == 'psychic':
+                target = max(alive_targets, key=lambda t: t.max_hp)
+                dmg = roll('3d10') + 6
+                return target, f"invades {target.name}'s mind! PSYCHIC ANNIHILATION for {dmg} damage!", dmg
+            elif ability == 'curse':
+                target = random.choice(alive_targets)
+                dmg = roll('2d12') + 5
+                target.stunned = getattr(target, 'stunned', 0)
+                return target, f"curses {target.name} with Vecna's Wrath! {dmg} necrotic damage!", dmg
+            elif ability == 'telekinesis':
+                target = min(alive_targets, key=lambda t: t.hp)
+                dmg = roll('3d8') + 4
+                return target, f"HURLS {target.name} with telekinetic force! {dmg} damage!", dmg
+            else:  # mind_lair
+                target = random.choice(alive_targets)
+                dmg = roll('4d6') + 8
+                return target, f"traps {target.name} in a Mind Lair! {dmg} psychic damage! \"You cannot escape me.\"", dmg
 
         if self.enemy_type == 'demogorgon' and random.random() < 0.3:
             # DnD Demogorgon's twin bite - attacks two targets
@@ -1451,6 +1516,27 @@ class Enemy(Entity):
             target = random.choice(alive_targets)
             dmg = roll('3d8') + 4
             return target, f"summons a SHADOW STORM engulfing {target.name}! {dmg} shadow damage!", dmg
+
+        # Secret ST enemy abilities
+        if self.enemy_type == 'demodog' and random.random() < 0.3:
+            target = min(alive_targets, key=lambda t: t.hp)
+            dmg = roll('2d6') + 3
+            return target, f"PACK LUNGES at {target.name}! {dmg} damage!", dmg
+
+        if self.enemy_type == 'demobat' and random.random() < 0.35:
+            target = random.choice(alive_targets)
+            dmg = roll('1d8') + 2
+            return target, f"LATCHES onto {target.name}'s face! {dmg} damage!", dmg
+
+        if self.enemy_type == 'flayed' and random.random() < 0.3:
+            target = random.choice(alive_targets)
+            dmg = roll('2d8') + 2
+            return target, f"convulses and SLAMS {target.name}! {dmg} damage!", dmg
+
+        if self.enemy_type == 'creel_phantom' and random.random() < 0.35:
+            target = max(alive_targets, key=lambda t: t.max_hp)
+            dmg = roll('2d8') + 4
+            return target, f"whispers \"Tick tock...\" and strikes {target.name}! {dmg} psychic damage!", dmg
 
         # Default: Target lowest HP
         target = min(alive_targets, key=lambda t: t.hp)
@@ -1488,6 +1574,14 @@ ITEM_TEMPLATES = {
     'eye_of_vecna': {'name': 'Eye of Vecna', 'type': 'accessory', 'icon': '👁️', 'stat_bonus': {'INT': 6, 'WIS': 4}, 'price': 600, 'desc': '+6 INT, +4 WIS'},
     'demogorgon_fang': {'name': 'Demogorgon Fang', 'type': 'accessory', 'icon': '🦷', 'stat_bonus': {'STR': 5, 'CON': 3}, 'price': 650, 'desc': '+5 STR, +3 CON'},
     'shadow_heart': {'name': 'Shadow Heart', 'type': 'accessory', 'icon': '🖤', 'stat_bonus': {'INT': 4, 'DEX': 4}, 'hp_bonus': 20, 'price': 700, 'desc': '+4 INT, +4 DEX, +20 Max HP'},
+    # ST-specific drops
+    'eleven_bracelet': {'name': "Eleven's Bracelet", 'type': 'accessory', 'icon': '🔗', 'stat_bonus': {'INT': 8, 'WIS': 6}, 'hp_bonus': 30, 'price': 1200, 'desc': '+8 INT, +6 WIS, +30 Max HP — The best drop'},
+    'upside_down_vine': {'name': 'Upside Down Vine', 'type': 'accessory', 'icon': '🌿', 'stat_bonus': {'CON': 4, 'DEX': 3}, 'hp_bonus': 15, 'price': 350, 'desc': '+4 CON, +3 DEX, +15 Max HP'},
+    'demobat_wing': {'name': 'Demobat Wing', 'type': 'accessory', 'icon': '🦇', 'stat_bonus': {'DEX': 5}, 'ac_bonus': 2, 'price': 300, 'desc': '+5 DEX, +2 AC'},
+    'flayed_essence': {'name': 'Flayed Essence', 'type': 'accessory', 'icon': '💉', 'stat_bonus': {'STR': 4, 'CON': 4}, 'price': 400, 'desc': '+4 STR, +4 CON'},
+    'creel_locket': {'name': "Creel's Locket", 'type': 'accessory', 'icon': '🎵', 'stat_bonus': {'WIS': 6, 'CHA': 4}, 'hp_bonus': 10, 'price': 500, 'desc': '+6 WIS, +4 CHA, +10 Max HP — Running Up That Hill...'},
+    'hawkins_lab_keycard': {'name': 'Hawkins Lab Keycard', 'type': 'accessory', 'icon': '🪪', 'stat_bonus': {'INT': 3, 'DEX': 3, 'WIS': 3}, 'price': 450, 'desc': '+3 INT, +3 DEX, +3 WIS'},
+    'st_sword_of_kas': {'name': 'Sword of Kas', 'type': 'weapon', 'icon': '⚔️', 'attack': '3d8+6', 'stat_bonus': {'STR': 6}, 'price': 1500, 'desc': 'The legendary blade that can slay Vecna'},
 }
 
 def generate_loot(level, enemy_type='normal'):
@@ -1525,6 +1619,16 @@ def generate_loot(level, enemy_type='normal'):
     if random.random() < 0.10:
         loot.append(dict(ITEM_TEMPLATES['revive_potion']))
 
+    # ST enemies drop special ST items
+    ST_ENEMIES = {'st_vecna', 'st_demogorgon', 'st_mind_flayer', 'demodog', 'demobat', 'flayed', 'shadow_tendril', 'creel_phantom'}
+    if enemy_type in ST_ENEMIES:
+        st_drop_pool = ['hawkins_lab_keycard', 'upside_down_vine', 'demobat_wing', 'flayed_essence']
+        if random.random() < 0.25:
+            loot.append(dict(ITEM_TEMPLATES[random.choice(st_drop_pool)]))
+        # Sword of Kas — ultra rare (5% from any ST enemy)
+        if random.random() < 0.05:
+            loot.append(dict(ITEM_TEMPLATES['st_sword_of_kas']))
+
     return gold, loot
 
 
@@ -1542,6 +1646,7 @@ class TileType(Enum):
     LAVA = 7
     TRAP = 8
     GRASS = 9
+    ST_PORTAL = 10
 
 class DungeonGenerator:
     def __init__(self, width=40, height=30, floor_num=1):
@@ -1554,6 +1659,7 @@ class DungeonGenerator:
         self.enemy_spawns = []
         self.chest_positions = []
         self.stairs_pos = None
+        self.st_portal_pos = None
         self.explored = [[False] * width for _ in range(height)]
 
     def generate(self):
@@ -1669,6 +1775,16 @@ class DungeonGenerator:
                 if self.tiles[ty][tx] == TileType.FLOOR:
                     self.tiles[ty][tx] = TileType.TRAP
 
+        # Stranger Things Portal — 30% chance on floors 3+, placed in a middle room
+        self.st_portal_pos = None
+        if self.floor_num >= 3 and random.random() < 0.30 and len(self.rooms) > 2:
+            portal_room = random.choice(self.rooms[1:-1])
+            px = portal_room[0] + portal_room[2] // 2
+            py = portal_room[1] + portal_room[3] // 2
+            if self.tiles[py][px] == TileType.FLOOR:
+                self.tiles[py][px] = TileType.ST_PORTAL
+                self.st_portal_pos = (px, py)
+
         return self
 
     def _carve_h_corridor(self, x1, x2, y):
@@ -1685,7 +1801,7 @@ class DungeonGenerator:
 
     def is_walkable(self, x, y):
         if 0 <= x < self.width and 0 <= y < self.height:
-            return self.tiles[y][x] in (TileType.FLOOR, TileType.DOOR, TileType.STAIRS, TileType.GRASS, TileType.TRAP, TileType.CHEST, TileType.LAVA, TileType.WATER)
+            return self.tiles[y][x] in (TileType.FLOOR, TileType.DOOR, TileType.STAIRS, TileType.GRASS, TileType.TRAP, TileType.CHEST, TileType.LAVA, TileType.WATER, TileType.ST_PORTAL)
         return False
 
     def reveal_around(self, x, y, radius=6):
@@ -2161,6 +2277,8 @@ class Game:
         self.skill_tree_member_idx = 0  # Which party member's tree to view
         self.skill_tree_selected = 0  # Currently highlighted node index
         self._title_opts = []  # Title screen options
+        self.in_upside_down = False  # Whether current floor is an Upside Down version
+        self.st_portal_announced = False  # Whether AI has reacted to portal
 
         # Fonts
         self.font_lg = pygame.font.SysFont('Segoe UI', 32, bold=True)
@@ -2176,6 +2294,8 @@ class Game:
             self.iso_tiles[name] = make_iso_tile(name, wall=(name == 'stone_wall'))
         self.iso_tiles['chest'] = make_texture('chest', 20, 20)
         self.iso_tiles['stairs'] = make_texture('stairs', 20, 20)
+        self.iso_tiles['st_portal'] = make_texture('st_portal', 20, 20)
+        self.iso_tiles['upside_down_floor'] = make_iso_tile('upside_down_floor')
 
     def add_message(self, msg, color=C_WHITE):
         self.message_log.append((msg, color))
@@ -2285,6 +2405,7 @@ class Game:
         self.dungeon = DungeonGenerator(40, 30, self.floor_num).generate()
         self.enemies = []
         self.opened_chests = set()
+        self.st_portal_announced = False
 
         # Place player
         sx, sy = self.dungeon.spawn_point
@@ -2305,55 +2426,85 @@ class Game:
             companion.hp = companion.max_hp
 
         # Spawn enemies
-        enemy_types_by_floor = {
-            1: ['slime', 'kobold', 'bat_swarm'],
-            2: ['goblin', 'kobold', 'spider'],
-            3: ['goblin', 'zombie', 'skeleton'],
-            4: ['skeleton', 'spider', 'mimic'],
-            5: ['orc', 'wraith', 'skeleton', 'st_demogorgon'],
-            6: ['orc', 'troll', 'gelatinous_cube', 'st_demogorgon'],
-            7: ['troll', 'minotaur', 'wraith', 'st_vecna', 'st_mind_flayer'],
-            8: ['minotaur', 'mind_flayer', 'dark_knight', 'st_vecna', 'st_mind_flayer'],
-            9: ['mind_flayer', 'dark_knight', 'dragon', 'demogorgon'],
-            10: ['dragon', 'dark_knight', 'vecna', 'demogorgon', 'st_mind_flayer'],
-        }
-        available_types = enemy_types_by_floor.get(min(self.floor_num, 10), ['dragon', 'mind_flayer', 'dark_knight'])
+        if self.in_upside_down:
+            # UPSIDE DOWN FLOOR — all ST and secret ST enemies!
+            st_regular = ['demodog', 'demobat', 'flayed', 'shadow_tendril']
+            st_bosses = ['st_demogorgon', 'st_mind_flayer', 'creel_phantom']
+            boss_spawned = set()
 
-        # Boss-tier enemies should only spawn once per floor (they're bosses, not regular mobs)
-        BOSS_TIER = {'minotaur', 'mind_flayer', 'dark_knight', 'dragon', 'vecna', 'demogorgon',
-                     'boss_lich', 'st_demogorgon', 'st_vecna', 'st_mind_flayer'}
-        regular_types = [t for t in available_types if t not in BOSS_TIER]
-        boss_types_in_pool = [t for t in available_types if t in BOSS_TIER]
-        boss_spawned = set()  # track which boss types already spawned this floor
+            for ex, ey in self.dungeon.enemy_spawns:
+                if st_bosses and random.random() < 0.10 and not boss_spawned:
+                    etype = random.choice(st_bosses)
+                    boss_spawned.add(etype)
+                else:
+                    etype = random.choice(st_regular)
+                enemy = Enemy(etype, max(1, self.floor_num + random.randint(-1, 1)))
+                enemy.x = ex
+                enemy.y = ey
+                self.enemies.append(enemy)
 
-        for ex, ey in self.dungeon.enemy_spawns:
-            # Small chance to spawn a boss-tier enemy (only if one hasn't spawned yet)
-            if boss_types_in_pool and random.random() < 0.08 and not boss_spawned:
-                etype = random.choice(boss_types_in_pool)
-                boss_spawned.add(etype)
-            elif regular_types:
-                etype = random.choice(regular_types)
-            else:
-                etype = random.choice(available_types)
-            enemy = Enemy(etype, max(1, self.floor_num + random.randint(-1, 1)))
-            enemy.x = ex
-            enemy.y = ey
-            self.enemies.append(enemy)
+            # ST Vecna as boss on Upside Down floors (always!)
+            if self.dungeon.rooms:
+                boss_room = self.dungeon.rooms[-2] if len(self.dungeon.rooms) > 2 else self.dungeon.rooms[-1]
+                boss = Enemy('st_vecna', self.floor_num + 3)
+                boss.max_hp = int(boss.max_hp * 2.5)  # Even harder
+                boss.hp = boss.max_hp
+                boss.name = "💀 ST Vecna, The One"
+                boss.x = boss_room[0] + boss_room[2] // 2
+                boss.y = boss_room[1] + boss_room[3] // 2
+                self.enemies.append(boss)
 
-        # Boss on every 3rd floor
-        if self.floor_num % 3 == 0 and self.dungeon.rooms:
-            boss_room = self.dungeon.rooms[-2] if len(self.dungeon.rooms) > 2 else self.dungeon.rooms[-1]
-            boss_types = {
-                3: 'minotaur', 6: 'demogorgon', 9: 'vecna', 12: 'vecna',
+            # Exit back to normal on stairs (next floor will be normal)
+            self.in_upside_down = False
+        else:
+            enemy_types_by_floor = {
+                1: ['slime', 'kobold', 'bat_swarm'],
+                2: ['goblin', 'kobold', 'spider'],
+                3: ['goblin', 'zombie', 'skeleton'],
+                4: ['skeleton', 'spider', 'mimic'],
+                5: ['orc', 'wraith', 'skeleton'],
+                6: ['orc', 'troll', 'gelatinous_cube'],
+                7: ['troll', 'minotaur', 'wraith'],
+                8: ['minotaur', 'mind_flayer', 'dark_knight'],
+                9: ['mind_flayer', 'dark_knight', 'dragon', 'demogorgon'],
+                10: ['dragon', 'dark_knight', 'vecna', 'demogorgon'],
             }
-            boss_type = boss_types.get(self.floor_num, 'boss_lich')
-            boss = Enemy(boss_type, self.floor_num + 2)
-            boss.max_hp = int(boss.max_hp * 2.0)
-            boss.hp = boss.max_hp
-            boss.name = f"Boss {boss.name}"
-            boss.x = boss_room[0] + boss_room[2] // 2
-            boss.y = boss_room[1] + boss_room[3] // 2
-            self.enemies.append(boss)
+            available_types = enemy_types_by_floor.get(min(self.floor_num, 10), ['dragon', 'mind_flayer', 'dark_knight'])
+
+            # Boss-tier enemies should only spawn once per floor (they're bosses, not regular mobs)
+            BOSS_TIER = {'minotaur', 'mind_flayer', 'dark_knight', 'dragon', 'vecna', 'demogorgon',
+                         'boss_lich', 'st_demogorgon', 'st_vecna', 'st_mind_flayer'}
+            regular_types = [t for t in available_types if t not in BOSS_TIER]
+            boss_types_in_pool = [t for t in available_types if t in BOSS_TIER]
+            boss_spawned = set()
+
+            for ex, ey in self.dungeon.enemy_spawns:
+                if boss_types_in_pool and random.random() < 0.08 and not boss_spawned:
+                    etype = random.choice(boss_types_in_pool)
+                    boss_spawned.add(etype)
+                elif regular_types:
+                    etype = random.choice(regular_types)
+                else:
+                    etype = random.choice(available_types)
+                enemy = Enemy(etype, max(1, self.floor_num + random.randint(-1, 1)))
+                enemy.x = ex
+                enemy.y = ey
+                self.enemies.append(enemy)
+
+            # Boss on every 3rd floor
+            if self.floor_num % 3 == 0 and self.dungeon.rooms:
+                boss_room = self.dungeon.rooms[-2] if len(self.dungeon.rooms) > 2 else self.dungeon.rooms[-1]
+                boss_types = {
+                    3: 'minotaur', 6: 'demogorgon', 9: 'vecna', 12: 'vecna',
+                }
+                boss_type = boss_types.get(self.floor_num, 'boss_lich')
+                boss = Enemy(boss_type, self.floor_num + 2)
+                boss.max_hp = int(boss.max_hp * 2.0)
+                boss.hp = boss.max_hp
+                boss.name = f"Boss {boss.name}"
+                boss.x = boss_room[0] + boss_room[2] // 2
+                boss.y = boss_room[1] + boss_room[3] // 2
+                self.enemies.append(boss)
 
         # Mimic hidden in a random chest position
         if self.floor_num >= 3 and random.random() < 0.25:
@@ -2367,7 +2518,11 @@ class Game:
                 self.enemies.append(mimic)
 
         self.dungeon.reveal_around(sx, sy)
-        self.add_message(f"\n📍 Floor {self.floor_num} — The dungeon deepens...", C_GOLD)
+        if self.in_upside_down:
+            self.add_message(f"\n☠️ Floor {self.floor_num} — THE UPSIDE DOWN", (200, 50, 80))
+            self.add_message(f"  Dark vines crawl across every surface. Ash drifts from the sky.", (150, 40, 60))
+        else:
+            self.add_message(f"\n📍 Floor {self.floor_num} — The dungeon deepens...", C_GOLD)
 
         # Snap camera to player immediately
         iso_x = (self.player.x - self.player.y) * TILE_W // 2
@@ -2450,6 +2605,17 @@ class Game:
                 self.state = GameState.GAME_OVER
                 return
 
+        elif tile == TileType.ST_PORTAL:
+            # Enter the Upside Down version of the next floor!
+            self.add_message(f"🌀 You step into the Stranger Things portal...", (200, 50, 80))
+            self.add_message(f"  ☠️ The world twists and darkens. You enter the UPSIDE DOWN!", (180, 40, 60))
+            self.floor_num += 1
+            self.in_upside_down = True
+            self.st_portal_announced = False
+            self.save_game()
+            self.generate_floor()
+            return
+
         # Check enemy encounters
         for enemy in self.enemies:
             if enemy.alive and abs(enemy.x - nx) <= 1 and abs(enemy.y - ny) <= 1:
@@ -2458,12 +2624,47 @@ class Game:
 
         # AI companion chat
         self.ai_chat_timer += 1
+
+        # AI reacts to seeing an ST Portal nearby
+        if not self.st_portal_announced and self.dungeon.st_portal_pos:
+            ppx, ppy = self.dungeon.st_portal_pos
+            if abs(nx - ppx) <= 3 and abs(ny - ppy) <= 3:
+                self.st_portal_announced = True
+                companions = [c for c in self.party[1:] if c.alive]
+                if companions:
+                    talker = random.choice(companions)
+                    portal_lines = [
+                        "What's this?! Some kind of... rift?",
+                        "That's weird... I can feel something dark on the other side.",
+                        "Whoa... is that a portal? This gives me chills.",
+                        "Something's not right about that portal... I sense the Upside Down.",
+                        "Do you see that? It looks like a tear in reality!",
+                        "That's... definitely not normal. Should we go through?",
+                    ]
+                    line = random.choice(portal_lines)
+                    self.ai_chat_bubble = (talker.name, line)
+                    self.ai_chat_display_time = 300  # 5 seconds
+                    self.add_message(f"💬 {talker.name}: \"{line}\"", (200, 100, 150))
+
         if self.ai_chat_timer >= 12:
             self.ai_chat_timer = 0
             companions = [c for c in self.party[1:] if c.alive]
             if companions and random.random() < 0.3:
                 talker = random.choice(companions)
-                line = ai_companion_say(talker, 'explore')
+                # Special dialogue when in the Upside Down
+                if self.in_upside_down:
+                    ud_lines = [
+                        "This place feels... wrong. Like the world is rotting.",
+                        "I can barely breathe... the air is thick with ash.",
+                        "Those vines... they're everywhere. Don't touch them!",
+                        "We need to find a way out of this nightmare.",
+                        "I hear something moving in the shadows...",
+                        "The Upside Down... it's like a dark mirror of the dungeon.",
+                        "Stay close. Creatures are lurking everywhere here.",
+                    ]
+                    line = random.choice(ud_lines)
+                else:
+                    line = ai_companion_say(talker, 'explore')
                 self.ai_chat_bubble = (talker.name, line)
                 self.ai_chat_display_time = 180  # 3 seconds at 60fps
                 self.add_message(f"💬 {talker.name}: \"{line}\"", (150, 200, 255))
@@ -2649,9 +2850,13 @@ class Game:
             'boss_lich':      {'levels': 5, 'accessory': 'lich_phylactery'},
             'vecna':          {'levels': 7, 'accessory': 'eye_of_vecna'},
             'demogorgon':     {'levels': 7, 'accessory': 'demogorgon_fang'},
-            'st_vecna':       {'levels': 5, 'accessory': 'eye_of_vecna'},
-            'st_demogorgon':  {'levels': 5, 'accessory': 'demogorgon_fang'},
+            'st_vecna':       {'levels': 10, 'accessory': 'eleven_bracelet'},
+            'st_demogorgon':  {'levels': 5, 'accessory': 'upside_down_vine'},
             'st_mind_flayer': {'levels': 8, 'accessory': 'shadow_heart'},
+            # Secret ST enemies
+            'demodog':        {'levels': 1, 'accessory': 'flayed_essence'},
+            'demobat':        {'levels': 1, 'accessory': 'demobat_wing'},
+            'creel_phantom':  {'levels': 2, 'accessory': 'creel_locket'},
         }
         for enemy in self.combat.enemies:
             reward = BOSS_REWARDS.get(enemy.enemy_type)
@@ -2745,6 +2950,7 @@ class Game:
                 'companions': [serialize_entity(c) for c in self.party[1:]],
                 'gold': self.gold,
                 'floor_num': self.floor_num,
+                'in_upside_down': self.in_upside_down,
             }
             with open(SAVE_FILE, 'w') as f:
                 json.dump(data, f, indent=2)
@@ -2788,6 +2994,7 @@ class Game:
 
             self.gold = data.get('gold', 50)
             self.floor_num = data.get('floor_num', 1)
+            self.in_upside_down = data.get('in_upside_down', False)
 
             # Revive all party members to full HP/MP (respawn after death)
             for member in self.party:
@@ -3004,6 +3211,20 @@ class Game:
                     surf = self.iso_tiles['water']
                 elif tile == TileType.LAVA:
                     surf = self.iso_tiles['lava']
+                elif tile == TileType.ST_PORTAL:
+                    # Draw floor first, then portal effect
+                    screen.blit(self.iso_tiles['stone_floor'], (sx, sy))
+                    portal_surf = self.iso_tiles['st_portal']
+                    screen.blit(portal_surf, (sx + TILE_W // 2 - 10, sy - 10))
+                    # Pulsing crimson glow
+                    glow = pygame.Surface((32, 32), pygame.SRCALPHA)
+                    pulse_a = 50 + int(math.sin(self.anim_tick * 0.06) * 40)
+                    pygame.draw.circle(glow, (200, 30, 60, pulse_a), (16, 16), 16)
+                    screen.blit(glow, (sx + TILE_W // 2 - 16, sy - 16))
+                    # Floating particles around portal
+                    if random.random() < 0.3:
+                        spawn_particles(sx + TILE_W // 2, sy, (200, 40, 60), 2, 1, 20)
+                    continue
                 elif tile == TileType.CHEST:
                     # Draw floor first, then chest
                     screen.blit(self.iso_tiles['stone_floor'], (sx, sy))
@@ -3032,7 +3253,11 @@ class Game:
                         screen.blit(trap_s, (sx + TILE_W // 2 - 4, sy + TILE_H // 2 - 4))
                         continue
                 else:
-                    surf = self.iso_tiles['stone_floor']
+                    # Use dark Upside Down floor texture when in the Upside Down
+                    if self.in_upside_down:
+                        surf = self.iso_tiles['upside_down_floor']
+                    else:
+                        surf = self.iso_tiles['stone_floor']
 
                 # Apply fog
                 if not in_sight:
@@ -3242,6 +3467,10 @@ class Game:
                     col = C_GOLD
                 elif tile == TileType.STAIRS:
                     col = (200, 200, 255)
+                elif tile == TileType.ST_PORTAL:
+                    # Pulsing red portal on minimap
+                    pulse = int(math.sin(self.anim_tick * 0.1) * 40)
+                    col = (200 + pulse, 30, 60)
                 else:
                     col = (80, 75, 90)
                 pygame.draw.rect(screen, col, (px, py, mm_size, mm_size))
