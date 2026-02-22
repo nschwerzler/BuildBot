@@ -2774,8 +2774,6 @@ class Game:
         for i, member in enumerate(self.combat.party):
             mx = 180 + i * 90 + sx
             my = floor_y - 40 + (i % 2) * 30 + sy
-            member.x = mx // TILE_W
-            member.y = my // TILE_H
 
             if not member.alive:
                 # Draw X mark
@@ -2815,8 +2813,6 @@ class Game:
         for i, enemy in enumerate(self.combat.enemies):
             ex = SCREEN_W - 250 - i * 90 + sx
             ey = floor_y - 50 + (i % 2) * 30 + sy
-            enemy.x = ex // TILE_W
-            enemy.y = ey // TILE_H
 
             if not enemy.alive:
                 dead_t = self.font_md.render("💀", True, (100, 60, 60))
