@@ -2173,6 +2173,10 @@ class Game:
 
     def new_game(self, char_class):
         """Start a new game with the selected class."""
+        # Clear old save when starting fresh
+        if os.path.exists(SAVE_FILE):
+            os.remove(SAVE_FILE)
+
         self.player = Entity("Hero", char_class)
         self.party = [self.player]
         self.gold = 50
@@ -2215,6 +2219,9 @@ class Game:
         for c in self.party[1:]:
             line = ai_companion_say(c, 'explore')
             self.add_message(f"  💬 {c.name}: \"{line}\"", (150, 200, 255))
+
+        # Save baseline immediately so progress is never lost
+        self.save_game()
 
     def generate_floor(self):
         """Generate a new dungeon floor."""
