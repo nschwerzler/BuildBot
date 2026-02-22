@@ -2319,8 +2319,22 @@ class Game:
         }
         available_types = enemy_types_by_floor.get(min(self.floor_num, 10), ['dragon', 'mind_flayer', 'dark_knight'])
 
+        # Boss-tier enemies should only spawn once per floor (they're bosses, not regular mobs)
+        BOSS_TIER = {'minotaur', 'mind_flayer', 'dark_knight', 'dragon', 'vecna', 'demogorgon',
+                     'boss_lich', 'st_demogorgon', 'st_vecna', 'st_mind_flayer'}
+        regular_types = [t for t in available_types if t not in BOSS_TIER]
+        boss_types_in_pool = [t for t in available_types if t in BOSS_TIER]
+        boss_spawned = set()  # track which boss types already spawned this floor
+
         for ex, ey in self.dungeon.enemy_spawns:
-            etype = random.choice(available_types)
+            # Small chance to spawn a boss-tier enemy (only if one hasn't spawned yet)
+            if boss_types_in_pool and random.random() < 0.08 and not boss_spawned:
+                etype = random.choice(boss_types_in_pool)
+                boss_spawned.add(etype)
+            elif regular_types:
+                etype = random.choice(regular_types)
+            else:
+                etype = random.choice(available_types)
             enemy = Enemy(etype, max(1, self.floor_num + random.randint(-1, 1)))
             enemy.x = ex
             enemy.y = ey
