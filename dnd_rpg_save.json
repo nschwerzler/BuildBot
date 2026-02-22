@@ -3,24 +3,30 @@
   "player": {
     "name": "Hero",
     "char_class": "rogue",
-    "level": 2,
-    "xp": 10,
-    "xp_to_level": 150,
-    "hp": 11,
-    "max_hp": 11,
-    "mp": 14,
-    "max_mp": 14,
-    "ac": 16,
+    "level": 4,
+    "xp": 150,
+    "xp_to_level": 337,
+    "hp": 8,
+    "max_hp": 12,
+    "mp": 4,
+    "max_mp": 17,
+    "ac": 23,
     "stats": {
       "STR": 14,
-      "DEX": 18,
+      "DEX": 20,
       "CON": 7,
       "INT": 10,
       "WIS": 13,
       "CHA": 11
     },
-    "skill_points": 2,
-    "skill_tree": {},
+    "skill_points": 0,
+    "skill_tree": {
+      "shadow_step": 1,
+      "lethal_edge": 1,
+      "poison_tips": 2,
+      "evasion": 1,
+      "nimble": 1
+    },
     "inventory": [
       {
         "name": "Iron Sword",
@@ -67,6 +73,40 @@
         "desc": "Restores 2d8+4 HP"
       },
       {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
         "name": "Health Potion",
         "type": "consumable",
         "icon": "\ud83e\uddea",
@@ -74,6 +114,125 @@
         "value": 20,
         "price": 15,
         "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Chain Mail",
+        "type": "armor",
+        "icon": "\u26d3\ufe0f",
+        "ac_bonus": 4,
+        "price": 100,
+        "desc": "+4 AC"
       },
       {
         "name": "Health Potion",
@@ -110,6 +269,58 @@
         "value": 15,
         "price": 20,
         "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
       }
     ],
     "equipment": {
@@ -121,7 +332,14 @@
         "price": 50,
         "desc": "+1 attack damage"
       },
-      "armor": null,
+      "armor": {
+        "name": "Chain Mail",
+        "type": "armor",
+        "icon": "\u26d3\ufe0f",
+        "ac_bonus": 4,
+        "price": 100,
+        "desc": "+4 AC"
+      },
       "accessory": null
     },
     "skills": [
@@ -138,24 +356,31 @@
     {
       "name": "Ironheart",
       "char_class": "warrior",
-      "level": 2,
-      "xp": 0,
-      "xp_to_level": 150,
-      "hp": 16,
-      "max_hp": 16,
-      "mp": 14,
-      "max_mp": 14,
-      "ac": 16,
+      "level": 4,
+      "xp": 140,
+      "xp_to_level": 337,
+      "hp": 25,
+      "max_hp": 36,
+      "mp": 6,
+      "max_mp": 20,
+      "ac": 19,
       "stats": {
-        "STR": 18,
-        "DEX": 15,
-        "CON": 12,
-        "INT": 8,
-        "WIS": 16,
-        "CHA": 13
+        "STR": 23,
+        "DEX": 18,
+        "CON": 15,
+        "INT": 11,
+        "WIS": 19,
+        "CHA": 16
       },
-      "skill_points": 2,
-      "skill_tree": {},
+      "skill_points": 0,
+      "skill_tree": {
+        "fortitude": 1,
+        "berserker": 1,
+        "titans_grip": 1,
+        "iron_will": 1,
+        "cleave": 1,
+        "warlord": 1
+      },
       "inventory": [],
       "equipment": {
         "weapon": null,
@@ -175,24 +400,30 @@
     {
       "name": "Lumina",
       "char_class": "cleric",
-      "level": 2,
-      "xp": 0,
-      "xp_to_level": 150,
+      "level": 4,
+      "xp": 140,
+      "xp_to_level": 337,
       "hp": 13,
-      "max_hp": 13,
-      "mp": 19,
-      "max_mp": 19,
-      "ac": 15,
+      "max_hp": 23,
+      "mp": 21,
+      "max_mp": 29,
+      "ac": 17,
       "stats": {
         "STR": 11,
         "DEX": 14,
         "CON": 10,
         "INT": 15,
-        "WIS": 14,
+        "WIS": 16,
         "CHA": 16
       },
-      "skill_points": 2,
-      "skill_tree": {},
+      "skill_points": 0,
+      "skill_tree": {
+        "divine_grace": 2,
+        "blessed_hp": 1,
+        "wis_mastery": 1,
+        "holy_shield": 1,
+        "smite_power": 1
+      },
       "inventory": [],
       "equipment": {
         "weapon": null,
@@ -210,6 +441,6 @@
       "ai_personality": "fierce"
     }
   ],
-  "gold": 97,
-  "floor_num": 2
+  "gold": 427,
+  "floor_num": 3
 }

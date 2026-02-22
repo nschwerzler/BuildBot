@@ -1479,6 +1479,15 @@ ITEM_TEMPLATES = {
     'amulet_of_life': {'name': 'Amulet of Life', 'type': 'accessory', 'icon': '📿', 'hp_bonus': 20, 'price': 150, 'desc': '+20 Max HP'},
     'scroll_fireball': {'name': 'Scroll of Fireball', 'type': 'consumable', 'icon': '📜', 'effect': 'fireball', 'value': 30, 'price': 60, 'desc': 'Deals 3d6 fire damage'},
     'revive_potion': {'name': 'Potion of Revive', 'type': 'consumable', 'icon': '💖', 'effect': 'revive', 'value': 0, 'price': 200, 'desc': 'Revives a fallen party member with 50% HP'},
+    # Boss accessories
+    'minotaur_horn': {'name': 'Minotaur Horn', 'type': 'accessory', 'icon': '🐂', 'stat_bonus': {'STR': 3}, 'hp_bonus': 10, 'price': 150, 'desc': '+3 STR, +10 Max HP'},
+    'mind_crystal': {'name': 'Mind Crystal', 'type': 'accessory', 'icon': '🔮', 'stat_bonus': {'INT': 4, 'WIS': 2}, 'price': 250, 'desc': '+4 INT, +2 WIS'},
+    'dark_sigil': {'name': 'Dark Sigil', 'type': 'accessory', 'icon': '⚜️', 'stat_bonus': {'STR': 2, 'DEX': 2}, 'ac_bonus': 1, 'price': 200, 'desc': '+2 STR, +2 DEX, +1 AC'},
+    'dragon_scale': {'name': 'Dragon Scale', 'type': 'accessory', 'icon': '🐉', 'stat_bonus': {'CON': 4}, 'hp_bonus': 25, 'price': 350, 'desc': '+4 CON, +25 Max HP'},
+    'lich_phylactery': {'name': 'Lich Phylactery', 'type': 'accessory', 'icon': '💀', 'stat_bonus': {'INT': 5}, 'hp_bonus': 15, 'price': 400, 'desc': '+5 INT, +15 Max HP'},
+    'eye_of_vecna': {'name': 'Eye of Vecna', 'type': 'accessory', 'icon': '👁️', 'stat_bonus': {'INT': 6, 'WIS': 4}, 'price': 600, 'desc': '+6 INT, +4 WIS'},
+    'demogorgon_fang': {'name': 'Demogorgon Fang', 'type': 'accessory', 'icon': '🦷', 'stat_bonus': {'STR': 5, 'CON': 3}, 'price': 650, 'desc': '+5 STR, +3 CON'},
+    'shadow_heart': {'name': 'Shadow Heart', 'type': 'accessory', 'icon': '🖤', 'stat_bonus': {'INT': 4, 'DEX': 4}, 'hp_bonus': 20, 'price': 700, 'desc': '+4 INT, +4 DEX, +20 Max HP'},
 }
 
 def generate_loot(level, enemy_type='normal'):
@@ -2605,6 +2614,35 @@ class Game:
                     line = ai_companion_say(member, 'level_up')
                     self.add_message(f"  💬 {member.name}: \"{line}\"", (150, 200, 255))
                 spawn_particles(member.x * TILE_W + TILE_W // 2, member.y * TILE_H, C_GOLD, 20, 3, 40)
+
+        # Boss rewards: bonus levels + guaranteed accessory
+        BOSS_REWARDS = {
+            'minotaur':       {'levels': 2, 'accessory': 'minotaur_horn'},
+            'mind_flayer':    {'levels': 2, 'accessory': 'mind_crystal'},
+            'dark_knight':    {'levels': 2, 'accessory': 'dark_sigil'},
+            'dragon':         {'levels': 3, 'accessory': 'dragon_scale'},
+            'boss_lich':      {'levels': 3, 'accessory': 'lich_phylactery'},
+            'vecna':          {'levels': 4, 'accessory': 'eye_of_vecna'},
+            'demogorgon':     {'levels': 4, 'accessory': 'demogorgon_fang'},
+            'st_vecna':       {'levels': 3, 'accessory': 'eye_of_vecna'},
+            'st_demogorgon':  {'levels': 3, 'accessory': 'demogorgon_fang'},
+            'st_mind_flayer': {'levels': 4, 'accessory': 'shadow_heart'},
+        }
+        for enemy in self.combat.enemies:
+            reward = BOSS_REWARDS.get(enemy.enemy_type)
+            if reward:
+                bonus_lvls = reward['levels']
+                acc_key = reward['accessory']
+                acc_item = dict(ITEM_TEMPLATES[acc_key])
+                self.player.inventory.append(acc_item)
+                self.add_message(f"🏅 BOSS DEFEATED! +{bonus_lvls} bonus levels!", (255, 215, 0))
+                self.add_message(f"  {acc_item['icon']} Boss drop: {acc_item['name']}!", (255, 215, 0))
+                # Grant bonus levels to all party members
+                for member in self.party:
+                    for _ in range(bonus_lvls):
+                        member.gain_xp(member.xp_to_level - member.xp)  # instantly level up
+                    self.add_message(f"  ⬆️ {member.name} → Level {member.level}!", C_GOLD)
+                spawn_particles(self.player.x * TILE_W + TILE_W // 2, self.player.y * TILE_H, (255, 215, 0), 30, 5, 60)
 
         # Loot drops
         for enemy in self.combat.enemies:
