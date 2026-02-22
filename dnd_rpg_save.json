@@ -6,7 +6,7 @@
     "level": 1,
     "xp": 0,
     "xp_to_level": 100,
-    "hp": 6,
+    "hp": 3,
     "max_hp": 6,
     "mp": 11,
     "max_mp": 11,
@@ -29,6 +29,33 @@
         "attack": "1d8+1",
         "price": 50,
         "desc": "+1 attack damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
       },
       {
         "name": "Health Potion",
@@ -76,11 +103,11 @@
       "name": "Ironheart",
       "char_class": "warrior",
       "level": 1,
-      "xp": 0,
+      "xp": 59,
       "xp_to_level": 100,
       "hp": 11,
       "max_hp": 11,
-      "mp": 11,
+      "mp": 6,
       "max_mp": 11,
       "ac": 16,
       "stats": {
@@ -113,11 +140,11 @@
       "name": "Lumina",
       "char_class": "cleric",
       "level": 1,
-      "xp": 0,
+      "xp": 59,
       "xp_to_level": 100,
       "hp": 8,
       "max_hp": 8,
-      "mp": 16,
+      "mp": 14,
       "max_mp": 16,
       "ac": 15,
       "stats": {
@@ -147,6 +174,6 @@
       "ai_personality": "fierce"
     }
   ],
-  "gold": 50,
+  "gold": 71,
   "floor_num": 2
 }

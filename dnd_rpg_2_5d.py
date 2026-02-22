@@ -2549,16 +2549,16 @@ class Game:
             if e in self.enemies:
                 self.enemies.remove(e)
 
-        # Distribute XP
+        # Distribute XP (all party members get XP, even dead ones)
+        xp_share = total_xp // max(1, len(self.party))
         for member in self.party:
-            if member.alive:
-                leveled = member.gain_xp(total_xp // max(1, len([p for p in self.party if p.alive])))
-                if leveled:
-                    self.add_message(f"🎉 {member.name} leveled up to {member.level}! (+2 skill points)", C_GOLD)
-                    if member.is_ai:
-                        line = ai_companion_say(member, 'level_up')
-                        self.add_message(f"  💬 {member.name}: \"{line}\"", (150, 200, 255))
-                    spawn_particles(member.x * TILE_W + TILE_W // 2, member.y * TILE_H, C_GOLD, 20, 3, 40)
+            leveled = member.gain_xp(xp_share)
+            if leveled:
+                self.add_message(f"🎉 {member.name} leveled up to {member.level}! (+2 skill points)", C_GOLD)
+                if member.is_ai:
+                    line = ai_companion_say(member, 'level_up')
+                    self.add_message(f"  💬 {member.name}: \"{line}\"", (150, 200, 255))
+                spawn_particles(member.x * TILE_W + TILE_W // 2, member.y * TILE_H, C_GOLD, 20, 3, 40)
 
         # Loot drops
         for enemy in self.combat.enemies:
