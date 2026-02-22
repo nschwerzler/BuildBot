@@ -782,6 +782,167 @@ def make_character_sprite(char_class, palette, w=24, h=32, is_enemy=False):
         pygame.draw.circle(aura, (80, 0, 120, 25), (w // 2, h // 2), 14)
         surf.blit(aura, (0, 0))
 
+    elif char_class == 'vecna':
+        # DnD Vecna - skeletal lich-god with missing hand and eye
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 80), (w // 2 - 10, h - 5, 20, 5))
+        # Dark robes with arcane symbols
+        pygame.draw.polygon(surf, (50, 20, 70), [(w // 2, body_top - 4), (w // 2 - 10, h - 6), (w // 2 + 10, h - 6)])
+        pygame.draw.polygon(surf, (80, 30, 100), [(w // 2, body_top - 4), (w // 2 - 8, h - 8), (w // 2 + 8, h - 8)], 1)
+        # Arcane runes on robe
+        for i in range(3):
+            ry2 = body_top + 6 + i * 6
+            pygame.draw.circle(surf, (120, 60, 180, 150), (w // 2, ry2), 2, 1)
+        # Skeletal head
+        pygame.draw.circle(surf, (200, 190, 170), (head_cx, head_cy - 1), 6)
+        # One glowing green eye (left), empty socket (right)
+        pygame.draw.circle(surf, (0, 255, 0), (head_cx - 3, head_cy - 2), 3)
+        pygame.draw.circle(surf, (150, 255, 150), (head_cx - 3, head_cy - 2), 1)
+        pygame.draw.circle(surf, (20, 10, 10), (head_cx + 3, head_cy - 2), 2)  # empty socket
+        # Crown of dark power
+        for i in range(5):
+            cx2 = head_cx - 5 + i * 2 + 1
+            pygame.draw.polygon(surf, (160, 50, 200), [(cx2, head_cy - 8), (cx2 - 1, head_cy - 5), (cx2 + 1, head_cy - 5)])
+        # Left arm (skeletal, missing hand - the Hand of Vecna)
+        pygame.draw.rect(surf, (180, 170, 150), (w // 2 - 8, body_top + 2, 2, 10))
+        pygame.draw.circle(surf, (100, 255, 100, 150), (w // 2 - 8, body_top + 12), 3)  # green stump glow
+        # Right arm with staff
+        pygame.draw.rect(surf, (180, 170, 150), (w // 2 + 6, body_top + 2, 2, 10))
+        pygame.draw.rect(surf, (60, 30, 80), (w // 2 + 8, body_top - 12, 2, 24))
+        pygame.draw.circle(surf, (200, 50, 255), (w // 2 + 9, body_top - 12), 5)
+        pygame.draw.circle(surf, (255, 150, 255), (w // 2 + 9, body_top - 12), 2)
+        # Necrotic aura
+        aura = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(aura, (100, 0, 150, 35), (w // 2, h // 2 - 2), 16)
+        for i in range(6):
+            px2 = w // 2 + random.randint(-14, 14)
+            py2 = random.randint(body_top - 6, body_bot + 2)
+            pygame.draw.circle(aura, (150, 50, 255, 80), (px2, py2), 1)
+        surf.blit(aura, (0, 0))
+
+    elif char_class == 'demogorgon':
+        # DnD Demogorgon - two-headed demon prince, massive and terrifying
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 90), (w // 2 - 10, h - 5, 20, 5))
+        # Massive reptilian body
+        pygame.draw.rect(surf, (40, 80, 40), (w // 2 - 8, body_top - 2, 16, body_bot - body_top + 6))
+        pygame.draw.rect(surf, (50, 100, 50), (w // 2 - 8, body_top - 2, 16, body_bot - body_top + 6), 1)
+        # TWO heads on long necks
+        # Left head
+        pygame.draw.line(surf, (45, 85, 45), (w // 2 - 3, body_top - 2), (w // 2 - 6, body_top - 10), 3)
+        pygame.draw.circle(surf, (50, 90, 45), (w // 2 - 6, body_top - 12), 5)
+        pygame.draw.circle(surf, (255, 50, 0), (w // 2 - 8, body_top - 13), 2)  # red eye
+        pygame.draw.rect(surf, (200, 180, 150), (w // 2 - 9, body_top - 10, 4, 1))  # teeth
+        # Right head
+        pygame.draw.line(surf, (45, 85, 45), (w // 2 + 3, body_top - 2), (w // 2 + 6, body_top - 10), 3)
+        pygame.draw.circle(surf, (50, 90, 45), (w // 2 + 6, body_top - 12), 5)
+        pygame.draw.circle(surf, (255, 50, 0), (w // 2 + 8, body_top - 13), 2)  # red eye
+        pygame.draw.rect(surf, (200, 180, 150), (w // 2 + 5, body_top - 10, 4, 1))  # teeth
+        # Tentacle arms
+        for side in [-1, 1]:
+            sx2 = w // 2 + side * 7
+            for seg in range(6):
+                wobble = int(math.sin(seg * 1.2 + side) * 2)
+                pygame.draw.rect(surf, (45, 85, 45), (sx2 + wobble + side * seg, body_top + seg * 2, 3, 3))
+        # Forked tail
+        pygame.draw.arc(surf, (40, 80, 40), (w // 2, body_bot, 10, 8), 0.5, 2.5, 2)
+        pygame.draw.line(surf, (40, 80, 40), (w // 2 + 8, body_bot + 5), (w // 2 + 12, body_bot + 2), 1)
+        pygame.draw.line(surf, (40, 80, 40), (w // 2 + 8, body_bot + 5), (w // 2 + 12, body_bot + 8), 1)
+        # Legs with claws
+        pygame.draw.rect(surf, (35, 70, 35), (w // 2 - 5, body_bot + 2, 4, 6))
+        pygame.draw.rect(surf, (35, 70, 35), (w // 2 + 1, body_bot + 2, 4, 6))
+        # Demonic aura
+        aura = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(aura, (80, 0, 0, 30), (w // 2, h // 2 - 4), 16)
+        surf.blit(aura, (0, 0))
+
+    elif char_class == 'st_vecna':
+        # Stranger Things Vecna (001/Henry Creel) - humanoid covered in vines/tendrils
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 70), (w // 2 - 9, h - 5, 18, 5))
+        # Desiccated humanoid body - dark red/brown flesh
+        pygame.draw.rect(surf, (80, 40, 40), (w // 2 - 5, body_top, 10, body_bot - body_top))
+        # Vine-like tendrils all over body
+        for i in range(8):
+            vx = w // 2 + random.randint(-6, 6)
+            vy = body_top + random.randint(0, body_bot - body_top)
+            pygame.draw.line(surf, (50, 25, 20), (vx, vy), (vx + random.randint(-4, 4), vy + random.randint(2, 6)), 1)
+        # Head - grotesque, nose-less face
+        pygame.draw.circle(surf, (90, 45, 40), (head_cx, head_cy), 6)
+        # Sunken glowing eyes
+        pygame.draw.circle(surf, (200, 0, 0), (head_cx - 3, head_cy - 1), 2)
+        pygame.draw.circle(surf, (200, 0, 0), (head_cx + 3, head_cy - 1), 2)
+        pygame.draw.circle(surf, (255, 100, 100), (head_cx - 3, head_cy - 1), 1)
+        pygame.draw.circle(surf, (255, 100, 100), (head_cx + 3, head_cy - 1), 1)
+        # No nose - just a slit
+        pygame.draw.line(surf, (50, 20, 20), (head_cx, head_cy + 1), (head_cx, head_cy + 3), 1)
+        # Cracked texture on head
+        pygame.draw.line(surf, (60, 30, 25), (head_cx - 4, head_cy - 4), (head_cx - 1, head_cy + 2), 1)
+        pygame.draw.line(surf, (60, 30, 25), (head_cx + 2, head_cy - 3), (head_cx + 4, head_cy + 1), 1)
+        # Extended clawed hands
+        pygame.draw.rect(surf, (70, 35, 35), (w // 2 - 9, body_top + 2, 3, 12))
+        pygame.draw.rect(surf, (70, 35, 35), (w // 2 + 6, body_top + 2, 3, 12))
+        # Claws
+        for side in [-1, 1]:
+            cx2 = w // 2 + side * 8 + (1 if side == 1 else -2)
+            for ci in range(3):
+                pygame.draw.line(surf, (40, 20, 15), (cx2 + ci, body_top + 14), (cx2 + ci + side * 2, body_top + 18), 1)
+        # Legs
+        pygame.draw.rect(surf, (70, 35, 35), (w // 2 - 4, body_bot, 3, 6))
+        pygame.draw.rect(surf, (70, 35, 35), (w // 2 + 1, body_bot, 3, 6))
+        # Psychic/Upside Down red particle aura
+        aura = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(aura, (150, 0, 0, 30), (w // 2, h // 2 - 2), 14)
+        for i in range(5):
+            px2 = w // 2 + random.randint(-10, 10)
+            py2 = random.randint(body_top - 4, body_bot + 4)
+            pygame.draw.circle(aura, (255, 50, 50, 100), (px2, py2), 1)
+        surf.blit(aura, (0, 0))
+
+    elif char_class == 'st_demogorgon':
+        # Stranger Things Demogorgon - tall, faceless with petal-mouth head
+        surf.fill((0, 0, 0, 0))
+        pygame.draw.ellipse(surf, (0, 0, 0, 70), (w // 2 - 9, h - 5, 18, 5))
+        # Tall thin grey-brown body
+        pygame.draw.rect(surf, (90, 60, 50), (w // 2 - 5, body_top - 2, 10, body_bot - body_top + 4))
+        # Muscular texture
+        pygame.draw.line(surf, (80, 50, 40), (w // 2 - 3, body_top + 2), (w // 2 - 3, body_bot - 2), 1)
+        pygame.draw.line(surf, (80, 50, 40), (w // 2 + 3, body_top + 2), (w // 2 + 3, body_bot - 2), 1)
+        # PETAL-MOUTH HEAD (signature look - flower-like opening)
+        # Closed head base
+        pygame.draw.circle(surf, (100, 65, 50), (head_cx, head_cy - 1), 6)
+        # Petal flaps opening outward
+        petals = 5
+        for i in range(petals):
+            angle = (i / petals) * math.pi * 2 - math.pi / 2
+            px2 = head_cx + int(math.cos(angle) * 7)
+            py2 = head_cy - 1 + int(math.sin(angle) * 7)
+            pygame.draw.polygon(surf, (110, 70, 55), [
+                (head_cx + int(math.cos(angle) * 3), head_cy - 1 + int(math.sin(angle) * 3)),
+                (px2 - 1, py2), (px2 + 1, py2)
+            ])
+        # Inner mouth - red/pink
+        pygame.draw.circle(surf, (180, 40, 50), (head_cx, head_cy - 1), 3)
+        # Tiny teeth ring
+        for i in range(6):
+            angle = (i / 6) * math.pi * 2
+            tx2 = head_cx + int(math.cos(angle) * 2)
+            ty2 = head_cy - 1 + int(math.sin(angle) * 2)
+            pygame.draw.rect(surf, (220, 210, 190), (tx2, ty2, 1, 1))
+        # Long clawed arms
+        pygame.draw.rect(surf, (85, 55, 45), (w // 2 - 9, body_top, 3, 14))
+        pygame.draw.rect(surf, (85, 55, 45), (w // 2 + 6, body_top, 3, 14))
+        # Large claws
+        for side in [-1, 1]:
+            cx2 = w // 2 + side * 8 + (1 if side == 1 else -2)
+            for ci in range(4):
+                pygame.draw.line(surf, (60, 40, 30), (cx2 + ci, body_top + 13), (cx2 + ci + side * 2, body_top + 18), 1)
+        # Digitigrade legs
+        pygame.draw.rect(surf, (85, 55, 45), (w // 2 - 4, body_bot, 3, 5))
+        pygame.draw.rect(surf, (85, 55, 45), (w // 2 + 1, body_bot, 3, 5))
+        pygame.draw.rect(surf, (70, 40, 30), (w // 2 - 5, body_bot + 4, 4, 3))
+        pygame.draw.rect(surf, (70, 40, 30), (w // 2 + 1, body_bot + 4, 4, 3))
+
     _tex_cache[key] = surf
     return surf
 
@@ -1145,6 +1306,18 @@ class Enemy(Entity):
                    'palette': [(180, 40, 40), (140, 30, 30), (100, 20, 20)]},
         'boss_lich': {'hp': 120, 'ac': 17, 'atk': '2d10', 'xp': 500, 'gold': (100, 300),
                       'palette': [(40, 10, 60), (60, 20, 80), (30, 5, 50)]},
+        # Classic DnD Vecna - undead god of secrets
+        'vecna': {'hp': 150, 'ac': 18, 'atk': '2d10+4', 'xp': 700, 'gold': (150, 400),
+                  'palette': [(50, 20, 70), (80, 30, 100), (30, 10, 50)]},
+        # Classic DnD Demogorgon - two-headed demon prince
+        'demogorgon': {'hp': 180, 'ac': 19, 'atk': '2d12+5', 'xp': 800, 'gold': (200, 500),
+                       'palette': [(40, 80, 40), (60, 100, 50), (30, 60, 30)]},
+        # Stranger Things Vecna (001/Henry Creel)
+        'st_vecna': {'hp': 140, 'ac': 17, 'atk': '2d10+3', 'xp': 650, 'gold': (120, 350),
+                     'palette': [(80, 40, 40), (60, 25, 30), (100, 50, 45)]},
+        # Stranger Things Demogorgon (faceless predator)
+        'st_demogorgon': {'hp': 130, 'ac': 16, 'atk': '2d8+4', 'xp': 600, 'gold': (100, 300),
+                          'palette': [(90, 60, 50), (70, 45, 35), (110, 70, 55)]},
     }
 
     def __init__(self, enemy_type, level=1):
@@ -1174,7 +1347,33 @@ class Enemy(Entity):
         alive_targets = [t for t in targets if t.alive]
         if not alive_targets:
             return None, "has no targets", 0
-        # Target lowest HP
+
+        # Special abilities for powerful enemies
+        if self.enemy_type == 'vecna' and random.random() < 0.4:
+            # Vecna's necrotic grasp - targets random party member
+            target = random.choice(alive_targets)
+            dmg = roll('3d6') + 4
+            return target, f"unleashes Necrotic Grasp on {target.name}! {dmg} necrotic damage!", dmg
+
+        if self.enemy_type == 'st_vecna' and random.random() < 0.35:
+            # ST Vecna's psychic curse - targets strongest party member
+            target = max(alive_targets, key=lambda t: t.max_hp)
+            dmg = roll('2d8') + 3
+            return target, f"invades {target.name}'s mind with psychic terror! {dmg} psychic damage!", dmg
+
+        if self.enemy_type == 'demogorgon' and random.random() < 0.3:
+            # DnD Demogorgon's twin bite - attacks two targets
+            target = random.choice(alive_targets)
+            dmg = roll('2d10') + 5
+            return target, f"bites with BOTH heads at {target.name}! {dmg} damage!", dmg
+
+        if self.enemy_type == 'st_demogorgon' and random.random() < 0.35:
+            # ST Demogorgon's petal-mouth lunge
+            target = min(alive_targets, key=lambda t: t.hp)
+            dmg = roll('2d8') + 3
+            return target, f"opens its petal-mouth and lunges at {target.name}! {dmg} damage!", dmg
+
+        # Default: Target lowest HP
         target = min(alive_targets, key=lambda t: t.hp)
         d20, attack_total = self.attack_roll()
         if attack_total >= target.ac:
@@ -1207,9 +1406,9 @@ def generate_loot(level, enemy_type='normal'):
     loot = []
     # Gold
     gold = random.randint(5, 15) * level
-    if enemy_type in ('dragon', 'boss_lich', 'mind_flayer'):
+    if enemy_type in ('dragon', 'boss_lich', 'mind_flayer', 'vecna', 'demogorgon'):
         gold *= 5
-    elif enemy_type in ('minotaur', 'dark_knight', 'troll'):
+    elif enemy_type in ('minotaur', 'dark_knight', 'troll', 'st_vecna', 'st_demogorgon'):
         gold *= 3
     elif enemy_type == 'mimic':
         gold *= 4  # Mimics are treasure
@@ -1390,10 +1589,10 @@ class DungeonGenerator:
 
     def is_walkable(self, x, y):
         if 0 <= x < self.width and 0 <= y < self.height:
-            return self.tiles[y][x] in (TileType.FLOOR, TileType.DOOR, TileType.STAIRS, TileType.GRASS, TileType.TRAP)
+            return self.tiles[y][x] in (TileType.FLOOR, TileType.DOOR, TileType.STAIRS, TileType.GRASS, TileType.TRAP, TileType.CHEST, TileType.LAVA, TileType.WATER)
         return False
 
-    def reveal_around(self, x, y, radius=4):
+    def reveal_around(self, x, y, radius=6):
         for dy in range(-radius, radius + 1):
             for dx in range(-radius, radius + 1):
                 nx, ny = x + dx, y + dy
@@ -1697,6 +1896,7 @@ class Game:
         self.ai_chat_display_time = 0
         self.anim_tick = 0
         self.title_anim = 0
+        self.move_cooldown = 0  # Frame counter for held-key movement
 
         # Fonts
         self.font_lg = pygame.font.SysFont('Segoe UI', 32, bold=True)
@@ -1752,10 +1952,17 @@ class Game:
         sx, sy = self.dungeon.spawn_point
         self.player.x = sx
         self.player.y = sy
-        # Place companions near player
+        # Place companions near player (offset so they don't overlap)
+        offsets = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         for i, companion in enumerate(self.party[1:]):
-            companion.x = sx + (i + 1) % 3 - 1
-            companion.y = sy + (i + 1) // 3
+            ox, oy = offsets[i % len(offsets)]
+            cx, cy = sx + ox, sy + oy
+            if self.dungeon.is_walkable(cx, cy):
+                companion.x = cx
+                companion.y = cy
+            else:
+                companion.x = sx
+                companion.y = sy
             companion.alive = True
             companion.hp = companion.max_hp
 
@@ -1765,12 +1972,12 @@ class Game:
             2: ['goblin', 'kobold', 'spider'],
             3: ['goblin', 'zombie', 'skeleton'],
             4: ['skeleton', 'spider', 'mimic'],
-            5: ['orc', 'wraith', 'skeleton'],
-            6: ['orc', 'troll', 'gelatinous_cube'],
-            7: ['troll', 'minotaur', 'wraith'],
-            8: ['minotaur', 'mind_flayer', 'dark_knight'],
-            9: ['mind_flayer', 'dark_knight', 'dragon'],
-            10: ['dragon', 'dark_knight', 'mind_flayer'],
+            5: ['orc', 'wraith', 'skeleton', 'st_demogorgon'],
+            6: ['orc', 'troll', 'gelatinous_cube', 'st_demogorgon'],
+            7: ['troll', 'minotaur', 'wraith', 'st_vecna'],
+            8: ['minotaur', 'mind_flayer', 'dark_knight', 'st_vecna'],
+            9: ['mind_flayer', 'dark_knight', 'dragon', 'demogorgon'],
+            10: ['dragon', 'dark_knight', 'vecna', 'demogorgon'],
         }
         available_types = enemy_types_by_floor.get(min(self.floor_num, 10), ['dragon', 'mind_flayer', 'dark_knight'])
 
@@ -1785,7 +1992,7 @@ class Game:
         if self.floor_num % 3 == 0 and self.dungeon.rooms:
             boss_room = self.dungeon.rooms[-2] if len(self.dungeon.rooms) > 2 else self.dungeon.rooms[-1]
             boss_types = {
-                3: 'minotaur', 6: 'dragon', 9: 'boss_lich',
+                3: 'minotaur', 6: 'demogorgon', 9: 'vecna', 12: 'vecna',
             }
             boss_type = boss_types.get(self.floor_num, 'boss_lich')
             boss = Enemy(boss_type, self.floor_num + 2)
@@ -1809,6 +2016,14 @@ class Game:
 
         self.dungeon.reveal_around(sx, sy)
         self.add_message(f"\n📍 Floor {self.floor_num} — The dungeon deepens...", C_GOLD)
+
+        # Snap camera to player immediately
+        iso_x = (self.player.x - self.player.y) * TILE_W // 2
+        iso_y = (self.player.x + self.player.y) * TILE_H // 2
+        self.camera_x = iso_x - SCREEN_W // 2 + TILE_W // 2
+        self.camera_y = iso_y - SCREEN_H // 2
+        self.target_cam_x = self.camera_x
+        self.target_cam_y = self.camera_y
 
     def try_move(self, dx, dy):
         """Attempt to move the player."""
@@ -1962,17 +2177,36 @@ class Game:
         self.title_anim += 1
         self.game_time += 1
 
+        # Held-key movement for smooth exploring
+        if self.state == GameState.EXPLORING and self.player:
+            if self.move_cooldown > 0:
+                self.move_cooldown -= 1
+            else:
+                keys = pygame.key.get_pressed()
+                moved = False
+                if keys[pygame.K_w] or keys[pygame.K_UP]:
+                    self.try_move(0, -1)
+                    moved = True
+                elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
+                    self.try_move(0, 1)
+                    moved = True
+                elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
+                    self.try_move(-1, 0)
+                    moved = True
+                elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+                    self.try_move(1, 0)
+                    moved = True
+                if moved:
+                    self.move_cooldown = 8  # ~133ms delay between moves at 60fps
+
         # Update camera
         if self.state == GameState.EXPLORING and self.player:
-            tx = self.player.x * TILE_W - SCREEN_W // 2 + TILE_W // 2
-            ty = self.player.y * TILE_H - SCREEN_H // 2 + TILE_H // 2
-            # Convert to isometric camera
             iso_x = (self.player.x - self.player.y) * TILE_W // 2
             iso_y = (self.player.x + self.player.y) * TILE_H // 2
             self.target_cam_x = iso_x - SCREEN_W // 2 + TILE_W // 2
             self.target_cam_y = iso_y - SCREEN_H // 2
-            self.camera_x += (self.target_cam_x - self.camera_x) * 0.1
-            self.camera_y += (self.target_cam_y - self.camera_y) * 0.1
+            self.camera_x += (self.target_cam_x - self.camera_x) * 0.25
+            self.camera_y += (self.target_cam_y - self.camera_y) * 0.25
 
         update_particles()
         update_float_texts()
@@ -2233,7 +2467,7 @@ class Game:
                 dx = abs(tx - self.player.x)
                 dy = abs(ty - self.player.y)
                 dist = math.sqrt(dx * dx + dy * dy)
-                in_sight = dist <= 6
+                in_sight = dist <= 8
 
                 if tile == TileType.WALL:
                     surf = self.iso_tiles['stone_wall']
@@ -2303,7 +2537,7 @@ class Game:
             # Check if in player's sight
             dx = abs(entity.x - self.player.x)
             dy = abs(entity.y - self.player.y)
-            if math.sqrt(dx * dx + dy * dy) > 6:
+            if math.sqrt(dx * dx + dy * dy) > 8:
                 continue
 
             sprite = entity.get_sprite()
@@ -2313,6 +2547,14 @@ class Game:
                 entity.flash_timer -= 1
                 if entity.flash_timer % 3 == 0:
                     continue  # Blink
+
+            # Player highlight indicator (glowing circle under feet)
+            if entity == self.player:
+                glow_surf = pygame.Surface((28, 14), pygame.SRCALPHA)
+                glow_alpha = 120 + int(math.sin(self.anim_tick * 0.08) * 40)
+                pygame.draw.ellipse(glow_surf, (255, 215, 0, glow_alpha), (0, 0, 28, 14))
+                pygame.draw.ellipse(glow_surf, (255, 255, 150, min(255, glow_alpha + 40)), (4, 2, 20, 10))
+                screen.blit(glow_surf, (sx - 2, sy + sprite.get_height() - 8))
 
             # Bobbing animation
             bob = int(math.sin(self.anim_tick * 0.1 + hash(entity.name)) * 2)
@@ -2662,55 +2904,64 @@ class Game:
 
         mx, my = pygame.mouse.get_pos()
 
-        # Action buttons
-        actions = [
-            ("⚔️ Attack", "Basic attack (d20 + bonus vs AC)", 'attack'),
-            ("🛡️ Defend", "Raise AC by 2 this round", 'defend'),
-        ]
-
-        # Skills
-        for i, skill_name in enumerate(current.skills):
-            cost = 3 + i * 2
-            actions.append((f"✨ {skill_name} ({cost} MP)", f"Use {skill_name}", f'skill_{i}'))
-
-        # Items
-        potions = [it for it in current.inventory if it['type'] == 'consumable']
-        if potions:
-            actions.append(("🧪 Use Potion", "Use a healing potion", 'potion'))
-
-        btn_x = 25
-        btn_y = panel_y + 35
-        btn_w = 230
-        btn_h = 28
-
-        for i, (label, desc, action_id) in enumerate(actions):
-            col_idx = i // 3
-            row_idx = i % 3
-            bx = btn_x + col_idx * (btn_w + 10)
-            by = btn_y + row_idx * (btn_h + 5)
-
-            is_hovered = bx <= mx <= bx + btn_w and by <= my <= by + btn_h
-            bg = (50, 40, 70) if is_hovered else (30, 25, 45)
-            border = C_GOLD if is_hovered else (60, 50, 80)
-
-            pygame.draw.rect(screen, bg, (bx, by, btn_w, btn_h), border_radius=5)
-            pygame.draw.rect(screen, border, (bx, by, btn_w, btn_h), 1, border_radius=5)
-
-            lt = self.font_xs.render(label, True, C_WHITE if is_hovered else (180, 175, 190))
-            screen.blit(lt, (bx + 8, by + 7))
-
-        # Target selection (if attacking)
-        if self.combat.selected_action in ('attack',) or (self.combat.selected_action and self.combat.selected_action.startswith('skill_')):
+        if self.combat.selected_action:
+            # TARGET SELECTION MODE
             alive_enemies = [e for e in self.combat.enemies if e.alive]
-            target_y = panel_y + 135
-            tt = self.font_sm.render("Select target:", True, C_GOLD)
-            screen.blit(tt, (25, target_y))
+            action_name = "Attack" if self.combat.selected_action == 'attack' else self.combat.selected_action.replace('skill_', 'Skill ')
+            prompt = self.font_md.render(f"🎯 Select target for {action_name}:", True, C_GOLD)
+            screen.blit(prompt, (25, panel_y + 35))
+
             for i, enemy in enumerate(alive_enemies):
-                tx = 130 + i * 130
-                is_hov = tx <= mx <= tx + 120 and target_y - 2 <= my <= target_y + 20
-                col = C_RED if is_hov else (200, 150, 150)
-                et = self.font_sm.render(f"{i + 1}. {enemy.name}", True, col)
-                screen.blit(et, (tx, target_y))
+                ty = panel_y + 60 + i * 28
+                tx = 40
+                is_hov = tx <= mx <= tx + 400 and ty - 2 <= my <= ty + 24
+                hp_pct = enemy.hp / enemy.max_hp
+                hp_col = C_RED if hp_pct < 0.3 else C_GREEN
+                col = C_RED if is_hov else (220, 180, 180)
+                label = f"[{i + 1}] {enemy.name}  (HP: {enemy.hp}/{enemy.max_hp})"
+                et = self.font_sm.render(label, True, col)
+                screen.blit(et, (tx, ty))
+
+            hint = self.font_xs.render("Press 1-9 to pick target | Enter = first | Esc = cancel", True, (150, 140, 170))
+            screen.blit(hint, (25, panel_y + 150))
+        else:
+            # ACTION SELECTION MODE
+            actions = [
+                ("[1] ⚔️ Attack", "Basic attack (d20 + bonus vs AC)", 'attack'),
+                ("[2] 🛡️ Defend", "Raise AC by 2 this round", 'defend'),
+            ]
+
+            for i, skill_name in enumerate(current.skills):
+                cost = 3 + i * 2
+                actions.append((f"[{i+3}] ✨ {skill_name} ({cost} MP)", f"Use {skill_name}", f'skill_{i}'))
+
+            potions = [it for it in current.inventory if it['type'] == 'consumable']
+            if potions:
+                actions.append(("[H] 🧪 Use Potion", "Use a healing potion", 'potion'))
+
+            btn_x = 25
+            btn_y = panel_y + 35
+            btn_w = 230
+            btn_h = 28
+
+            for i, (label, desc, action_id) in enumerate(actions):
+                col_idx = i // 3
+                row_idx = i % 3
+                bx = btn_x + col_idx * (btn_w + 10)
+                by = btn_y + row_idx * (btn_h + 5)
+
+                is_hovered = bx <= mx <= bx + btn_w and by <= my <= by + btn_h
+                bg = (50, 40, 70) if is_hovered else (30, 25, 45)
+                border = C_GOLD if is_hovered else (60, 50, 80)
+
+                pygame.draw.rect(screen, bg, (bx, by, btn_w, btn_h), border_radius=5)
+                pygame.draw.rect(screen, border, (bx, by, btn_w, btn_h), 1, border_radius=5)
+
+                lt = self.font_xs.render(label, True, C_WHITE if is_hovered else (180, 175, 190))
+                screen.blit(lt, (bx + 8, by + 7))
+
+            hint = self.font_xs.render("Press number keys or click to select action", True, (130, 120, 150))
+            screen.blit(hint, (25, panel_y + 150))
 
     def draw_inventory(self):
         """Draw the inventory screen."""
@@ -2871,17 +3122,9 @@ def main():
                     elif event.key == pygame.K_ESCAPE:
                         game.state = GameState.TITLE
 
-                # ─── EXPLORING ───
+                # ─── EXPLORING ─── (movement handled via held-keys in update())
                 elif game.state == GameState.EXPLORING:
-                    if event.key == pygame.K_w or event.key == pygame.K_UP:
-                        game.try_move(0, -1)
-                    elif event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                        game.try_move(0, 1)
-                    elif event.key == pygame.K_a or event.key == pygame.K_LEFT:
-                        game.try_move(-1, 0)
-                    elif event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-                        game.try_move(1, 0)
-                    elif event.key == pygame.K_i:
+                    if event.key == pygame.K_i:
                         game.state = GameState.INVENTORY
                     elif event.key == pygame.K_m:
                         game.minimap_open = not game.minimap_open
@@ -2904,35 +3147,30 @@ def main():
                         if not current:
                             continue
 
-                        if event.key == pygame.K_a or event.key == pygame.K_1:
-                            game.combat.selected_action = 'attack'
-                        elif event.key == pygame.K_s or event.key == pygame.K_2:
-                            # Defend
-                            current.ac += 2
-                            game.combat.add_log(f"🛡️ {current.name} takes a defensive stance! AC +2", C_BLUE)
-                            game.combat.next_turn()
-                        elif event.key in (pygame.K_3, pygame.K_4, pygame.K_5):
-                            skill_idx = event.key - pygame.K_3
-                            if skill_idx < len(current.skills):
-                                game.combat.selected_action = f'skill_{skill_idx}'
-                        elif event.key == pygame.K_h:
-                            # Use health potion
-                            potions = [i for i, it in enumerate(current.inventory) if it.get('effect') == 'heal']
-                            if potions:
-                                game.use_item(potions[0])
-                                game.combat.add_log(f"🧪 {current.name} drinks a health potion!", C_GREEN)
-                                game.combat.next_turn()
+                        alive_enemies = [e for e in game.combat.enemies if e.alive]
 
-                        # Target selection with number keys
+                        # If an action is selected and waiting for target
                         if game.combat.selected_action:
-                            alive_enemies = [e for e in game.combat.enemies if e.alive]
-                            if len(alive_enemies) == 1:
-                                # Auto-target single enemy
+                            target = None
+                            # Number keys to pick target (1-9)
+                            target_keys = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
+                                           pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]
+                            for ki, tk in enumerate(target_keys):
+                                if event.key == tk and ki < len(alive_enemies):
+                                    target = alive_enemies[ki]
+                                    break
+                            # Enter/Space auto-targets first enemy
+                            if event.key in (pygame.K_RETURN, pygame.K_SPACE) and alive_enemies:
                                 target = alive_enemies[0]
+                            # Escape cancels action
+                            if event.key == pygame.K_ESCAPE:
+                                game.combat.selected_action = None
+                                game.combat.add_log("Action cancelled.", (150, 150, 150))
+
+                            if target:
                                 if game.combat.selected_action == 'attack':
                                     game.combat.do_attack(current, target)
-                                    game.combat.next_turn()
-                                elif game.combat.selected_action.startswith('skill_'):
+                                elif game.combat.selected_action and game.combat.selected_action.startswith('skill_'):
                                     si = int(game.combat.selected_action.split('_')[1])
                                     success, msg, dmg = current.use_skill(si, target, [p for p in game.party if p.alive])
                                     if success:
@@ -2944,8 +3182,52 @@ def main():
                                                 game.combat.add_log(f"💀 {target.name} defeated!", C_RED)
                                     else:
                                         game.combat.add_log(f"❌ {msg}", C_RED)
-                                    game.combat.next_turn()
+                                game.combat.next_turn()
                                 game.combat.selected_action = None
+                        else:
+                            # Select action
+                            if event.key == pygame.K_1 or event.key == pygame.K_a:
+                                game.combat.selected_action = 'attack'
+                                # Auto-execute if single enemy
+                                if len(alive_enemies) == 1:
+                                    game.combat.do_attack(current, alive_enemies[0])
+                                    game.combat.next_turn()
+                                    game.combat.selected_action = None
+                                else:
+                                    game.combat.add_log(f"⚔️ Select target (1-{len(alive_enemies)})", C_GOLD)
+                            elif event.key == pygame.K_2 or event.key == pygame.K_s:
+                                # Defend
+                                current.ac += 2
+                                game.combat.add_log(f"🛡️ {current.name} takes a defensive stance! AC +2", C_BLUE)
+                                game.combat.next_turn()
+                            elif event.key in (pygame.K_3, pygame.K_4, pygame.K_5):
+                                skill_idx = event.key - pygame.K_3
+                                if skill_idx < len(current.skills):
+                                    game.combat.selected_action = f'skill_{skill_idx}'
+                                    if len(alive_enemies) == 1:
+                                        si = skill_idx
+                                        target = alive_enemies[0]
+                                        success, msg, dmg = current.use_skill(si, target, [p for p in game.party if p.alive])
+                                        if success:
+                                            game.combat.add_log(f"✨ {msg}", C_PURPLE)
+                                            if dmg > 0:
+                                                target.take_damage(dmg)
+                                                spawn_float_text(target.x * TILE_W, target.y * TILE_H, f"-{dmg}", C_PURPLE)
+                                                if not target.alive:
+                                                    game.combat.add_log(f"💀 {target.name} defeated!", C_RED)
+                                        else:
+                                            game.combat.add_log(f"❌ {msg}", C_RED)
+                                        game.combat.next_turn()
+                                        game.combat.selected_action = None
+                                    else:
+                                        game.combat.add_log(f"✨ Select target (1-{len(alive_enemies)})", C_PURPLE)
+                            elif event.key == pygame.K_h:
+                                # Use health potion
+                                potions = [i for i, it in enumerate(current.inventory) if it.get('effect') == 'heal']
+                                if potions:
+                                    game.use_item(potions[0])
+                                    game.combat.add_log(f"🧪 {current.name} drinks a health potion!", C_GREEN)
+                                    game.combat.next_turn()
 
                 # ─── INVENTORY ───
                 elif game.state == GameState.INVENTORY:
@@ -2997,48 +3279,15 @@ def main():
                 elif game.state == GameState.COMBAT and game.combat and game.combat.phase == 'player_turn':
                     current = game.combat.get_current()
                     if current:
-                        # Check action buttons
                         panel_y = SCREEN_H - 180
-                        actions_list = ['attack', 'defend']
-                        for si in range(len(current.skills)):
-                            actions_list.append(f'skill_{si}')
-                        potions = [it for it in current.inventory if it.get('effect') == 'heal']
-                        if potions:
-                            actions_list.append('potion')
 
-                        btn_x = 25
-                        btn_y = panel_y + 35
-                        btn_w = 230
-                        btn_h = 28
-
-                        for i, action_id in enumerate(actions_list):
-                            col_idx = i // 3
-                            row_idx = i % 3
-                            bx = btn_x + col_idx * (btn_w + 10)
-                            by = btn_y + row_idx * (btn_h + 5)
-
-                            if bx <= mx <= bx + btn_w and by <= my <= by + btn_h:
-                                if action_id == 'defend':
-                                    current.ac += 2
-                                    game.combat.add_log(f"🛡️ {current.name} defends! AC +2", C_BLUE)
-                                    game.combat.next_turn()
-                                elif action_id == 'potion':
-                                    potions_list = [idx for idx, it in enumerate(current.inventory) if it.get('effect') == 'heal']
-                                    if potions_list:
-                                        game.use_item(potions_list[0])
-                                        game.combat.add_log(f"🧪 {current.name} uses a potion!", C_GREEN)
-                                        game.combat.next_turn()
-                                else:
-                                    game.combat.selected_action = action_id
-                                break
-
-                        # Target selection
-                        if game.combat.selected_action and game.combat.selected_action not in ('defend', 'potion'):
+                        if game.combat.selected_action:
+                            # TARGET SELECTION via mouse
                             alive_enemies = [e for e in game.combat.enemies if e.alive]
-                            target_y = panel_y + 135
                             for i, enemy in enumerate(alive_enemies):
-                                tx = 130 + i * 130
-                                if tx <= mx <= tx + 120 and target_y - 5 <= my <= target_y + 25:
+                                ty = panel_y + 60 + i * 28
+                                tx = 40
+                                if tx <= mx <= tx + 400 and ty - 2 <= my <= ty + 24:
                                     if game.combat.selected_action == 'attack':
                                         game.combat.do_attack(current, enemy)
                                     elif game.combat.selected_action.startswith('skill_'):
@@ -3055,6 +3304,60 @@ def main():
                                             game.combat.add_log(f"❌ {msg}", C_RED)
                                     game.combat.next_turn()
                                     game.combat.selected_action = None
+                                    break
+                        else:
+                            # ACTION SELECTION via mouse
+                            actions_list = ['attack', 'defend']
+                            for si in range(len(current.skills)):
+                                actions_list.append(f'skill_{si}')
+                            potions = [it for it in current.inventory if it.get('effect') == 'heal']
+                            if potions:
+                                actions_list.append('potion')
+
+                            btn_x = 25
+                            btn_y = panel_y + 35
+                            btn_w = 230
+                            btn_h = 28
+
+                            for i, action_id in enumerate(actions_list):
+                                col_idx = i // 3
+                                row_idx = i % 3
+                                bx = btn_x + col_idx * (btn_w + 10)
+                                by = btn_y + row_idx * (btn_h + 5)
+
+                                if bx <= mx <= bx + btn_w and by <= my <= by + btn_h:
+                                    if action_id == 'defend':
+                                        current.ac += 2
+                                        game.combat.add_log(f"🛡️ {current.name} defends! AC +2", C_BLUE)
+                                        game.combat.next_turn()
+                                    elif action_id == 'potion':
+                                        potions_list = [idx for idx, it in enumerate(current.inventory) if it.get('effect') == 'heal']
+                                        if potions_list:
+                                            game.use_item(potions_list[0])
+                                            game.combat.add_log(f"🧪 {current.name} uses a potion!", C_GREEN)
+                                            game.combat.next_turn()
+                                    else:
+                                        game.combat.selected_action = action_id
+                                        # Auto-target if single enemy
+                                        alive_enemies = [e for e in game.combat.enemies if e.alive]
+                                        if len(alive_enemies) == 1:
+                                            target = alive_enemies[0]
+                                            if action_id == 'attack':
+                                                game.combat.do_attack(current, target)
+                                            elif action_id.startswith('skill_'):
+                                                si = int(action_id.split('_')[1])
+                                                success, msg, dmg = current.use_skill(si, target, [p for p in game.party if p.alive])
+                                                if success:
+                                                    game.combat.add_log(f"✨ {msg}", C_PURPLE)
+                                                    if dmg > 0:
+                                                        target.take_damage(dmg)
+                                                        spawn_float_text(target.x * TILE_W, target.y * TILE_H, f"-{dmg}", C_PURPLE)
+                                                        if not target.alive:
+                                                            game.combat.add_log(f"💀 {target.name} defeated!", C_RED)
+                                                else:
+                                                    game.combat.add_log(f"❌ {msg}", C_RED)
+                                            game.combat.next_turn()
+                                            game.combat.selected_action = None
                                     break
 
         game.update()
