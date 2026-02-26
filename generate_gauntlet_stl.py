@@ -36,21 +36,19 @@ class STLWriter:
         self.add_tri(v1, v3, v4)
 
     def save(self, filename):
-        """Write binary STL file."""
-        with open(filename, 'wb') as f:
-            # 80-byte header
-            header = b'Gauntlet STL - Generated for Bambu Studio' + b'\0' * 38
-            f.write(header[:80])
-            # Triangle count
-            f.write(struct.pack('<I', len(self.triangles)))
-            # Triangles
+        """Write ASCII STL file (maximum compatibility)."""
+        with open(filename, 'w') as f:
+            f.write("solid gauntlet\n")
             for (nx, ny, nz, v1, v2, v3) in self.triangles:
-                f.write(struct.pack('<fff', nx, ny, nz))
-                f.write(struct.pack('<fff', *v1))
-                f.write(struct.pack('<fff', *v2))
-                f.write(struct.pack('<fff', *v3))
-                f.write(struct.pack('<H', 0))  # attribute byte count
-        print(f"  Wrote {len(self.triangles)} triangles to {filename}")
+                f.write(f"  facet normal {nx:.6e} {ny:.6e} {nz:.6e}\n")
+                f.write(f"    outer loop\n")
+                f.write(f"      vertex {v1[0]:.6e} {v1[1]:.6e} {v1[2]:.6e}\n")
+                f.write(f"      vertex {v2[0]:.6e} {v2[1]:.6e} {v2[2]:.6e}\n")
+                f.write(f"      vertex {v3[0]:.6e} {v3[1]:.6e} {v3[2]:.6e}\n")
+                f.write(f"    endloop\n")
+                f.write(f"  endfacet\n")
+            f.write("endsolid gauntlet\n")
+        print(f"  Wrote {len(self.triangles)} triangles to {filename} (ASCII format)")
 
 
 # ─── GEOMETRY HELPERS ─────────────────────────────────────
