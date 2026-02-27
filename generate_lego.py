@@ -2,12 +2,11 @@
 LEGO 2x6 Hinge Brick Generator
 ================================
 Clean 2x6 brick with:
-  - 12 top studs
-  - 12 side studs (front & back, all columns)
+  - 12 top studs (2x6 grid)
   - Hinge PEG flush on RIGHT end wall
   - Hinge SOCKET flush on LEFT end wall
-  - Decorative rings on front & back faces
   - Anti-stud tubes underneath
+  - Ribs for strength
   - Hollow interior
 
 Chain bricks:  Brick A RIGHT peg -> Brick B LEFT socket -> spins!
@@ -40,10 +39,6 @@ PEG_L      = 5.0     # peg length sticking out
 SOCK_OR    = 2.8     # socket outer radius (5.6mm OD)
 SOCK_IR    = 1.65    # socket inner radius (3.3mm ID, peg + clearance)
 SOCK_DEPTH = 5.5     # socket depth (slightly longer than peg)
-
-# ── Decorative ring dims ──
-RING_R     = 2.0     # decorative ring outer radius
-RING_THICK = 0.5     # decorative ring thickness
 
 # ── Derived ──
 BODY_X = COLS * PITCH - TOL * 2
@@ -233,26 +228,20 @@ def build_lego_2x6():
             m.cyl_y(PITCH/2 + col*PITCH - TOL, BRICK_H,
                     PITCH/2 + row*PITCH - TOL, sr, STUD_H)
 
-    # ── 3. SIDE STUDS — all columns on front & back faces ──
-    for col in range(COLS):
-        cx = PITCH/2 + col*PITCH - TOL
-        m.cyl_z(cx, cy, -STUD_H, sr, STUD_H)           # front face
-        m.cyl_z(cx, cy, BODY_Z, sr, STUD_H)             # back face
-
-    # ── 4. ANTI-STUD TUBES (underneath) ──
+    # ── 3. ANTI-STUD TUBES (underneath) ──
     tro, tri_ = TUBE_OD/2, TUBE_ID/2
     th = BRICK_H - TOP_WALL
     for col in range(COLS - 1):
         m.tube_y(PITCH + col*PITCH - TOL, 0, cz, tro, tri_, th)
 
-    # ── 5. RIBS ──
+    # ── 4. RIBS ──
     for col in range(COLS):
         cx = PITCH/2 + col*PITCH - TOL
         m.box(cx-RIB_W/2, 0, WALL, cx+RIB_W/2, th*0.3, cz - tro)
         m.box(cx-RIB_W/2, 0, cz + tro, cx+RIB_W/2, th*0.3, BODY_Z - WALL)
 
     # ==============================================================
-    #  6. HINGE PEG — flush on RIGHT end wall
+    #  5. HINGE PEG — flush on RIGHT end wall
     # ==============================================================
     #  Peg sticks straight out of the right wall center.
     #  No arms, no bridges — just a cylinder from the wall face.
@@ -260,36 +249,19 @@ def build_lego_2x6():
     m.cyl_x(BODY_X, cy, cz, PEG_R, PEG_L)
 
     # ==============================================================
-    #  7. HINGE SOCKET — flush on LEFT end wall
+    #  6. HINGE SOCKET — flush on LEFT end wall
     # ==============================================================
     #  Socket (hollow tube) built into the left wall, opening left.
     #  Peg from another brick slides in and spins.
     #
     m.tube_x(-SOCK_DEPTH, cy, cz, SOCK_OR, SOCK_IR, SOCK_DEPTH)
 
-    # ==============================================================
-    #  8. DECORATIVE RINGS — front & back faces
-    # ==============================================================
-    #  Raised rings between each stud column on front/back walls.
-    #  Like Technic decorations but purely cosmetic (no holes).
-    #
-    for col in range(COLS - 1):
-        rx = PITCH + col*PITCH - TOL
-        # Front face ring
-        m.cyl_z(rx, cy, -RING_THICK, RING_R, RING_THICK)
-        # Back face ring
-        m.cyl_z(rx, cy, BODY_Z, RING_R, RING_THICK)
-
     # ──────────────────────────────────────────────────────────────
-    n_side = COLS * 2
-    n_rings = (COLS - 1) * 2
     print(f"LEGO 2x{COLS} Hinge Brick:")
     print(f"  Body: {BODY_X:.1f} x {BRICK_H:.1f} x {BODY_Z:.1f} mm")
     print(f"  Top studs: {COLS * ROWS}")
-    print(f"  Side studs: {n_side} (front + back)")
     print(f"  RIGHT end = Peg (diam {PEG_R*2:.1f}mm, {PEG_L:.0f}mm long)")
     print(f"  LEFT end  = Socket (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
-    print(f"  Decorative rings: {n_rings} (front + back)")
     print(f"  Anti-stud tubes: {COLS - 1}")
     print(f"  Triangles: {len(m.tris)}")
     return m
@@ -299,5 +271,5 @@ if __name__ == "__main__":
     m = build_lego_2x6()
     m.save_stl("lego_2x6.stl")
     m.save_3mf("lego_2x6.3mf")
-    print("\nDone! Hinge brick with decorative rings.")
+    print("\nDone! Clean hinge brick.")
     print("Peg on right end, socket on left end.")
