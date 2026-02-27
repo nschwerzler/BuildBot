@@ -278,144 +278,42 @@ def box(m, x0, y0, z0, x1, y1, z1):
 def generate():
     m = Mesh()
 
-    # Coordinate system:
-    # X = left/right (width), Z = up/down (height), Y = arm length
-    # Arm slides in along Y axis through the center of the tube.
-    # Z=0 is the center; negative Z = palm side, positive Z = top of hand
-    #
-    # The tube is elliptical: rx (X radius) controls width,
-    # rz (Z radius) controls height.
-    #
-    # Real gauntlet shape: clear forearm taper, visible wrist cuff,
-    # wider hand section, and a solid knuckle block/plate at the end.
+    # Just one clean thin hollow tube. No blocks, no extras.
+    # Thinner walls, natural arm taper.
 
-    # Main gauntlet tube profile:
     # (y, rx_outer, rz_outer, wall_thickness)
     profiles = [
-        # -- Elbow end (flared entry lip) --
-        (0,    46,   40,   3.0),
-        (5,    48,   42,   3.0),   # visible lip
-        (10,   46,   40,   3.0),
+        # -- Elbow entry --
+        (0,    40,   35,   2.0),
+        (5,    41,   36,   2.0),
+        (10,   40,   35,   2.0),
 
-        # -- Forearm (strong taper — clearly narrowing) --
-        (25,   44,   38,   2.8),
-        (40,   42,   36,   2.8),
-        (55,   40,   34,   2.5),
-        (70,   38,   32,   2.5),
-        (85,   35,   30,   2.5),
-        (95,   33,   28,   2.5),
+        # -- Forearm taper --
+        (25,   38,   33,   2.0),
+        (40,   36,   31,   2.0),
+        (55,   34,   29,   2.0),
+        (70,   32,   27,   2.0),
+        (85,   30,   25,   2.0),
+        (95,   28,   24,   2.0),
 
-        # -- Wrist (narrowest point — visible pinch) --
-        (105,  31,   26,   3.0),
-        (110,  30,   25,   3.0),   # wrist pinch (smallest)
-        (115,  31,   26,   3.0),
+        # -- Wrist --
+        (105,  27,   23,   2.0),
+        (110,  26,   22,   2.0),
+        (115,  27,   23,   2.0),
 
-        # -- Hand plate (expands out dramatically — wider & flatter) --
-        (122,  38,   26,   2.5),
-        (130,  46,   27,   2.5),
-        (138,  50,   28,   2.5),
-        (146,  52,   28,   2.5),
-        (154,  52,   28,   2.5),
+        # -- Hand (wider, flatter) --
+        (125,  34,   22,   2.0),
+        (135,  38,   22,   2.0),
+        (145,  40,   22,   2.0),
+        (155,  40,   22,   2.0),
 
-        # -- Knuckle guard block (thick raised ridge at the end) --
-        (158,  53,   30,   4.0),
-        (162,  54,   34,   5.0),   # big knuckle ridge
-        (166,  54,   34,   5.0),
-        (170,  53,   32,   4.5),
-        (174,  50,   28,   3.5),   # tapers back at very end
+        # -- Knuckle end (just the tube shape, slightly raised) --
+        (162,  40,   23,   2.0),
+        (168,  39,   22,   2.0),
+        (172,  38,   21,   2.0),
     ]
 
-    # Clean tube — full 360 wrap, no cutouts
-    slices = hollow_tube(m, profiles, segs=48)
-
-    # --- BIG solid knuckle block at the hand end ---
-    # A thick shield plate covering the top half, extending well past the tube.
-    last_outer, last_inner = slices[-1]
-    last_y = profiles[-1][0]
-    last_rx = profiles[-1][1]
-    last_rz = profiles[-1][2]
-    last_w = profiles[-1][3]
-
-    # Make the plate MUCH bigger than the tube cross-section
-    plate_depth = 25.0    # sticks out 25mm forward
-    plate_rx = last_rx + 8   # 8mm wider on each side
-    plate_rz = last_rz + 10  # 10mm taller on top
-    plate_w = 5.0            # 5mm thick walls
-    plate_y = last_y + plate_depth
-
-    segs = 48
-    top_start = 0
-    top_end = segs // 2  # top half
-
-    # Build front face ring (larger than the tube)
-    front_outer = []
-    front_inner = []
-    frx_i = max(1.0, plate_rx - plate_w)
-    frz_i = max(1.0, plate_rz - plate_w)
-    for i in range(segs):
-        a = 2.0 * math.pi * i / segs
-        ca, sa = math.cos(a), math.sin(a)
-        front_outer.append((plate_rx * ca, plate_y, plate_rz * sa))
-        front_inner.append((frx_i * ca, plate_y, frz_i * sa))
-
-    # Build back face ring at the tube end (also enlarged to match plate)
-    back_outer = []
-    back_inner = []
-    for i in range(segs):
-        a = 2.0 * math.pi * i / segs
-        ca, sa = math.cos(a), math.sin(a)
-        back_outer.append((plate_rx * ca, last_y, plate_rz * sa))
-        back_inner.append((frx_i * ca, last_y, frz_i * sa))
-
-    # Connect the enlarged plate sides (back to front) for top half
-    for si in range(top_start, top_end):
-        si_next = (si + 1) % segs
-        if si_next > top_end:
-            continue
-        # Outer wall
-        m.quad(back_outer[si], front_outer[si],
-               front_outer[si_next], back_outer[si_next])
-        # Inner wall
-        m.quad(back_inner[si], back_inner[si_next],
-               front_inner[si_next], front_inner[si])
-
-    # Front face (solid fill)
-    for si in range(top_start, top_end):
-        si_next = (si + 1) % segs
-        if si_next > top_end:
-            continue
-        m.quad(front_outer[si], front_outer[si_next],
-               front_inner[si_next], front_inner[si])
-
-    # Back face (solid fill — closes off behind the plate)
-    for si in range(top_start, top_end):
-        si_next = (si + 1) % segs
-        if si_next > top_end:
-            continue
-        m.quad(back_outer[si], back_inner[si],
-               back_inner[si_next], back_outer[si_next])
-
-    # Side walls at the edges of the top half
-    m.quad(back_outer[top_start], back_inner[top_start],
-           front_inner[top_start], front_outer[top_start])
-    m.quad(back_outer[top_end], front_outer[top_end],
-           front_inner[top_end], back_inner[top_end])
-
-    # Connect the plate back face to the tube's last ring
-    # (bridge the gap between tube outer and plate outer on the top half)
-    for si in range(top_start, top_end):
-        si_next = (si + 1) % segs
-        if si_next > top_end:
-            continue
-        # Outer bridge
-        m.quad(last_outer[si], back_outer[si],
-               back_outer[si_next], last_outer[si_next])
-        # Inner bridge
-        m.quad(last_inner[si], last_inner[si_next],
-               back_inner[si_next], back_inner[si])
-
-    # No separate finger tubes or thumb tubes.
-    # Real gauntlets end at the knuckles - fingers are free.
+    hollow_tube(m, profiles, segs=48)
 
     return m
 
