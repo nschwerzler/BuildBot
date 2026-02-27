@@ -34,17 +34,14 @@ RIB_W     = 0.8
 TOL       = 0.1
 
 # ── Hinge dims ──
-# Foldable living-hinge arms on side walls:
-#   RIGHT wall: short arm + peg, SINGLE living hinge (folds up flat)
-#   LEFT wall:  longer arm + socket, TWO living hinges (folds up + turns outward)
-#   Folded flat = clean wall brick.  Fold out = connector!
+# Solid arms extending from side walls:
+#   RIGHT wall: arm + peg
+#   LEFT wall:  arm + socket
 PEG_R      = 1.5     # peg radius (3mm diam)
 PEG_L      = 4.0     # peg length sticking out
 SOCK_OR    = 2.8     # socket outer radius (5.6mm OD)
 SOCK_IR    = 1.65    # socket inner radius (3.3mm ID, peg + clearance)
 SOCK_L     = 4.0     # socket depth
-LH_THICK   = 1.5     # living hinge thickness (visible but still bendable)
-LH_WIDTH   = 6.0     # living hinge width in Z (wide bridge)
 
 # ── Derived ──
 BODY_X = COLS * PITCH - TOL * 2
@@ -253,77 +250,48 @@ def build_lego_2x6():
         m.box(cx-RIB_W/2, 0, cz + tro, cx+RIB_W/2, th*0.3, BODY_Z - WALL)
 
     # ==============================================================
-    #  6. FOLDABLE HINGE — RIGHT WALL (short peg arm)
+    #  6. HINGE ARM — RIGHT WALL (peg)
     # ==============================================================
-    #  All bridges OVERLAP 0.5mm into both wall and arm blocks
-    #  so there are no coincident-face gaps.
+    #  ONE single box from INSIDE the right wall all the way out,
+    #  no separate bridge/arm pieces.  Then peg on the end.
     #
-    arm_cy = BRICK_H / 2       # mid-height of brick
-    arm_cz = BODY_Z / 2        # centered between the two rows
-    lhw2   = LH_WIDTH / 2      # half-width of hinge bridge
-    OL     = 0.5               # overlap penetration into wall/arm
+    arm_cy = BRICK_H / 2       # mid-height
+    arm_cz = BODY_Z / 2        # centered between rows
+    arm_hr = 3.5               # arm half-height and half-width
 
-    # Bridge: starts 0.5mm INSIDE wall, ends 0.5mm INSIDE arm
-    bridge_len = 2.0           # visible span between wall and arm
-    br_x0 = BODY_X - OL        # penetrates into right wall
-    br_x1 = BODY_X + bridge_len + OL  # penetrates into arm
-    m.box(br_x0, arm_cy - LH_THICK/2, arm_cz - lhw2,
-          br_x1, arm_cy + LH_THICK/2, arm_cz + lhw2)
+    # Single arm box: starts 1mm inside right wall, extends 5mm out
+    r_arm_x0 = BODY_X - WALL   # starts inside the wall
+    r_arm_x1 = BODY_X + 5.0    # extends 5mm past wall
+    m.box(r_arm_x0, arm_cy - arm_hr, arm_cz - arm_hr,
+          r_arm_x1, arm_cy + arm_hr, arm_cz + arm_hr)
 
-    # Arm block (solid plate)
-    pax0 = BODY_X + bridge_len
-    pax1 = pax0 + 3.0
-    par  = 3.5
-    m.box(pax0, arm_cy - par, arm_cz - par,
-          pax1, arm_cy + par, arm_cz + par)
-
-    # Peg extending right from arm center
-    m.cyl_x(pax1, arm_cy, arm_cz, PEG_R, PEG_L)
+    # Peg on the end
+    m.cyl_x(r_arm_x1, arm_cy, arm_cz, PEG_R, PEG_L)
 
     # ==============================================================
-    #  7. FOLDABLE HINGE — LEFT WALL (socket arm, two-stage fold)
+    #  7. HINGE ARM — LEFT WALL (socket)
     # ==============================================================
-    #  All bridges overlap 0.5mm into adjacent blocks.
+    #  ONE single box from INSIDE the left wall extending out,
+    #  then socket tube on the end.
     #
-    # First hinge bridge (at wall, overlaps into wall and arm1)
-    h1_x0 = -(bridge_len + OL)      # extends past arm1
-    h1_x1 = OL                       # penetrates into left wall
-    m.box(h1_x0, arm_cy - LH_THICK/2, arm_cz - lhw2,
-          h1_x1, arm_cy + LH_THICK/2, arm_cz + lhw2)
+    l_arm_x1 = WALL            # starts inside the left wall
+    l_arm_x0 = -8.0            # extends 8mm past wall
+    m.box(l_arm_x0, arm_cy - arm_hr, arm_cz - arm_hr,
+          l_arm_x1, arm_cy + arm_hr, arm_cz + arm_hr)
 
-    # Arm segment 1 (solid block between the two hinges)
-    s1x1 = -bridge_len
-    s1x0 = s1x1 - 4.0
-    s1r  = 3.5
-    m.box(s1x0, arm_cy - s1r, arm_cz - s1r,
-          s1x1, arm_cy + s1r, arm_cz + s1r)
-
-    # Second hinge bridge (overlaps into arm1 and arm2)
-    h2_span = 2.0
-    h2_x0 = s1x0 - h2_span - OL   # extends past arm2
-    h2_x1 = s1x0 + OL             # penetrates into arm1
-    m.box(h2_x0, arm_cy - lhw2, arm_cz - LH_THICK/2,
-          h2_x1, arm_cy + lhw2, arm_cz + LH_THICK/2)
-
-    # Arm segment 2 — socket mount block
-    s2x1 = s1x0 - h2_span
-    s2x0 = s2x1 - 3.0
-    s2r  = 3.5
-    m.box(s2x0, arm_cy - s2r, arm_cz - s2r,
-          s2x1, arm_cy + s2r, arm_cz + s2r)
-
-    # Socket tube (overlaps 0.5mm into arm2)
-    m.tube_x(s2x0 - SOCK_L, arm_cy, arm_cz, SOCK_OR, SOCK_IR, SOCK_L + OL)
+    # Socket tube on the end
+    m.tube_x(l_arm_x0 - SOCK_L, arm_cy, arm_cz, SOCK_OR, SOCK_IR, SOCK_L)
+    # Solid cap connecting socket to arm (overlaps into arm)
+    m.cyl_x(l_arm_x0 - 0.5, arm_cy, arm_cz, SOCK_OR, 0.5)
 
     # ──────────────────────────────────────────────────────────────
     n_side = COLS * 2
-    print(f"LEGO 2x{COLS} Foldable-Hinge Brick:")
+    print(f"LEGO 2x{COLS} Hinge Brick:")
     print(f"  Body: {BODY_X:.1f} x {BRICK_H:.1f} x {BODY_Z:.1f} mm")
     print(f"  Top studs: {COLS * ROWS}")
     print(f"  Side studs: {n_side} (front + back, all columns)")
-    print(f"  RIGHT = Foldable peg arm (diam {PEG_R*2:.1f}mm, {PEG_L:.0f}mm long)")
-    print(f"  LEFT  = Foldable socket arm (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
-    print(f"  Living hinges: {LH_THICK}mm thick (foldable)")
+    print(f"  RIGHT = Peg arm (diam {PEG_R*2:.1f}mm, {PEG_L:.0f}mm long)")
+    print(f"  LEFT  = Socket arm (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
     print(f"  Anti-stud tubes: {COLS - 1}")
     print(f"  Triangles: {len(m.tris)}")
     return m
