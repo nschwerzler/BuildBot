@@ -36,14 +36,15 @@ RIB_W     = 0.8
 TOL       = 0.1
 
 # ── Hinge dims ──
-# Pin/fork connection axis is along Z (front-to-back).
-# Pin side: single arm + cylinder pin at the tip
-# Fork side: two prongs + gap that accepts the arm; prongs cradle the pin
-PIN_R       = 2.0         # pin radius (4mm diameter)
-ARM_LEN     = 6.0         # how far arm/prongs extend from brick face
-ARM_THICK   = 2.5         # arm/prong thickness in Y
-ARM_WIDTH   = 10.0        # arm/prong width in Z
-FORK_GAP    = ARM_THICK + 0.6  # gap between fork prongs
+# Simple peg-and-socket hinge:
+#   RIGHT end: two pegs sticking up from the top surface
+#   LEFT end: two hollow sockets (tubes) that the pegs fit into
+#   Brick A's pegs drop into Brick B's sockets -> spins!
+PEG_R       = 1.5         # peg radius (3mm diameter)
+PEG_H       = 6.0         # peg height above brick top
+SOCK_OR     = 2.8         # socket outer radius
+SOCK_IR     = 1.65        # socket inner radius (peg + 0.15mm clearance)
+SOCK_H      = 6.0         # socket height
 
 # ── Derived ──
 BODY_X = COLS * PITCH - TOL * 2
@@ -219,73 +220,38 @@ def build_lego_2x6():
         m.box(cx-RIB_W/2, 0, cz + tro, cx+RIB_W/2, th*0.3, BODY_Z - WALL)
 
     # ==============================================================
-    #  6. HINGE PIN (male) — RIGHT END (+X side)
+    #  6. HINGE PEGS (male) — RIGHT END, top surface
     # ==============================================================
+    #  Two solid pegs sticking up from the rightmost stud positions.
+    #  These drop into the sockets on another brick.
     #
-    #  Top view:                    Side view (from front):
+    #       ┌──┐  ┌──┐
+    #       │  │  │  │   <- pegs
+    #   ════╧══╧══╧══╧═══  <- brick top
     #
-    #    brick │████ARM████│           brick │▓▓ARM▓▓│
-    #    body  │     ●═══pin══Z        body  │       │
-    #          │████████████│                 │▓▓▓▓▓▓│
-    #
-    #  Arm = flat tab, pin = cylinder at tip along Z
-
-    arm_y0 = cy - ARM_THICK / 2
-    arm_y1 = cy + ARM_THICK / 2
-    arm_z0 = cz - ARM_WIDTH / 2
-    arm_z1 = cz + ARM_WIDTH / 2
-
-    # Arm box extending right
-    m.box(BODY_X, arm_y0, arm_z0, BODY_X + ARM_LEN, arm_y1, arm_z1)
-
-    # Pin cylinder at arm tip, along Z, with 1.5mm overhang on each side
-    pin_oh = 1.5
-    m.cyl_z(BODY_X + ARM_LEN, cy, arm_z0 - pin_oh, PIN_R, ARM_WIDTH + pin_oh*2)
-
-    # Reinforcement fillet where arm meets brick
-    m.box(BODY_X - 1.0, arm_y0 - 1.0, arm_z0, BODY_X, arm_y1 + 1.0, arm_z1)
+    for row in range(ROWS):
+        peg_x = PITCH/2 + (COLS - 1)*PITCH - TOL   # rightmost column
+        peg_z = PITCH/2 + row*PITCH - TOL
+        m.cyl_y(peg_x, BRICK_H + STUD_H, peg_z, PEG_R, PEG_H)
 
     # ==============================================================
-    #  7. HINGE FORK (female) — LEFT END (-X side)
+    #  7. HINGE SOCKETS (female) — LEFT END, top surface
     # ==============================================================
+    #  Two hollow tubes at the leftmost stud positions.
+    #  Another brick's pegs drop in and spin freely.
     #
-    #  Side view:
-    #     ┌─PRONG─┐│
-    #     │  gap  ││  brick body
-    #     └─PRONG─┘│
+    #       ╔══╗  ╔══╗
+    #       ║  ║  ║  ║   <- sockets (hollow)
+    #   ════╩══╩══╩══╩═══  <- brick top
     #
-    #  Gap accepts the arm; cradle cylinder holds the pin.
-
-    gap_y0 = cy - FORK_GAP / 2
-    gap_y1 = cy + FORK_GAP / 2
-    prong_t = ARM_THICK * 1.5  # prong thickness (beefier)
-
-    # Bottom prong — extends left, OPEN on right side so arm can slide in
-    m.box(-ARM_LEN, gap_y0 - prong_t, arm_z0, 0, gap_y0, arm_z1)
-    # Top prong
-    m.box(-ARM_LEN, gap_y1, arm_z0, 0, gap_y1 + prong_t, arm_z1)
-
-    # Back wall connecting prongs at the far end (U-shape, only at tip)
-    # This wall stops the arm and holds the pin in place
-    m.box(-ARM_LEN, gap_y0 - prong_t, arm_z0, -ARM_LEN + ARM_THICK, gap_y1 + prong_t, arm_z1)
-
-    # Small lip/bumps on inner faces of prongs to retain the pin
-    # These are thin ridges near the open end that the pin snaps past
-    lip_w = 0.6       # how far lip sticks into gap
-    lip_depth = 2.0   # lip thickness along X (near the entry)
-    lip_x0 = -lip_depth  # near the brick face (entry end)
-    lip_x1 = 0
-    # Bottom prong lip (top face, sticking up into gap)
-    m.box(lip_x0, gap_y0, arm_z0 + 1, lip_x1, gap_y0 + lip_w, arm_z1 - 1)
-    # Top prong lip (bottom face, sticking down into gap)
-    m.box(lip_x0, gap_y1 - lip_w, arm_z0 + 1, lip_x1, gap_y1, arm_z1 - 1)
-
-    # Reinforcement where fork meets brick — only reinforce the PRONGS, not the gap!
-    fillet = 1.2
-    # Bottom prong fillet
-    m.box(-fillet, gap_y0 - prong_t, arm_z0, 0, gap_y0, arm_z1)
-    # Top prong fillet
-    m.box(-fillet, gap_y1, arm_z0, 0, gap_y1 + prong_t, arm_z1)
+    for row in range(ROWS):
+        sock_x = PITCH/2 + 0*PITCH - TOL   # leftmost column
+        sock_z = PITCH/2 + row*PITCH - TOL
+        # Hollow tube: outer wall + inner hole
+        m.tube_y(sock_x, BRICK_H + STUD_H, sock_z, SOCK_OR, SOCK_IR, SOCK_H)
+        # Bottom cap (ring) to support the peg
+        # The stud already provides a base, but add a ring floor
+        # (stud is already there at this position from step 2)
 
     # ──────────────────────────────────────────────────────────────
     n_side = ((COLS+1)//2) * 2
@@ -293,8 +259,8 @@ def build_lego_2x6():
     print(f"  Body: {BODY_X:.1f} x {BRICK_H:.1f} x {BODY_Z:.1f} mm")
     print(f"  Top studs: {COLS * ROWS}")
     print(f"  Side studs: {n_side} (front + back)")
-    print(f"  RIGHT = Pin (diam {PIN_R*2:.1f}mm, arm {ARM_LEN:.0f}mm)")
-    print(f"  LEFT  = Fork (gap {FORK_GAP:.1f}mm, prongs {ARM_LEN:.0f}mm)")
+    print(f"  RIGHT = 2 Pegs (diam {PEG_R*2:.1f}mm, height {PEG_H:.0f}mm)")
+    print(f"  LEFT  = 2 Sockets (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
     print(f"  Anti-stud tubes: {COLS - 1}")
     print(f"  Triangles: {len(m.tris)}")
     return m
@@ -304,5 +270,5 @@ if __name__ == "__main__":
     m = build_lego_2x6()
     m.save_stl("lego_2x6.stl")
     m.save_3mf("lego_2x6.3mf")
-    print("\nDone! Pin on right, fork on left.")
-    print("Print 2 copies - snap Brick A's pin into Brick B's fork to spin!")
+    print("\nDone! Pegs on right, sockets on left.")
+    print("Print 2 — drop Brick A's pegs into Brick B's sockets to spin!")
