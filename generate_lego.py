@@ -1,18 +1,18 @@
 """
-LEGO 2x6 Multi-Connect Brick Generator
+LEGO 2x6 Technic Hinge Brick Generator
 ========================================
-A 2x6 brick with standard LEGO compatibility PLUS extra
-connection mechanisms for creative LEGO building:
-  - 12 top studs + 12 side studs (front & back)
+Feature-packed 2x6 brick with:
+  - 12 top studs
+  - 12 side studs (front & back, all columns)
   - Hinge PEG flush on RIGHT end wall
   - Hinge SOCKET flush on LEFT end wall
-  - Anti-stud tubes underneath + ribs
-  --- EXTRA CONNECTORS ---
-  - Keychain loop arch on top (right end)
-  - Clip bars on front face (standard clip pieces snap on)
-  - Jumper offset studs (half-pitch centered, for offset builds)
-  - Technic half-pins on end walls (fit into Technic holes)
-  - SNOT plate ledge on back face (sideways plate attachment)
+  - 5 Technic-style reinforcement rings on front & back faces
+  - End-wall mini-studs on left & right walls
+  - Cross-rib lattice underneath
+  - Corner reinforcement pillars
+  - Grip ridges between top studs
+  - Anti-stud tubes underneath
+  - Hollow interior
 
 Chain bricks:  Brick A RIGHT peg -> Brick B LEFT socket -> spins!
 """
@@ -45,23 +45,16 @@ SOCK_OR    = 2.8     # socket outer radius (5.6mm OD)
 SOCK_IR    = 1.65    # socket inner radius (3.3mm ID, peg + clearance)
 SOCK_DEPTH = 5.5     # socket depth (slightly longer than peg)
 
-# ── Extra connector dims ──
-# Keychain loop (arch on top-right)
-LOOP_W     = 1.5     # loop post/bar thickness
-LOOP_H     = 7.0     # loop height above top surface
-LOOP_GAP   = 6.0     # gap between posts (keyring opening)
-# Clip bars (front face — standard clip pieces grab these)
-BAR_R      = 1.59    # bar radius (3.18mm diam, standard LEGO bar)
-BAR_LEN    = 6.0     # bar length protruding from face
-# Jumper offset studs (half-pitch centered on top)
-JUMP_STUD_R = STUD_D / 2   # same diameter as normal studs
-JUMP_STUD_H = STUD_H       # same height as normal studs
-# Technic half-pins (end walls — fit into Technic holes)
-TPIN_R     = 2.4     # pin radius (4.8mm diam, fits Technic holes)
-TPIN_L     = 4.0     # pin length (half-pin, short insert)
-# SNOT plate ledge (back face — sideways plate attachment)
-LEDGE_H    = 1.6     # ledge height (1 plate height = 3.2mm, half for lip)
-LEDGE_D    = 1.2     # ledge depth (protrusion from back face)
+# ── Extra feature dims ──
+GRIP_H     = 0.4     # grip ridge height above top plate
+GRIP_W     = 0.6     # grip ridge width
+PILLAR_SZ  = 2.0     # corner pillar size
+MINI_STUD_R = 1.5    # mini stud radius for end walls
+MINI_STUD_H = 1.0    # mini stud height
+RAIL_H     = 1.0     # bottom rail height
+RAIL_W     = 1.0     # bottom rail width
+RING_R     = 2.0     # decorative ring outer radius
+RING_THICK = 0.5     # decorative ring thickness
 
 # ── Derived ──
 BODY_X = COLS * PITCH - TOL * 2
@@ -286,89 +279,98 @@ def build_lego_2x6():
     m.tube_x(-SOCK_DEPTH, cy, cz, SOCK_OR, SOCK_IR, SOCK_DEPTH)
 
     # ==============================================================
-    #  8. KEYCHAIN LOOP — arch on top near right end
+    #  8. END-WALL MINI-STUDS
     # ==============================================================
-    #  Two vertical posts with a connecting bar on top, forming
-    #  a rectangular arch. A keyring or carabiner hooks through it.
-    #
-    loop_x = BODY_X - PITCH/2 - TOL   # centered on last stud column
-    # Post A (front side)
-    m.box(loop_x - LOOP_W/2, BRICK_H, cz - LOOP_GAP/2 - LOOP_W/2,
-          loop_x + LOOP_W/2, BRICK_H + LOOP_H, cz - LOOP_GAP/2 + LOOP_W/2)
-    # Post B (back side)
-    m.box(loop_x - LOOP_W/2, BRICK_H, cz + LOOP_GAP/2 - LOOP_W/2,
-          loop_x + LOOP_W/2, BRICK_H + LOOP_H, cz + LOOP_GAP/2 + LOOP_W/2)
-    # Top bar connecting posts
-    m.box(loop_x - LOOP_W/2, BRICK_H + LOOP_H - LOOP_W,
-          cz - LOOP_GAP/2 - LOOP_W/2,
-          loop_x + LOOP_W/2, BRICK_H + LOOP_H,
-          cz + LOOP_GAP/2 + LOOP_W/2)
-
-    # ==============================================================
-    #  9. CLIP BARS — front face (standard clips snap onto these)
-    # ==============================================================
-    #  Horizontal bars protruding from the front face, centered on
-    #  each stud column at mid-height. Any standard LEGO clip piece
-    #  (1x1 clip, minifig hand, etc.) can grab these bars.
-    #
-    for col in range(COLS):
-        bx = PITCH/2 + col*PITCH - TOL
-        m.cyl_z(bx, cy, -BAR_LEN, BAR_R, BAR_LEN)
-
-    # ==============================================================
-    #  10. JUMPER OFFSET STUDS — half-pitch centered on top
-    # ==============================================================
-    #  Single studs placed at half-pitch offsets between normal
-    #  studs. Lets you build with half-stud offset alignment,
-    #  just like official LEGO jumper plates but built-in.
-    #
-    for col in range(COLS - 1):
-        jx = PITCH + col*PITCH - TOL       # halfway between stud columns
-        m.cyl_y(jx, BRICK_H, cz, JUMP_STUD_R, JUMP_STUD_H)
-
-    # ==============================================================
-    #  11. TECHNIC HALF-PINS — end walls (fit Technic holes)
-    # ==============================================================
-    #  Short pins on each end wall (above and below the hinge
-    #  connectors). These fit into standard Technic beam holes
-    #  for rigid perpendicular connections.
+    #  Small studs on the left and right end walls for extra grip
+    #  when connecting bricks end-to-end traditionally.
     #
     for row in range(ROWS):
-        pz = PITCH/2 + row*PITCH - TOL
-        # Right end — above and below the hinge peg
-        m.cyl_x(BODY_X, cy + PEG_R + 3.5, pz, TPIN_R, TPIN_L)
-        m.cyl_x(BODY_X, cy - PEG_R - 3.5, pz, TPIN_R, TPIN_L)
-        # Left end — above and below the hinge socket
-        m.cyl_x(-TPIN_L, cy + SOCK_OR + 2.5, pz, TPIN_R, TPIN_L)
-        m.cyl_x(-TPIN_L, cy - SOCK_OR - 2.5, pz, TPIN_R, TPIN_L)
+        sz = PITCH/2 + row*PITCH - TOL
+        # Right end wall — above and below the peg
+        m.cyl_x(BODY_X, cy + PEG_R + 1.5, sz, MINI_STUD_R, MINI_STUD_H)
+        m.cyl_x(BODY_X, cy - PEG_R - 1.5, sz, MINI_STUD_R, MINI_STUD_H)
+        # Left end wall — above and below the socket
+        m.cyl_x(-MINI_STUD_H, cy + SOCK_OR + 1.0, sz, MINI_STUD_R, MINI_STUD_H)
+        m.cyl_x(-MINI_STUD_H, cy - SOCK_OR - 1.0, sz, MINI_STUD_R, MINI_STUD_H)
 
     # ==============================================================
-    #  12. SNOT PLATE LEDGE — back face (sideways plate mounting)
+    #  9. DECORATIVE RINGS — front & back faces
     # ==============================================================
-    #  A thin ledge running along the back face at the top edge.
-    #  Slide a plate's bottom groove onto this ledge to mount
-    #  plates sideways (Studs Not On Top technique).
+    #  Raised rings between each stud column on front/back walls.
+    #  Like Technic decorations but purely cosmetic (no holes).
     #
-    m.box(WALL, BRICK_H - LEDGE_H, BODY_Z,
-          BODY_X - WALL, BRICK_H, BODY_Z + LEDGE_D)
+    for col in range(COLS - 1):
+        rx = PITCH + col*PITCH - TOL
+        # Front face ring
+        m.cyl_z(rx, cy, -RING_THICK, RING_R, RING_THICK)
+        # Back face ring
+        m.cyl_z(rx, cy, BODY_Z, RING_R, RING_THICK)
+
+    # ==============================================================
+    #  10. BOTTOM SIDE RAILS
+    # ==============================================================
+    #  Raised rails running the full length on the bottom edges
+    #  of front and back faces. Looks like a chassis.
+    #
+    m.box(0, 0, -RAIL_W, BODY_X, RAIL_H, 0)               # front rail
+    m.box(0, 0, BODY_Z, BODY_X, RAIL_H, BODY_Z + RAIL_W)  # back rail
+
+    # ==============================================================
+    #  11. CROSS-RIB LATTICE — underneath for strength
+    # ==============================================================
+    #  Diagonal cross-ribs between the anti-stud tubes for extra
+    #  structural rigidity. Two per bay (X-pattern).
+    #
+    for col in range(COLS - 2):
+        x0 = PITCH + col*PITCH - TOL
+        x1 = PITCH + (col+1)*PITCH - TOL
+        # Cross rib from front-left to back-right of each bay
+        m.box(x0-RIB_W/2, 0, WALL, x1+RIB_W/2, th*0.2, WALL + RIB_W)
+        m.box(x0-RIB_W/2, 0, BODY_Z-WALL-RIB_W, x1+RIB_W/2, th*0.2, BODY_Z-WALL)
+
+    # ==============================================================
+    #  9. GRIP RIDGES — between top studs along the length
+    # ==============================================================
+    #  Small raised ridges between each pair of studs on top.
+    #  Gives a textured grip and looks cool.
+    #
+    for col in range(COLS - 1):
+        rx = PITCH + col*PITCH - TOL      # between columns
+        for row in range(ROWS):
+            rz = PITCH/2 + row*PITCH - TOL
+            m.box(rx - GRIP_W/2, BRICK_H, rz - sr*0.6,
+                  rx + GRIP_W/2, BRICK_H + GRIP_H, rz + sr*0.6)
+
+    # ==============================================================
+    #  10. CORNER REINFORCEMENT PILLARS — 4 corners underneath
+    # ==============================================================
+    #  Thicker corner posts for structural strength.
+    #
+    ps = PILLAR_SZ
+    m.box(0, 0, 0, ps, th, ps)                                        # front-left
+    m.box(BODY_X - ps, 0, 0, BODY_X, th, ps)                          # front-right
+    m.box(0, 0, BODY_Z - ps, ps, th, BODY_Z)                          # back-left
+    m.box(BODY_X - ps, 0, BODY_Z - ps, BODY_X, th, BODY_Z)            # back-right
 
     # ──────────────────────────────────────────────────────────────
     n_side = COLS * 2
-    n_jumpers = COLS - 1
-    n_tpins = ROWS * 4 * 2
-    print(f"LEGO 2x{COLS} Multi-Connect Brick:")
+    n_rings = (COLS - 1) * 2
+    n_end_studs = ROWS * 4 * 2
+    print(f"LEGO 2x{COLS} Technic Hinge Brick:")
     print(f"  Body: {BODY_X:.1f} x {BRICK_H:.1f} x {BODY_Z:.1f} mm")
     print(f"  Top studs: {COLS * ROWS}")
     print(f"  Side studs: {n_side} (front + back)")
+    print(f"  End-wall mini-studs: {n_end_studs}")
     print(f"  RIGHT end = Peg (diam {PEG_R*2:.1f}mm, {PEG_L:.0f}mm long)")
     print(f"  LEFT end  = Socket (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
-    print(f"  Keychain loop: arch near right end ({LOOP_GAP:.0f}mm opening)")
-    print(f"  Clip bars: {COLS} on front face ({BAR_R*2:.2f}mm diam)")
-    print(f"  Jumper studs: {n_jumpers} half-pitch offset on top")
-    print(f"  Technic half-pins: {n_tpins} on end walls ({TPIN_R*2:.1f}mm diam)")
-    print(f"  SNOT ledge: back face top edge ({LEDGE_D:.1f}mm deep)")
+    print(f"  Decorative rings: {n_rings} (front + back)")
+    print(f"  Grip ridges: {(COLS-1) * ROWS}")
+    print(f"  Bottom rails: 2 (front + back)")
+    print(f"  Corner pillars: 4")
+    print(f"  Cross-ribs: {(COLS-2)*2}")
     print(f"  Anti-stud tubes: {COLS - 1}")
     print(f"  Triangles: {len(m.tris)}")
+    return m
     return m
 
 
@@ -376,6 +378,6 @@ if __name__ == "__main__":
     m = build_lego_2x6()
     m.save_stl("lego_2x6.stl")
     m.save_3mf("lego_2x6.3mf")
-    print("\nDone! Multi-connect brick generated.")
+    print("\nDone! Feature-packed hinge brick.")
     print("Peg on right end, socket on left end.")
-    print("Keychain loop, clip bars, jumper studs, Technic pins, SNOT ledge.")
+    print("Decorative rings, end-wall studs, grip ridges, rails, cross-ribs.")
