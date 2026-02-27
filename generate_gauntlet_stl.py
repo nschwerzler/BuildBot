@@ -285,134 +285,59 @@ def generate():
     #
     # The tube is elliptical: rx (X radius) controls width,
     # rz (Z radius) controls height.
+    #
+    # Real gauntlet: one smooth tube from mid-forearm to knuckles.
+    # No floating finger tubes. Subtle wrist cuff. Clean taper.
 
     # Main gauntlet tube profile:
     # (y, rx_outer, rz_outer, wall_thickness)
     profiles = [
-        # -- Elbow end (wider, rounder) --
-        (0,    44,   38,   3.0),
-        (5,    44,   38,   3.0),
-        (12,   43,   37,   2.8),
+        # -- Elbow flare (slight lip so it doesn't slide up) --
+        (0,    42,   36,   3.0),
+        (4,    43,   37,   3.0),   # subtle lip
+        (8,    42,   36,   3.0),
 
-        # -- Forearm (gradual taper) --
-        (25,   42,   36,   2.5),
-        (40,   40,   34,   2.5),
-        (55,   38,   32,   2.5),
-        (70,   36,   30,   2.5),
-        (85,   35,   29,   2.5),
-        (95,   34,   28,   2.5),
+        # -- Forearm (smooth gradual taper toward wrist) --
+        (20,   41,   35,   2.8),
+        (35,   40,   34,   2.8),
+        (50,   39,   33,   2.5),
+        (65,   38,   32,   2.5),
+        (80,   37,   31,   2.5),
+        (95,   36,   30,   2.5),
 
-        # -- Wrist cuff (flares outward) --
-        (100,  35,   29,   3.0),
-        (106,  38,   31,   3.0),
-        (112,  42,   34,   3.5),
-        (118,  46,   36,   3.5),   # flange peak
-        (122,  44,   35,   3.0),
-        (126,  40,   32,   3.0),
+        # -- Wrist (subtle cuff - NOT an aggressive flare) --
+        (105,  36,   30,   3.0),
+        (110,  37,   31,   3.0),   # subtle outward step
+        (115,  37,   31,   3.0),
 
-        # -- Hand section (wider, flatter oval) --
-        (132,  42,   28,   2.5),
-        (142,  42,   26,   2.5),
-        (152,  42,   26,   2.5),
-        (160,  42,   26,   2.5),
+        # -- Hand plate (wider, flatter for the hand shape) --
+        (120,  40,   28,   2.5),
+        (130,  42,   27,   2.5),
+        (140,  43,   26,   2.5),
+        (150,  43,   26,   2.5),
 
-        # -- Knuckle guard (raised bump) --
-        (166,  43,   28,   3.5),
-        (172,  44,   32,   4.0),
-        (176,  44,   32,   4.0),
-        (180,  43,   30,   3.5),
-        (186,  42,   26,   2.5),
+        # -- Knuckle area (slight raised ridge, then taper to end) --
+        (158,  43,   27,   3.0),
+        (164,  43,   28,   3.0),
+        (168,  43,   27,   2.8),
+        (172,  42,   26,   2.5),
     ]
 
     # Palm cutout: from hand section to end, remove bottom arc
-    # so fingers can grip. Cut ~120 degrees of the bottom.
-    hollow_tube(m, profiles, segs=36,
-                palm_cut_start=132, palm_cut_end=186,
-                palm_cut_arc=140)
+    # so fingers can grip. Cut ~130 degrees of the bottom.
+    hollow_tube(m, profiles, segs=48,
+                palm_cut_start=120, palm_cut_end=172,
+                palm_cut_arc=130)
 
-    # -- Finger guards (small tubes, no palm cut) --
-    finger_xs = [-27, -9, 9, 27]
-    for fx in finger_xs:
-        # Small elliptical tube per finger
-        fp = [
-            (188, 7, 7, 2.0),
-            (194, 7, 7, 2.0),
-            (200, 6, 6, 2.0),
-            (206, 5.5, 5.5, 2.0),
-            (212, 5, 5, 2.0),
-        ]
-        # Offset each finger tube to its X position
-        # Build manually with X offset
-        f_slices = []
-        for y, rx, rz, w in fp:
-            rx_i = max(0.5, rx - w)
-            rz_i = max(0.5, rz - w)
-            outer = []
-            inner = []
-            for i in range(16):
-                a = 2.0 * math.pi * i / 16
-                ca, sa = math.cos(a), math.sin(a)
-                outer.append((fx + rx * ca, y, rz * sa))
-                inner.append((fx + rx_i * ca, y, rz_i * sa))
-            f_slices.append((outer, inner))
-
-        for yi in range(len(f_slices) - 1):
-            o1, i1 = f_slices[yi]
-            o2, i2 = f_slices[yi + 1]
-            for si in range(16):
-                si_n = (si + 1) % 16
-                m.quad(o1[si], o2[si], o2[si_n], o1[si_n])
-                m.quad(i1[si], i1[si_n], i2[si_n], i2[si])
-
-        # Front cap
-        o_f, i_f = f_slices[0]
-        for si in range(16):
-            si_n = (si + 1) % 16
-            m.quad(o_f[si], i_f[si], i_f[si_n], o_f[si_n])
-        # Back cap
-        o_b, i_b = f_slices[-1]
-        for si in range(16):
-            si_n = (si + 1) % 16
-            m.quad(o_b[si], o_b[si_n], i_b[si_n], i_b[si])
-
-    # -- Thumb tube (offset left, slightly angled) --
-    t_slices = []
-    for y, rx, rz, w in [(148,9,9,2.0),(156,9,8,2.0),(164,8,7,2.0),
-                          (172,7,6,2.0),(180,6,5,2.0)]:
-        tx = -48
-        rx_i = max(0.5, rx - w)
-        rz_i = max(0.5, rz - w)
-        outer = []
-        inner = []
-        for i in range(12):
-            a = 2.0 * math.pi * i / 12
-            ca, sa = math.cos(a), math.sin(a)
-            outer.append((tx + rx * ca, y, rz * sa))
-            inner.append((tx + rx_i * ca, y, rz_i * sa))
-        t_slices.append((outer, inner))
-
-    for yi in range(len(t_slices) - 1):
-        o1, i1 = t_slices[yi]
-        o2, i2 = t_slices[yi + 1]
-        for si in range(12):
-            si_n = (si + 1) % 12
-            m.quad(o1[si], o2[si], o2[si_n], o1[si_n])
-            m.quad(i1[si], i1[si_n], i2[si_n], i2[si])
-    o_f, i_f = t_slices[0]
-    for si in range(12):
-        si_n = (si + 1) % 12
-        m.quad(o_f[si], i_f[si], i_f[si_n], o_f[si_n])
-    o_b, i_b = t_slices[-1]
-    for si in range(12):
-        si_n = (si + 1) % 12
-        m.quad(o_b[si], o_b[si_n], i_b[si_n], i_b[si])
+    # No separate finger tubes or thumb tubes.
+    # Real gauntlets end at the knuckles - fingers are free.
 
     return m
 
 
 if __name__ == '__main__':
     print("=" * 55)
-    print("  GAUNTLET v9 - Hollow Torus Armor")
+    print("  GAUNTLET v10 - Realistic Hollow Tube Gauntlet")
     print("=" * 55)
     print()
 
@@ -427,12 +352,11 @@ if __name__ == '__main__':
     print(f"\n  Verts: {len(m.verts)}  Tris: {len(m.tris)}")
     print()
     print("  SHAPE:")
-    print("  + Hollow tube - arm slides through the center")
-    print("  + Full 360 wrap from elbow to wrist")
-    print("  + Palm cutout at hand section for grip")
-    print("  + Flared wrist cuff")
-    print("  + Raised knuckle guard")
-    print("  + Finger tubes + thumb tube")
-    print("  + Elliptical cross-section (natural arm shape)")
+    print("  + One clean hollow tube - arm slides through")
+    print("  + Smooth forearm taper, subtle wrist cuff")
+    print("  + Wider flatter hand section")
+    print("  + Palm cutout for gripping")
+    print("  + Ends at knuckles - fingers free (like real gauntlets)")
+    print("  + No floating parts - single solid piece")
     print()
     print("  PRINT: PLA/PETG | 0.2mm | 15% infill | Tree supports")
