@@ -260,19 +260,32 @@ def build_lego_2x6():
     gap_y1 = cy + FORK_GAP / 2
     prong_t = ARM_THICK * 1.5  # prong thickness (beefier)
 
-    # Bottom prong
+    # Bottom prong — extends left, OPEN on right side so arm can slide in
     m.box(-ARM_LEN, gap_y0 - prong_t, arm_z0, 0, gap_y0, arm_z1)
     # Top prong
     m.box(-ARM_LEN, gap_y1, arm_z0, 0, gap_y1 + prong_t, arm_z1)
-    # Back wall connecting prongs (U-shape)
+
+    # Back wall connecting prongs at the far end (U-shape, only at tip)
+    # This wall stops the arm and holds the pin in place
     m.box(-ARM_LEN, gap_y0 - prong_t, arm_z0, -ARM_LEN + ARM_THICK, gap_y1 + prong_t, arm_z1)
 
-    # Cradle cylinder inside fork (solid, slightly bigger than pin for easy snap)
-    cradle_r = PIN_R + 0.3
-    m.cyl_y(-ARM_LEN + ARM_THICK, gap_y0, cz, cradle_r, FORK_GAP)
+    # Small lip/bumps on inner faces of prongs to retain the pin
+    # These are thin ridges near the open end that the pin snaps past
+    lip_w = 0.6       # how far lip sticks into gap
+    lip_depth = 2.0   # lip thickness along X (near the entry)
+    lip_x0 = -lip_depth  # near the brick face (entry end)
+    lip_x1 = 0
+    # Bottom prong lip (top face, sticking up into gap)
+    m.box(lip_x0, gap_y0, arm_z0 + 1, lip_x1, gap_y0 + lip_w, arm_z1 - 1)
+    # Top prong lip (bottom face, sticking down into gap)
+    m.box(lip_x0, gap_y1 - lip_w, arm_z0 + 1, lip_x1, gap_y1, arm_z1 - 1)
 
-    # Reinforcement where fork meets brick
-    m.box(-1.0, gap_y0 - prong_t, arm_z0, 0, gap_y1 + prong_t, arm_z1)
+    # Reinforcement where fork meets brick — only reinforce the PRONGS, not the gap!
+    fillet = 1.2
+    # Bottom prong fillet
+    m.box(-fillet, gap_y0 - prong_t, arm_z0, 0, gap_y0, arm_z1)
+    # Top prong fillet
+    m.box(-fillet, gap_y1, arm_z0, 0, gap_y1 + prong_t, arm_z1)
 
     # ──────────────────────────────────────────────────────────────
     n_side = ((COLS+1)//2) * 2
