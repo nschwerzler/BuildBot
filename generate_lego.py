@@ -1,24 +1,16 @@
 """
-LEGO 2x6 Brick Generator
-==========================
-Generates a realistic, functional 2x6 LEGO-compatible brick
-with proper interlocking geometry for 3D printing.
+LEGO 2x6 Brick Generator — Deluxe Edition
+============================================
+Generates a functional 2x6 LEGO-compatible brick with:
+  - 12 top studs (2x6 grid)
+  - Side studs on front and back faces
+  - Hinge finger (male) on left end
+  - Hinge socket (female) on right end
+  - Anti-stud tubes underneath
+  - Reinforcing ribs
+  - Hollow interior, proper wall thickness
 
-Features:
-  - 12 cylindrical studs on top (2x6 grid)
-  - Hollow interior with proper wall thickness
-  - 5 bottom anti-stud tubes for snap-fit connection
-  - Reinforcing ribs along bottom edges
-  - Accurate LEGO-compatible dimensions
-  - Slight printing tolerances built in
-
-Standard LEGO dimensions used:
-  - Pitch: 8.0 mm (stud center-to-center)
-  - Brick height (body): 9.6 mm
-  - Stud diameter: 4.8 mm, height: 1.8 mm
-  - Wall thickness: 1.2 mm (sides), 1.0 mm (top)
-  - Anti-stud tube OD: 6.51 mm
-  - Anti-stud tube ID: 4.8 mm (grips stud)
+Two bricks connect via hinges to spin freely!
 """
 import math
 import os
@@ -32,12 +24,20 @@ BRICK_H     = 9.6        # body height (without stud)
 STUD_D      = 4.8        # stud diameter
 STUD_H      = 1.7        # stud height
 STUD_SEGS   = 24         # segments per cylinder
-WALL        = 1.2        # side wall thickness
+WALL        = 1.5        # side wall thickness (slightly thicker for side studs)
 TOP_WALL    = 1.0        # top plate thickness
 TUBE_OD     = 6.51       # anti-stud outer diameter
 TUBE_ID     = 4.8        # anti-stud inner diameter (grips stud)
 RIB_W       = 0.8        # reinforcing rib thickness
 TOLERANCE   = 0.1        # printing clearance per side
+
+# Hinge dimensions
+HINGE_PIN_R  = 1.6       # hinge pin radius (3.2mm diameter)
+HINGE_PIN_L  = 5.0       # how far pin extends from brick face
+HINGE_ARM_T  = 1.8       # arm/prong thickness
+HINGE_ARM_W  = 8.0       # arm width (covers center of brick height)
+HINGE_GAP    = 3.6       # gap between socket prongs (pin + clearance)
+HINGE_SOCK_L = 5.5       # socket prong extension length
 
 # Derived
 BODY_X = COLS * PITCH - TOLERANCE * 2   # 47.8
@@ -109,7 +109,7 @@ class Mesh:
                 self.tri(center_bot, pts_bot[j], pts_bot[i])
 
     def tube(self, cx, cy_bot, cz, r_outer, r_inner, height, segs=STUD_SEGS):
-        """Hollow tube (pipe) along Y axis - open top and bottom."""
+        """Hollow tube (pipe) along Y axis."""
         out_bot, out_top, in_bot, in_top = [], [], [], []
         for i in range(segs):
             a = 2 * math.pi * i / segs
@@ -121,14 +121,56 @@ class Mesh:
             in_top.append((cx + r_inner * cos_a, cy_bot + height, cz + r_inner * sin_a))
         for i in range(segs):
             j = (i + 1) % segs
-            # Outer wall
             self.quad(out_bot[i], out_bot[j], out_top[j], out_top[i])
-            # Inner wall (reversed winding)
             self.quad(in_bot[j], in_bot[i], in_top[i], in_top[j])
-            # Top ring
             self.quad(out_top[i], out_top[j], in_top[j], in_top[i])
-            # Bottom ring
             self.quad(out_bot[j], out_bot[i], in_bot[i], in_bot[j])
+
+    def cylinder_z(self, cx, cy, cz_start, radius, length, segs=STUD_SEGS, cap_start=True, cap_end=True):
+        """Solid cylinder along Z axis (for side studs on front/back)."""
+        pts_s, pts_e = [], []
+        for i in range(segs):
+            a = 2 * math.pi * i / segs
+            px = cx + radius * math.cos(a)
+            py = cy + radius * math.sin(a)
+            pts_s.append((px, py, cz_start))
+            pts_e.append((px, py, cz_start + length))
+        for i in range(segs):
+            j = (i + 1) % segs
+            self.quad(pts_s[i], pts_s[j], pts_e[j], pts_e[i])
+        if cap_end:
+            c = (cx, cy, cz_start + length)
+            for i in range(segs):
+                j = (i + 1) % segs
+                self.tri(c, pts_e[i], pts_e[j])
+        if cap_start:
+            c = (cx, cy, cz_start)
+            for i in range(segs):
+                j = (i + 1) % segs
+                self.tri(c, pts_s[j], pts_s[i])
+
+    def cylinder_x(self, cx_start, cy, cz, radius, length, segs=STUD_SEGS, cap_start=True, cap_end=True):
+        """Solid cylinder along X axis (for hinge pins)."""
+        pts_s, pts_e = [], []
+        for i in range(segs):
+            a = 2 * math.pi * i / segs
+            py = cy + radius * math.cos(a)
+            pz = cz + radius * math.sin(a)
+            pts_s.append((cx_start, py, pz))
+            pts_e.append((cx_start + length, py, pz))
+        for i in range(segs):
+            j = (i + 1) % segs
+            self.quad(pts_s[i], pts_s[j], pts_e[j], pts_e[i])
+        if cap_end:
+            c = (cx_start + length, cy, cz)
+            for i in range(segs):
+                j = (i + 1) % segs
+                self.tri(c, pts_e[i], pts_e[j])
+        if cap_start:
+            c = (cx_start, cy, cz)
+            for i in range(segs):
+                j = (i + 1) % segs
+                self.tri(c, pts_s[j], pts_s[i])
 
     def _normal(self, ia, ib, ic):
         a, b, c = self.verts[ia], self.verts[ib], self.verts[ic]
@@ -211,176 +253,139 @@ class Mesh:
 def build_lego_2x6():
     m = Mesh()
 
-    # Origin at bottom-left corner of brick, Y-up
-    # Body outer box: 0..BODY_X in X, 0..BRICK_H in Y, 0..BODY_Z in Z
-
-    # ── 1. Outer shell (hollow box) ──
-    # We build it as: outer box minus inner cavity
-
-    # Outer walls
-    ox0, oy0, oz0 = 0, 0, 0
-    ox1, oy1, oz1 = BODY_X, BRICK_H, BODY_Z
-
-    # Inner cavity (cut out from bottom, leaving top plate and side walls)
-    ix0 = WALL
-    iz0 = WALL
-    ix1 = BODY_X - WALL
-    iz1 = BODY_Z - WALL
-    iy0 = 0              # open bottom
-    iy1 = BRICK_H - TOP_WALL  # stop below top plate
-
-    # ── Build outer shell as 5 faces (no bottom face - it's open) ──
-    # Top face (outer)
-    m.quad((ox0, oy1, oz0), (ox1, oy1, oz0), (ox1, oy1, oz1), (ox0, oy1, oz1))
-    # Front face (Z=0)
-    m.quad((ox0, oy0, oz0), (ox1, oy0, oz0), (ox1, oy1, oz0), (ox0, oy1, oz0))
-    # Back face (Z=BODY_Z)
-    m.quad((ox1, oy0, oz1), (ox0, oy0, oz1), (ox0, oy1, oz1), (ox1, oy1, oz1))
-    # Left face (X=0)
-    m.quad((ox0, oy0, oz1), (ox0, oy0, oz0), (ox0, oy1, oz0), (ox0, oy1, oz1))
-    # Right face (X=BODY_X)
-    m.quad((ox1, oy0, oz0), (ox1, oy0, oz1), (ox1, oy1, oz1), (ox1, oy1, oz0))
-
-    # ── Inner cavity walls ──
-    # Inner top face (ceiling of cavity, underside of top plate)
-    m.quad((ix1, iy1, iz0), (ix0, iy1, iz0), (ix0, iy1, iz1), (ix1, iy1, iz1))
-    # Inner front wall
-    m.quad((ix1, iy0, iz0), (ix0, iy0, iz0), (ix0, iy1, iz0), (ix1, iy1, iz0))
-    # Inner back wall
-    m.quad((ix0, iy0, iz1), (ix1, iy0, iz1), (ix1, iy1, iz1), (ix0, iy1, iz1))
-    # Inner left wall
-    m.quad((ix0, iy0, iz0), (ix0, iy0, iz1), (ix0, iy1, iz1), (ix0, iy1, iz0))
-    # Inner right wall
-    m.quad((ix1, iy0, iz1), (ix1, iy0, iz0), (ix1, iy1, iz0), (ix1, iy1, iz1))
-
-    # ── Bottom rim (connects outer wall bottom edge to inner wall bottom edge) ──
-    # Front rim
-    m.quad((ox0, oy0, oz0), (ox1, oy0, oz0), (ix1, iy0, iz0), (ix0, iy0, iz0))
-    # Back rim
-    m.quad((ox1, oy0, oz1), (ox0, oy0, oz1), (ix0, iy0, iz1), (ix1, iy0, iz1))
-    # Left rim
-    m.quad((ox0, oy0, oz1), (ox0, oy0, oz0), (ix0, iy0, iz0), (ix0, iy0, iz1))
-    # Right rim
-    m.quad((ox1, oy0, oz0), (ox1, oy0, oz1), (ix1, iy0, iz1), (ix1, iy0, iz0))
-
-    # ── Top ledge (connects outer top to inner cavity ceiling) ──
-    # The top plate thickness = TOP_WALL. Outer top is at BRICK_H, inner ceiling at BRICK_H - TOP_WALL.
-    # These ledges fill the step between outer top surface edge and inner cavity ceiling edge.
-    # Front ledge
-    m.quad((ix0, iy1, iz0), (ix1, iy1, iz0), (ox1, oy1, oz0), (ox0, oy1, oz0))
-    # Back ledge
-    m.quad((ix1, iy1, iz1), (ix0, iy1, iz1), (ox0, oy1, oz1), (ox1, oy1, oz1))
-    # Left ledge
-    m.quad((ix0, iy1, iz1), (ix0, iy1, iz0), (ox0, oy1, oz0), (ox0, oy1, oz1))
-    # Right ledge
-    m.quad((ix1, iy1, iz0), (ix1, iy1, iz1), (ox1, oy1, oz1), (ox1, oy1, oz0))
-
-    # Wait — this approach makes overlapping geometry. Let me simplify.
-    # The top plate outer surface is at oy1 for both outer and inner.
-    # The inner cavity ceiling face IS already the underside of the top plate.
-    # The above "ledge" quads are actually at the same Y height, so they'd be degenerate.
-    # Actually no: outer top = oy1 = BRICK_H, inner ceiling = iy1 = BRICK_H - TOP_WALL
-    # So the top surface is correct as outer, and the cavity ceiling is correct as inner.
-    # The "ledge" would be where the inner wall extends up higher than the cavity —
-    # but actually the inner walls go from iy0 to iy1, and the outer walls go to oy1.
-    # The gap between iy1 and oy1 is the top plate itself, which is solid.
-    # The outer top face and inner ceiling face handle this correctly since the
-    # side walls (both outer and inner) already span to their respective heights.
-    # We just need to make sure the inner side walls connect properly.
-
-    # Actually, there's a gap: the outer side walls go from y=0 to y=BRICK_H,
-    # but the inner side walls only go to y=BRICK_H-TOP_WALL.
-    # That creates an unclosed gap at the top of the inner walls.
-    # The "ledge" IS needed — it connects the top edge of each inner wall to the
-    # underside perimeter of the outer top face. But they're at different Y values!
-
-    # Let me reconsider. Actually the top surface of the outer box is a full rectangle
-    # at y=BRICK_H. The inner cavity ceiling is a smaller rectangle at y=iy1.
-    # To close the mesh between the outer top (big rect at BRICK_H) and inner ceiling
-    # (small rect at iy1), we need the top plate to be properly represented.
-
-    # Simplest approach: just remove the problematic "ledge" quads above and
-    # re-do the outer top face as a frame (outer rect minus inner rect) at BRICK_H,
-    # plus the inner ceiling at iy1, plus 4 connecting strips on the sides.
-
-    # Actually, my current approach IS correct:
-    # - Outer 5 faces (top + 4 sides) form the exterior  
-    # - Inner 5 faces (ceiling + 4 sides) form the cavity
-    # - Bottom rim connects outer and inner bottom edges
-    # The mesh is closed everywhere. The "ledge" quads above are wrong/redundant
-    # since the outer top and inner ceiling are at different Y levels but the 
-    # side walls already bridge between them properly.
-    
-    # Let me just remove the ledge quads. The mesh closes via:
-    # outer side wall (y=0 to BRICK_H) + inner side wall (y=0 to iy1)
-    # + outer top (y=BRICK_H) + inner ceiling (y=iy1) + bottom rim
-    # Wait, there's still a gap at the top! The outer side at top has edge at y=BRICK_H,
-    # but the inner side at top has edge at y=iy1 < BRICK_H. 
-    # The outer top face's inner edge is at (ix, BRICK_H, iz) but no geometry connects
-    # from there down to (ix, iy1, iz).
-
-    # OK I need to just rebuild this properly. Let me use a clean approach.
-
-    # Clear and restart
-    m = Mesh()
-
-    # I'll build the shell as individual box walls to ensure proper closure.
-    # Think of it as 5 rectangular slabs:
-    #   - Top plate: full XZ area, thickness TOP_WALL
-    #   - Front wall: full XY area, thickness WALL  
-    #   - Back wall: full XY area, thickness WALL
-    #   - Left wall: shortened Z (between front/back walls), full Y, thickness WALL
-    #   - Right wall: same
-
+    # ── 1. Shell (5 box slabs) ──
     # Top plate
     m.box(0, BRICK_H - TOP_WALL, 0, BODY_X, BRICK_H, BODY_Z)
-
-    # Front wall (Z near side, full width, from bottom to top plate underside)
+    # Front wall
     m.box(0, 0, 0, BODY_X, BRICK_H - TOP_WALL, WALL)
-
     # Back wall
     m.box(0, 0, BODY_Z - WALL, BODY_X, BRICK_H - TOP_WALL, BODY_Z)
-
-    # Left wall (between front and back walls in Z)
+    # Left wall
     m.box(0, 0, WALL, WALL, BRICK_H - TOP_WALL, BODY_Z - WALL)
-
     # Right wall
     m.box(BODY_X - WALL, 0, WALL, BODY_X, BRICK_H - TOP_WALL, BODY_Z - WALL)
 
-    # ── 2. Studs on top ──
     stud_r = STUD_D / 2
+
+    # ── 2. Top studs (2x6 grid) ──
     for col in range(COLS):
         for row in range(ROWS):
             cx = PITCH / 2 + col * PITCH - TOLERANCE
             cz = PITCH / 2 + row * PITCH - TOLERANCE
             m.cylinder(cx, BRICK_H, cz, stud_r, STUD_H, STUD_SEGS)
 
-    # ── 3. Anti-stud tubes (bottom, between stud positions) ──
-    # For a 2×N brick, tubes go along the center line (between the 2 rows)
-    # at positions between each column pair
-    tube_r_out = TUBE_OD / 2
-    tube_r_in  = TUBE_ID / 2
-    tube_h     = BRICK_H - TOP_WALL  # from bottom to underside of top plate
-    center_z   = BODY_Z / 2
-    for col in range(COLS - 1):
-        cx = PITCH + col * PITCH - TOLERANCE  # halfway between col and col+1
-        m.tube(cx, 0, center_z, tube_r_out, tube_r_in, tube_h, STUD_SEGS)
-
-    # ── 4. Reinforcing ribs along the bottom ──
-    # Small ribs on the inside of front and back walls for strength
-    rib_h = BRICK_H - TOP_WALL  # full interior height
-    # Ribs under each stud column along front wall
+    # ── 3. Side studs on front face (Z=0, pointing -Z) ──
+    side_stud_len = STUD_H
     for col in range(COLS):
         cx = PITCH / 2 + col * PITCH - TOLERANCE
-        # Front rib
+        cy = BRICK_H / 2  # centered vertically on brick
+        m.cylinder_z(cx, cy, -side_stud_len, stud_r, side_stud_len, STUD_SEGS)
+
+    # ── 4. Side studs on back face (Z=BODY_Z, pointing +Z) ──
+    for col in range(COLS):
+        cx = PITCH / 2 + col * PITCH - TOLERANCE
+        cy = BRICK_H / 2
+        m.cylinder_z(cx, cy, BODY_Z, stud_r, side_stud_len, STUD_SEGS)
+
+    # ── 5. Anti-stud tubes underneath ──
+    tube_r_out = TUBE_OD / 2
+    tube_r_in  = TUBE_ID / 2
+    tube_h     = BRICK_H - TOP_WALL
+    center_z   = BODY_Z / 2
+    for col in range(COLS - 1):
+        cx = PITCH + col * PITCH - TOLERANCE
+        m.tube(cx, 0, center_z, tube_r_out, tube_r_in, tube_h, STUD_SEGS)
+
+    # ── 6. Reinforcing ribs ──
+    rib_h = BRICK_H - TOP_WALL
+    for col in range(COLS):
+        cx = PITCH / 2 + col * PITCH - TOLERANCE
         m.box(cx - RIB_W/2, 0, WALL, cx + RIB_W/2, rib_h * 0.3, center_z - tube_r_out)
-        # Back rib
         m.box(cx - RIB_W/2, 0, center_z + tube_r_out, cx + RIB_W/2, rib_h * 0.3, BODY_Z - WALL)
 
-    print(f"LEGO 2x{COLS} brick:")
+    # ── 7. Hinge finger (male) on LEFT end (X=0) ──
+    # Two arms extend left from the brick face, with a cylinder pin connecting tips
+    hinge_cy = BRICK_H / 2   # centered vertically
+    arm_half = HINGE_GAP / 2 + HINGE_ARM_T  # total half-span of arms
+
+    # Bottom arm
+    arm_y_bot = hinge_cy - HINGE_GAP / 2 - HINGE_ARM_T
+    m.box(-HINGE_PIN_L, arm_y_bot, center_z - HINGE_ARM_W / 2,
+          0,              arm_y_bot + HINGE_ARM_T, center_z + HINGE_ARM_W / 2)
+
+    # Top arm
+    arm_y_top = hinge_cy + HINGE_GAP / 2
+    m.box(-HINGE_PIN_L, arm_y_top, center_z - HINGE_ARM_W / 2,
+          0,              arm_y_top + HINGE_ARM_T, center_z + HINGE_ARM_W / 2)
+
+    # Connecting pin cylinder at the tips of the arms
+    pin_y_center = hinge_cy
+    pin_y_bot = arm_y_bot
+    pin_y_top = arm_y_top + HINGE_ARM_T
+    pin_length = pin_y_top - pin_y_bot
+    m.cylinder(-HINGE_PIN_L, pin_y_bot, center_z, HINGE_PIN_R, pin_length, STUD_SEGS)
+
+    # ── 8. Hinge socket (female) on RIGHT end (X=BODY_X) ──
+    # Two prongs extend right, with gap between them to accept the finger pin
+    # The prongs have a half-cylinder cutout to cradle the pin
+
+    # Bottom prong
+    sock_y_bot = hinge_cy - HINGE_GAP / 2 - HINGE_ARM_T
+    m.box(BODY_X, sock_y_bot, center_z - HINGE_ARM_W / 2,
+          BODY_X + HINGE_SOCK_L, sock_y_bot + HINGE_ARM_T, center_z + HINGE_ARM_W / 2)
+
+    # Top prong
+    sock_y_top = hinge_cy + HINGE_GAP / 2
+    m.box(BODY_X, sock_y_top, center_z - HINGE_ARM_W / 2,
+          BODY_X + HINGE_SOCK_L, sock_y_top + HINGE_ARM_T, center_z + HINGE_ARM_W / 2)
+
+    # Inner cradle walls - partial cylinder inside each prong to grip the pin
+    # Build small guide bumps on the inner faces of the prongs
+    bump_r = HINGE_PIN_R + 0.3  # slightly larger for easy snap
+    bump_segs = 12
+    # Bottom prong top face guide (half-ring pointing up into gap)
+    guide_y = sock_y_bot + HINGE_ARM_T
+    for i in range(bump_segs):
+        a0 = math.pi * i / bump_segs  # 0 to pi (top semicircle)
+        a1 = math.pi * (i + 1) / bump_segs
+        x0 = BODY_X + HINGE_SOCK_L / 2
+        p0z = center_z + bump_r * math.cos(a0)
+        p0y = guide_y + bump_r * math.sin(a0) * 0.3  # gentle bump
+        p1z = center_z + bump_r * math.cos(a1)
+        p1y = guide_y + bump_r * math.sin(a1) * 0.3
+
+    # Top prong bottom face guide
+    guide_y2 = sock_y_top
+    for i in range(bump_segs):
+        a0 = math.pi + math.pi * i / bump_segs
+        a1 = math.pi + math.pi * (i + 1) / bump_segs
+        p0z = center_z + bump_r * math.cos(a0)
+        p0y = guide_y2 + bump_r * math.sin(a0) * 0.3
+        p1z = center_z + bump_r * math.cos(a1)
+        p1y = guide_y2 + bump_r * math.sin(a1) * 0.3
+
+    # Back plate connecting the two prongs (gives socket its U shape)
+    m.box(BODY_X + HINGE_SOCK_L - HINGE_ARM_T, sock_y_bot + HINGE_ARM_T,
+          center_z - HINGE_ARM_W / 2,
+          BODY_X + HINGE_SOCK_L, sock_y_top,
+          center_z + HINGE_ARM_W / 2)
+
+    # Socket hole cylinder (decorative ring showing where pin sits)
+    hole_y_bot = sock_y_bot + HINGE_ARM_T
+    hole_y_top = sock_y_top
+    hole_len = hole_y_top - hole_y_bot
+    # Inner cylinder to show the pin channel
+    m.cylinder(BODY_X + HINGE_SOCK_L / 2, hole_y_bot, center_z,
+               HINGE_PIN_R + 0.15, hole_len, STUD_SEGS)
+
+    n_side = COLS * 2  # front + back side studs
+    print(f"LEGO 2x{COLS} Deluxe brick:")
     print(f"  Body: {BODY_X:.1f} x {BRICK_H:.1f} x {BODY_Z:.1f} mm")
-    print(f"  Studs: {COLS * ROWS} ({ROWS}x{COLS}), ø{STUD_D} x {STUD_H} mm")
-    print(f"  Anti-stud tubes: {COLS - 1}, OD {TUBE_OD} / ID {TUBE_ID} mm")
+    print(f"  Top studs: {COLS * ROWS}")
+    print(f"  Side studs: {n_side} ({COLS} front + {COLS} back)")
+    print(f"  Hinge finger (left): pin ø{HINGE_PIN_R*2:.1f} mm")
+    print(f"  Hinge socket (right): gap {HINGE_GAP:.1f} mm")
+    print(f"  Anti-stud tubes: {COLS - 1}")
     print(f"  Total triangles: {len(m.tris)}")
 
     return m
