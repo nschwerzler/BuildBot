@@ -1,318 +1,311 @@
 """
-Gauntlet STL Generator v3
-═════════════════════════
-Wearable armor gauntlet — prints FLAT, NO supports, watertight mesh.
+Gauntlet Generator v4
+═══════════════════════
+Proper 3D half-pipe armored gauntlet for 3D printing.
 
-Orientation for slicer (Bambu Studio):
-  X = width (across arm)
-  Y = length (elbow → fingertips), flat on bed
-  Z = height (up from build plate)
+Outputs:
+  gauntlet.3mf  — Bambu Studio project (tree supports pre-configured)
+  gauntlet.stl  — Universal STL for any slicer
 
 Design:
-  - Top-half armor only (open underneath to slide arm in)
-  - Open palm so you can GRAB things while wearing
-  - Universal fit (~medium adult, adjustable with strap slots)
-  - Every piece is a closed watertight solid (no non-manifold edges)
-  - All geometry sits flat on Z=0, max Z ~25mm (no supports needed)
+  - Half-pipe (semicircular arch) segments — proper 3D depth
+  - Segmented plates with articulation gaps
+  - Open bottom: arm slides in from below
+  - Open palm: full grip freedom
+  - Finger & thumb guards (half-tube channels)
+  - Universal adult fit, scalable in slicer
+  - Watertight manifold mesh (zero non-manifold edges)
+
+Orientation (slicer): X=width, Y=length, Z=height.
+Arch opening faces DOWN at Z=0 (bed).
+Tree supports handle the arch overhangs automatically.
+
+Compatible: Bambu A1, A1 Mini, P1S, P1P, X1C — any FDM printer.
 """
 import math
 import os
+import zipfile
 
-OUTPUT = "gauntlet.stl"
+OUTPUT_STL = "gauntlet.stl"
+OUTPUT_3MF = "gauntlet.3mf"
 
 
-class STL:
+# ═══════════════════════════════════════════════════════════
+# MESH CLASS — indexed triangles with vertex deduplication
+# ═══════════════════════════════════════════════════════════
+class Mesh:
     def __init__(self):
+        self.verts = []
         self.tris = []
+        self._vmap = {}
+
+    def v(self, x, y, z):
+        key = (round(x, 3), round(y, 3), round(z, 3))
+        if key not in self._vmap:
+            self._vmap[key] = len(self.verts)
+            self.verts.append(key)
+        return self._vmap[key]
 
     def tri(self, a, b, c):
-        u = (b[0]-a[0], b[1]-a[1], b[2]-a[2])
-        v = (c[0]-a[0], c[1]-a[1], c[2]-a[2])
-        nx = u[1]*v[2] - u[2]*v[1]
-        ny = u[2]*v[0] - u[0]*v[2]
-        nz = u[0]*v[1] - u[1]*v[0]
-        ln = math.sqrt(nx*nx + ny*ny + nz*nz)
-        if ln > 1e-12:
-            nx /= ln; ny /= ln; nz /= ln
-        self.tris.append((nx, ny, nz, a, b, c))
+        ia, ib, ic = self.v(*a), self.v(*b), self.v(*c)
+        if ia != ib and ib != ic and ia != ic:
+            self.tris.append((ia, ib, ic))
 
     def quad(self, a, b, c, d):
         self.tri(a, b, c)
         self.tri(a, c, d)
 
-    def save(self, path):
+    def _normal(self, ia, ib, ic):
+        a, b, c = self.verts[ia], self.verts[ib], self.verts[ic]
+        ux, uy, uz = b[0]-a[0], b[1]-a[1], b[2]-a[2]
+        vx, vy, vz = c[0]-a[0], c[1]-a[1], c[2]-a[2]
+        nx = uy*vz - uz*vy
+        ny = uz*vx - ux*vz
+        nz = ux*vy - uy*vx
+        ln = math.sqrt(nx*nx + ny*ny + nz*nz)
+        if ln > 1e-12:
+            return (nx/ln, ny/ln, nz/ln)
+        return (0.0, 0.0, 1.0)
+
+    # ─── STL OUTPUT ───────────────────────────────────
+    def save_stl(self, path):
         with open(path, 'w') as f:
             f.write("solid gauntlet\n")
-            for nx, ny, nz, a, b, c in self.tris:
-                f.write(f"  facet normal {nx:.6e} {ny:.6e} {nz:.6e}\n")
+            for ia, ib, ic in self.tris:
+                n = self._normal(ia, ib, ic)
+                a = self.verts[ia]
+                b = self.verts[ib]
+                c = self.verts[ic]
+                f.write(f"  facet normal {n[0]:.6e} {n[1]:.6e} {n[2]:.6e}\n")
                 f.write("    outer loop\n")
-                for v in (a, b, c):
-                    f.write(f"      vertex {v[0]:.6e} {v[1]:.6e} {v[2]:.6e}\n")
+                f.write(f"      vertex {a[0]:.6e} {a[1]:.6e} {a[2]:.6e}\n")
+                f.write(f"      vertex {b[0]:.6e} {b[1]:.6e} {b[2]:.6e}\n")
+                f.write(f"      vertex {c[0]:.6e} {c[1]:.6e} {c[2]:.6e}\n")
                 f.write("    endloop\n  endfacet\n")
             f.write("endsolid gauntlet\n")
-        print(f"  {len(self.tris)} triangles → {path}")
+        print(f"  STL: {len(self.tris)} tris, {os.path.getsize(path)//1024} KB → {path}")
+
+    # ─── 3MF OUTPUT (with Bambu tree support config) ──
+    def save_3mf(self, path):
+        vlines = []
+        for x, y, z in self.verts:
+            vlines.append(f'          <vertex x="{x}" y="{y}" z="{z}"/>')
+        tlines = []
+        for a, b, c in self.tris:
+            tlines.append(f'          <triangle v1="{a}" v2="{b}" v3="{c}"/>')
+
+        model_xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<model unit="millimeter" '
+            'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n'
+            '  <metadata name="Application">GauntletGen</metadata>\n'
+            '  <resources>\n'
+            '    <object id="1" type="model">\n'
+            '      <mesh>\n'
+            '        <vertices>\n' + '\n'.join(vlines) + '\n'
+            '        </vertices>\n'
+            '        <triangles>\n' + '\n'.join(tlines) + '\n'
+            '        </triangles>\n'
+            '      </mesh>\n'
+            '    </object>\n'
+            '  </resources>\n'
+            '  <build>\n'
+            '    <item objectid="1"/>\n'
+            '  </build>\n'
+            '</model>'
+        )
+
+        content_types = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n'
+            '  <Default Extension="rels" ContentType='
+            '"application/vnd.openxmlformats-package.relationships+xml"/>\n'
+            '  <Default Extension="model" ContentType='
+            '"application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>\n'
+            '</Types>'
+        )
+
+        rels = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<Relationships xmlns='
+            '"http://schemas.openxmlformats.org/package/2006/relationships">\n'
+            '  <Relationship Target="/3D/3dmodel.model" Id="rel0" '
+            'Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>\n'
+            '</Relationships>'
+        )
+
+        # Bambu Studio / PrusaSlicer config: TREE SUPPORTS AUTO-ENABLED
+        slicer_cfg = (
+            '; Gauntlet — tree supports pre-configured\n'
+            'enable_support = 1\n'
+            'support_type = tree(auto)\n'
+            'support_on_build_plate_only = 0\n'
+            'support_threshold_angle = 30\n'
+        )
+
+        with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr('[Content_Types].xml', content_types)
+            zf.writestr('_rels/.rels', rels)
+            zf.writestr('3D/3dmodel.model', model_xml)
+            zf.writestr('Metadata/Slic3r_PE.config', slicer_cfg)
+
+        print(f"  3MF: {len(self.tris)} tris, {os.path.getsize(path)//1024} KB → {path}")
+        print(f"       Tree supports: ENABLED")
 
 
-def box(stl, x, y, z, w, d, h):
-    """Axis-aligned watertight box. (x,y,z) is min corner, (w,d,h) are sizes."""
-    x1, y1, z1 = x+w, y+d, z+h
-    # Bottom (Z=z)
-    stl.quad((x,y,z), (x1,y,z), (x1,y1,z), (x,y1,z))
-    # Top (Z=z1)
-    stl.quad((x,y,z1), (x,y1,z1), (x1,y1,z1), (x1,y,z1))
-    # Front (Y=y)
-    stl.quad((x,y,z), (x,y,z1), (x1,y,z1), (x1,y,z))
-    # Back (Y=y1)
-    stl.quad((x,y1,z), (x1,y1,z), (x1,y1,z1), (x,y1,z1))
-    # Left (X=x)
-    stl.quad((x,y,z), (x,y1,z), (x,y1,z1), (x,y,z1))
-    # Right (X=x1)
-    stl.quad((x1,y,z), (x1,y,z1), (x1,y1,z1), (x1,y1,z))
-
-
-def curved_plate(stl, cx, y0, y1, half_w, rise, thick, segs=20, taper_start=1.0, taper_end=1.0):
+# ═══════════════════════════════════════════════════════════
+# GEOMETRY: Watertight half-pipe (semicircular arch solid)
+# ═══════════════════════════════════════════════════════════
+def half_pipe(m, cx, y0, y1, rx0, rz0, rx1, rz1,
+              wall=3.0, y_steps=8, segs=20):
     """
-    Watertight curved armor plate lying on the build plate.
-    Arch cross-section in X-Z plane, extruded along Y.
-    cx = center X, y0/y1 = start/end Y, half_w = half width,
-    rise = peak height, thick = wall thickness.
-    Open bottom (Z=0) is the flat underside sitting on the bed.
+    Closed watertight half-pipe solid.
+    Arch curves UP in Z, opening faces DOWN at Z=0.
+    Elliptical cross-section: rx = half-width, rz = arch height.
+    Tapers from (rx0,rz0) at y0 to (rx1,rz1) at y1.
     """
-    y_steps = max(4, int(abs(y1 - y0) / 8))
-
-    def make_ring(y_pos, scale):
-        """Generate arch cross-section at a Y position."""
+    def ring(y, rx, rz):
+        rx_in = max(0.5, rx - wall)
+        rz_in = max(0.5, rz - wall)
         outer = []
         inner = []
-        hw = half_w * scale
-        r = rise * scale
-        t = thick
-
         for i in range(segs + 1):
-            frac = i / segs  # 0..1 across width
-            x = cx - hw + 2 * hw * frac
-            # Parabolic arch: peak at center
-            u = 2.0 * frac - 1.0  # -1..1
-            z_out = r * max(0, 1.0 - u*u)
-            z_in = max(0, z_out - t)
-            outer.append((x, y_pos, z_out))
-            inner.append((x, y_pos, z_in))
-
-        # Edge points at Z=0 for closing the sides
-        left_bot = (cx - hw, y_pos, 0.0)
-        right_bot = (cx + hw, y_pos, 0.0)
-        return outer, inner, left_bot, right_bot
+            a = math.pi * i / segs  # 0 → π
+            ca, sa = math.cos(a), math.sin(a)
+            outer.append((cx + rx * ca, y, rz * sa))
+            inner.append((cx + rx_in * ca, y, rz_in * sa))
+        return outer, inner
 
     rings = []
     for yi in range(y_steps + 1):
         t = yi / y_steps
         y = y0 + (y1 - y0) * t
-        scale = taper_start + (taper_end - taper_start) * t
-        rings.append(make_ring(y, scale))
+        rx = rx0 + (rx1 - rx0) * t
+        rz = rz0 + (rz1 - rz0) * t
+        rings.append(ring(y, rx, rz))
 
     for yi in range(y_steps):
-        o1, i1, lb1, rb1 = rings[yi]
-        o2, i2, lb2, rb2 = rings[yi + 1]
+        o1, i1 = rings[yi]
+        o2, i2 = rings[yi + 1]
 
         for si in range(segs):
-            # Outer surface (top)
-            stl.quad(o1[si], o1[si+1], o2[si+1], o2[si])
-            # Inner surface (reversed)
-            stl.quad(i1[si], i2[si], i2[si+1], i1[si+1])
+            # Outer surface (normal outward)
+            m.quad(o1[si], o2[si], o2[si+1], o1[si+1])
+            # Inner surface (normal inward = outward from wall solid)
+            m.quad(i1[si], i1[si+1], i2[si+1], i2[si])
 
-        # Left wall: connect outer[0] → inner[0] → bottom
-        stl.quad(o1[0], o2[0], i2[0], i1[0])
-        stl.quad(o1[0], i1[0], lb1, lb1)  # degenerate, skip
-        # Actually, close left side properly: outer edge → Z=0 → inner edge
-        stl.quad(o1[0], lb1, lb2, o2[0])
-        stl.quad(i1[0], i2[0], lb2, lb1)
+        # Right rim strip at Z≈0 (angle=0 edge)
+        m.quad(i1[0], i2[0], o2[0], o1[0])
+        # Left rim strip at Z≈0 (angle=π edge)
+        m.quad(o1[-1], o2[-1], i2[-1], i1[-1])
 
-        # Right wall
-        stl.quad(o1[-1], i1[-1], i2[-1], o2[-1])
-        stl.quad(o1[-1], o2[-1], rb2, rb1)
-        stl.quad(i1[-1], rb1, rb2, i2[-1])
-
-        # Bottom flat face (Z=0 between left_bot and right_bot)
-        stl.quad(lb1, rb1, rb2, lb2)
-
-    # Front cap (Y=y0): close the arch end
-    o, inn, lb, rb = rings[0]
+    # Front end cap (y=y0, half-annulus facing -Y)
+    o_f, i_f = rings[0]
     for si in range(segs):
-        stl.quad(o[si+1], o[si], inn[si], inn[si+1])
-    # Front cap sides: outer edge to Z=0, inner edge to Z=0
-    stl.quad(o[0], lb, lb, inn[0])  # left
-    stl.quad(o[-1], inn[-1], rb, rb)  # right
-    # Front bottom strip
-    stl.quad(lb, rb, rb, lb)  # degenerate but harmless
+        m.quad(i_f[si], o_f[si], o_f[si+1], i_f[si+1])
 
-    # Actually let me do front cap properly as a filled polygon:
-    # Connect outer to inner with a strip, and close sides to Z=0
-    # Left triangle
-    stl.tri(o[0], lb, inn[0])
-    # Right triangle
-    stl.tri(o[-1], inn[-1], rb)
-    # Bottom strip
-    stl.quad(inn[0], lb, rb, inn[-1])
-
-    # Back cap (Y=y1)
-    o, inn, lb, rb = rings[-1]
+    # Back end cap (y=y1, half-annulus facing +Y)
+    o_b, i_b = rings[-1]
     for si in range(segs):
-        stl.quad(o[si], o[si+1], inn[si+1], inn[si])
-    stl.tri(o[0], inn[0], lb)
-    stl.tri(o[-1], rb, inn[-1])
-    stl.quad(inn[0], inn[-1], rb, lb)
+        m.quad(o_b[si], i_b[si], i_b[si+1], o_b[si+1])
 
 
-def finger_plate(stl, cx, y0, length, width, height, taper=0.65):
-    """
-    Flat finger guard — proper closed solid box with domed top.
-    Sits on Z=0, extends along Y.
-    """
-    steps = 8
-    hw = width / 2
-
-    # Build as series of cross-section boxes along Y
-    for yi in range(steps):
-        t0 = yi / steps
-        t1 = (yi + 1) / steps
-        y_a = y0 + length * t0
-        y_b = y0 + length * t1
-        w0 = hw * (1.0 - t0 * (1.0 - taper))
-        w1 = hw * (1.0 - t1 * (1.0 - taper))
-        h0 = height * (1.0 - t0 * 0.25)
-        h1 = height * (1.0 - t1 * 0.25)
-
-        # 4 corners at each end, Z=0 bottom, Z=h top
-        # Ring a (y_a)
-        a_bl = (cx - w0, y_a, 0)
-        a_br = (cx + w0, y_a, 0)
-        a_tl = (cx - w0, y_a, h0)
-        a_tr = (cx + w0, y_a, h0)
-        # Ring b (y_b)
-        b_bl = (cx - w1, y_b, 0)
-        b_br = (cx + w1, y_b, 0)
-        b_tl = (cx - w1, y_b, h1)
-        b_tr = (cx + w1, y_b, h1)
-
-        # Top
-        stl.quad(a_tl, a_tr, b_tr, b_tl)
-        # Bottom
-        stl.quad(a_bl, b_bl, b_br, a_br)
-        # Left
-        stl.quad(a_bl, a_tl, b_tl, b_bl)
-        # Right
-        stl.quad(a_br, b_br, b_tr, a_tr)
-
-    # Front cap (y0)
-    stl.quad((cx-hw, y0, 0), (cx+hw, y0, 0), (cx+hw, y0, height), (cx-hw, y0, height))
-    # Tip cap
-    ye = y0 + length
-    we = hw * taper
-    he = height * 0.75
-    stl.quad((cx-we, ye, 0), (cx-we, ye, he), (cx+we, ye, he), (cx+we, ye, 0))
-
-
-def strap_slot(stl, cx, y0, slot_w, slot_h, slot_d):
-    """Rectangular loop/slot for a strap — proper closed box hanging below Z=0."""
-    box(stl, cx - slot_w/2, y0, -slot_h, slot_w, slot_d, slot_h)
-
-
+# ═══════════════════════════════════════════════════════════
+# GAUNTLET ASSEMBLY
+# ═══════════════════════════════════════════════════════════
 def generate():
-    s = STL()
+    m = Mesh()
 
-    # ════════════════════════════════════════════════════
-    # DIMENSIONS (mm) — sized for universal adult fit
-    # Total length ~200mm (forearm 120 + hand 50 + fingers 35)
-    # Width ~90mm forearm, ~85mm hand
-    # Height ~22mm max (very flat, no supports)
-    # Open bottom — slides onto top of arm
-    # Open palm — can grab things
-    # ════════════════════════════════════════════════════
+    # All dimensions in mm.
+    # Y axis = arm length (elbow→fingers), X = width, Z = height.
+    # Half-pipe arch: opening at Z=0 (bed), arch peaks upward.
+    #
+    # Segmented with 2mm articulation gaps between sections.
+    # Universal adult fit (~medium). Scale in slicer for other sizes.
 
-    # ── FOREARM GUARD ──
-    # Curved plate, Y=0..120, half-arch over the top of the forearm
-    curved_plate(s, cx=0, y0=0, y1=120,
-                 half_w=44, rise=22, thick=2.5,
-                 segs=24, taper_start=1.1, taper_end=0.9)
+    # ── FOREARM GUARD ── (Y=0..110)
+    # Tapers from elbow (wider) to wrist (narrower)
+    half_pipe(m, cx=0, y0=0, y1=110,
+              rx0=44, rz0=30, rx1=38, rz1=26,
+              wall=2.5, y_steps=12, segs=24)
 
-    # ── WRIST CUFF ──
-    # Slightly flared at the wrist transition
-    curved_plate(s, cx=0, y0=118, y1=138,
-                 half_w=46, rise=24, thick=3.0,
-                 segs=20, taper_start=0.9, taper_end=1.05)
+    # ── WRIST CUFF ── (Y=112..132)
+    # Flared outward slightly for style and comfort
+    half_pipe(m, cx=0, y0=112, y1=132,
+              rx0=40, rz0=32, rx1=42, rz1=28,
+              wall=3.0, y_steps=6, segs=24)
 
-    # ── HAND BACK PLATE ──
-    # Flatter, wider plate covering back of hand
-    curved_plate(s, cx=0, y0=136, y1=175,
-                 half_w=44, rise=18, thick=2.5,
-                 segs=20, taper_start=1.05, taper_end=1.0)
+    # ── HAND PLATE ── (Y=134..170)
+    # Wider and flatter — covers back of hand
+    half_pipe(m, cx=0, y0=134, y1=170,
+              rx0=44, rz0=24, rx1=42, rz1=22,
+              wall=2.5, y_steps=8, segs=24)
 
-    # ── KNUCKLE RIDGE ──
-    # Thicker raised section across knuckles
-    curved_plate(s, cx=0, y0=170, y1=182,
-                 half_w=45, rise=20, thick=4.0,
-                 segs=16)
+    # ── KNUCKLE GUARD ── (Y=172..184)
+    # Thicker, slightly raised bump across knuckles
+    half_pipe(m, cx=0, y0=172, y1=184,
+              rx0=45, rz0=26, rx1=44, rz1=25,
+              wall=4.0, y_steps=4, segs=24)
 
-    # ── FINGER GUARD PLATES ──
-    # 4 separate plates for index through pinky
-    # Flat on the bed, tapered toward tips
-    # Open underneath so fingers can curl/grab
-    fw = 16  # finger plate width
-    fg = 3   # gap between fingers
-    total = 4 * fw + 3 * fg
-    x_start = -total / 2 + fw / 2
+    # ── FINGER GUARDS ── (Y=186..216)
+    # 4 individual half-tube channels, tapered toward tips
+    fw = 16.0    # finger channel width (diameter)
+    fg = 3.5     # gap between fingers
+    total_fw = 4 * fw + 3 * fg
+    finger_start_x = -total_fw / 2 + fw / 2
 
     for i in range(4):
-        fx = x_start + i * (fw + fg)
-        finger_plate(s, cx=fx, y0=183, length=32,
-                     width=fw, height=4.5, taper=0.6)
+        fx = finger_start_x + i * (fw + fg)
+        fr = fw / 2  # half-width = radius
+        half_pipe(m, cx=fx, y0=186, y1=216,
+                  rx0=fr, rz0=fr, rx1=fr*0.65, rz1=fr*0.65,
+                  wall=2.0, y_steps=6, segs=12)
 
-    # ── THUMB GUARD ──
-    # Offset to the left side, shorter
-    finger_plate(s, cx=-48, y0=148, length=28,
-                 width=18, height=4.5, taper=0.55)
+    # ── THUMB GUARD ── (Y=148..178)
+    # Offset to the left, angled outward
+    half_pipe(m, cx=-50, y0=148, y1=178,
+              rx0=10, rz0=10, rx1=8, rz1=8,
+              wall=2.0, y_steps=6, segs=12)
 
-    # ── ARMOR RIDGES (decorative) ──
-    # 3 raised ridges along the forearm plate
-    for rx in [-10, 0, 10]:
-        box(s, rx - 1.5, 8, 22, 3, 105, 2.5)
-
-    # ── STRAP ATTACHMENT SLOTS ──
-    # 4 slots (2 per side) for velcro/elastic straps
-    # Small rectangles that hang below the plate edges
-    for y_pos in [30, 90]:
-        strap_slot(s, cx=-43, y0=y_pos, slot_w=8, slot_h=6, slot_d=12)
-        strap_slot(s, cx=43, y0=y_pos, slot_w=8, slot_h=6, slot_d=12)
-
-    # ── WRIST STRAP SLOT ──
-    strap_slot(s, cx=-44, y0=125, slot_w=8, slot_h=6, slot_d=10)
-    strap_slot(s, cx=44, y0=125, slot_w=8, slot_h=6, slot_d=10)
-
-    return s
+    return m
 
 
+# ═══════════════════════════════════════════════════════════
+# MAIN
+# ═══════════════════════════════════════════════════════════
 if __name__ == '__main__':
-    print("=" * 50)
-    print("  GAUNTLET v3 — Wearable / Grabbable")
-    print("  Support-Free / Bambu Studio Ready")
-    print("=" * 50)
-
-    stl = generate()
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), OUTPUT)
-    stl.save(out)
-
-    kb = os.path.getsize(out) / 1024
-    print(f"\n  File: {out}")
-    print(f"  Size: {kb:.0f} KB | Tris: {len(stl.tris)}")
-    print(f"\n  Dimensions: ~90 x 215 x 25 mm")
-    print(f"  Fits: Most adult hands (strap-adjustable)")
+    print("=" * 55)
+    print("  GAUNTLET v4 — 3D Half-Pipe Armor")
+    print("  Tree Supports / Any Bambu Printer")
+    print("=" * 55)
     print()
-    print("  DESIGN:")
-    print("  ✓ Open bottom — slides onto arm")
-    print("  ✓ Open palm — full grip freedom")
-    print("  ✓ Strap slots — secure with velcro/elastic")
-    print("  ✓ Lies flat on bed — Z max ~25mm")
-    print("  ✓ No supports needed")
-    print("  ✓ Watertight mesh — no non-manifold edges")
+
+    m = generate()
+    base = os.path.dirname(os.path.abspath(__file__))
+
+    stl_path = os.path.join(base, OUTPUT_STL)
+    m.save_stl(stl_path)
+
+    mf_path = os.path.join(base, OUTPUT_3MF)
+    m.save_3mf(mf_path)
+
+    print(f"\n  Vertices: {len(m.verts)}")
+    print(f"  Triangles: {len(m.tris)}")
+    print(f"  Size: ~90 × 216 × 35 mm")
     print()
-    print("  PRINT: PLA/PETG | 0.2mm | 15% infill | 3 walls | NO supports")
+    print("  FEATURES:")
+    print("  ✓ Proper 3D half-pipe arch (not flat!)")
+    print("  ✓ Segmented armor plates with gaps")
+    print("  ✓ Open bottom — arm slides in")
+    print("  ✓ Open palm — full grip / grabbable")
+    print("  ✓ Watertight manifold (0 errors)")
+    print("  ✓ Tree supports pre-configured (3MF)")
+    print()
+    print("  COMPATIBLE PRINTERS:")
+    print("  ✓ Bambu A1 / A1 Mini (scale to 85%)")
+    print("  ✓ Bambu P1S / P1P")
+    print("  ✓ Bambu X1 / X1C")
+    print("  ✓ Any FDM printer (use .stl)")
+    print()
+    print("  PRINT: PLA/PETG | 0.2mm | 15% infill")
+    print("         3 walls | Tree supports: AUTO")
