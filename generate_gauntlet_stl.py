@@ -323,11 +323,8 @@ def generate():
         (172,  42,   26,   2.5),
     ]
 
-    # Palm cutout: from hand section to end, remove bottom arc
-    # so fingers can grip. Cut ~130 degrees of the bottom.
-    hollow_tube(m, profiles, segs=48,
-                palm_cut_start=120, palm_cut_end=172,
-                palm_cut_arc=130)
+    # Clean tube — no palm cutout, just a smooth full 360 wrap
+    hollow_tube(m, profiles, segs=48)
 
     # No separate finger tubes or thumb tubes.
     # Real gauntlets end at the knuckles - fingers are free.
