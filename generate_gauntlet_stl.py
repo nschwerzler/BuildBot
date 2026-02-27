@@ -286,44 +286,46 @@ def generate():
     # The tube is elliptical: rx (X radius) controls width,
     # rz (Z radius) controls height.
     #
-    # Real gauntlet: one smooth tube from mid-forearm to knuckles.
-    # No floating finger tubes. Subtle wrist cuff. Clean taper.
+    # Real gauntlet shape: clear forearm taper, visible wrist cuff,
+    # wider hand section, and a solid knuckle block/plate at the end.
 
     # Main gauntlet tube profile:
     # (y, rx_outer, rz_outer, wall_thickness)
     profiles = [
-        # -- Elbow flare (slight lip so it doesn't slide up) --
-        (0,    42,   36,   3.0),
-        (4,    43,   37,   3.0),   # subtle lip
-        (8,    42,   36,   3.0),
+        # -- Elbow end (flared entry lip) --
+        (0,    46,   40,   3.0),
+        (5,    48,   42,   3.0),   # visible lip
+        (10,   46,   40,   3.0),
 
-        # -- Forearm (smooth gradual taper toward wrist) --
-        (20,   41,   35,   2.8),
-        (35,   40,   34,   2.8),
-        (50,   39,   33,   2.5),
-        (65,   38,   32,   2.5),
-        (80,   37,   31,   2.5),
-        (95,   36,   30,   2.5),
+        # -- Forearm (strong taper — clearly narrowing) --
+        (25,   44,   38,   2.8),
+        (40,   42,   36,   2.8),
+        (55,   40,   34,   2.5),
+        (70,   38,   32,   2.5),
+        (85,   35,   30,   2.5),
+        (95,   33,   28,   2.5),
 
-        # -- Wrist (subtle cuff - NOT an aggressive flare) --
-        (105,  36,   30,   3.0),
-        (110,  37,   31,   3.0),   # subtle outward step
-        (115,  37,   31,   3.0),
+        # -- Wrist (narrowest point — visible pinch) --
+        (105,  31,   26,   3.0),
+        (110,  30,   25,   3.0),   # wrist pinch (smallest)
+        (115,  31,   26,   3.0),
 
-        # -- Hand plate (wider, flatter for the hand shape) --
-        (120,  40,   28,   2.5),
-        (130,  42,   27,   2.5),
-        (140,  43,   26,   2.5),
-        (150,  43,   26,   2.5),
+        # -- Hand plate (expands out dramatically — wider & flatter) --
+        (122,  38,   26,   2.5),
+        (130,  46,   27,   2.5),
+        (138,  50,   28,   2.5),
+        (146,  52,   28,   2.5),
+        (154,  52,   28,   2.5),
 
-        # -- Knuckle area (slight raised ridge, then taper to end) --
-        (158,  43,   27,   3.0),
-        (164,  43,   28,   3.0),
-        (168,  43,   27,   2.8),
-        (172,  42,   26,   2.5),
+        # -- Knuckle guard block (thick raised ridge at the end) --
+        (158,  53,   30,   4.0),
+        (162,  54,   34,   5.0),   # big knuckle ridge
+        (166,  54,   34,   5.0),
+        (170,  53,   32,   4.5),
+        (174,  50,   28,   3.5),   # tapers back at very end
     ]
 
-    # Clean tube — no palm cutout, just a smooth full 360 wrap
+    # Clean tube — full 360 wrap, no cutouts
     hollow_tube(m, profiles, segs=48)
 
     # No separate finger tubes or thumb tubes.
