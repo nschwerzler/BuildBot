@@ -4,8 +4,8 @@ LEGO 2x6 Hinge Brick Generator
 Functional 2x6 brick with:
   - 12 top studs
   - Side studs on front & back faces
-  - Hinge PIN (male finger) on RIGHT end
-  - Hinge FORK (female socket) on LEFT end
+  - Hinge PEG (male) on RIGHT side wall
+  - Hinge SOCKET (female) on LEFT side wall
   - Anti-stud tubes underneath
   - Hollow interior
 
@@ -36,10 +36,10 @@ RIB_W     = 0.8
 TOL       = 0.1
 
 # ── Hinge dims ──
-# Simple peg-and-socket hinge:
-#   RIGHT end: two pegs sticking up from the top surface
-#   LEFT end: two hollow sockets (tubes) that the pegs fit into
-#   Brick A's pegs drop into Brick B's sockets -> spins!
+# Simple peg-and-socket hinge on the SIDE WALLS:
+#   RIGHT wall: two pegs sticking out horizontally
+#   LEFT wall: two hollow sockets that the pegs slide into
+#   Chain bricks side-by-side: Brick A's pegs -> Brick B's sockets -> spins!
 PEG_R       = 1.5         # peg radius (3mm diameter)
 PEG_H       = 6.0         # peg height above brick top
 SOCK_OR     = 2.8         # socket outer radius
@@ -97,8 +97,24 @@ class Mesh:
             self.tri(ct, top[i], top[j])
             self.tri(cb, bot[j], bot[i])
 
+    def cyl_x(self, x0, cy, cz, r, l, segs=SEGS):
+        """Cylinder along X (for hinge pegs)."""
+        s, e = [], []
+        for i in range(segs):
+            a = 2*math.pi*i/segs
+            py, pz = cy+r*math.cos(a), cz+r*math.sin(a)
+            s.append((x0, py, pz)); e.append((x0+l, py, pz))
+        for i in range(segs):
+            j = (i+1) % segs
+            self.quad(s[i], s[j], e[j], e[i])
+        cs = (x0, cy, cz); ce = (x0+l, cy, cz)
+        for i in range(segs):
+            j = (i+1) % segs
+            self.tri(ce, e[i], e[j])
+            self.tri(cs, s[j], s[i])
+
     def cyl_z(self, cx, cy, z0, r, l, segs=SEGS):
-        """Cylinder along Z (for side studs & hinge pin)."""
+        """Cylinder along Z (for side studs)."""
         s, e = [], []
         for i in range(segs):
             a = 2*math.pi*i/segs
@@ -112,6 +128,23 @@ class Mesh:
             j = (i+1) % segs
             self.tri(ce, e[i], e[j])
             self.tri(cs, s[j], s[i])
+
+    def tube_x(self, x0, cy, cz, ro, ri, l, segs=SEGS):
+        """Hollow tube along X (for hinge sockets)."""
+        os_, oe, is_, ie = [], [], [], []
+        for i in range(segs):
+            a = 2*math.pi*i/segs
+            ca, sa = math.cos(a), math.sin(a)
+            os_.append((x0, cy+ro*ca, cz+ro*sa))
+            oe.append((x0+l, cy+ro*ca, cz+ro*sa))
+            is_.append((x0, cy+ri*ca, cz+ri*sa))
+            ie.append((x0+l, cy+ri*ca, cz+ri*sa))
+        for i in range(segs):
+            j = (i+1) % segs
+            self.quad(os_[i], os_[j], oe[j], oe[i])
+            self.quad(is_[j], is_[i], ie[i], ie[j])
+            self.quad(oe[i], oe[j], ie[j], ie[i])
+            self.quad(os_[j], os_[i], is_[i], is_[j])
 
     def tube_y(self, cx, y0, cz, ro, ri, h, segs=SEGS):
         """Hollow tube along Y (for anti-studs)."""
@@ -220,38 +253,30 @@ def build_lego_2x6():
         m.box(cx-RIB_W/2, 0, cz + tro, cx+RIB_W/2, th*0.3, BODY_Z - WALL)
 
     # ==============================================================
-    #  6. HINGE PEGS (male) — RIGHT END, top surface
+    #  6. HINGE PEGS (male) — RIGHT SIDE WALL
     # ==============================================================
-    #  Two solid pegs sticking up from the rightmost stud positions.
-    #  These drop into the sockets on another brick.
+    #  Two solid pegs sticking out horizontally from the right wall.
+    #  These slide into the sockets on another brick's left side.
     #
-    #       ┌──┐  ┌──┐
-    #       │  │  │  │   <- pegs
-    #   ════╧══╧══╧══╧═══  <- brick top
+    #     brick  ──┤ o  o  <- pegs sticking right
     #
     for row in range(ROWS):
-        peg_x = PITCH/2 + (COLS - 1)*PITCH - TOL   # rightmost column
-        peg_z = PITCH/2 + row*PITCH - TOL
-        m.cyl_y(peg_x, BRICK_H + STUD_H, peg_z, PEG_R, PEG_H)
+        peg_cy = BRICK_H / 2                    # mid-height of brick
+        peg_cz = PITCH/2 + row*PITCH - TOL      # each row center
+        m.cyl_x(BODY_X, peg_cy, peg_cz, PEG_R, PEG_H)
 
     # ==============================================================
-    #  7. HINGE SOCKETS (female) — LEFT END, top surface
+    #  7. HINGE SOCKETS (female) — LEFT SIDE WALL
     # ==============================================================
-    #  Two hollow tubes at the leftmost stud positions.
-    #  Another brick's pegs drop in and spin freely.
+    #  Two hollow tubes mounted on the left wall, opening facing left.
+    #  Another brick's pegs slide in from the left and spin freely.
     #
-    #       ╔══╗  ╔══╗
-    #       ║  ║  ║  ║   <- sockets (hollow)
-    #   ════╩══╩══╩══╩═══  <- brick top
+    #     o  o ├──  brick   <- sockets opening left
     #
     for row in range(ROWS):
-        sock_x = PITCH/2 + 0*PITCH - TOL   # leftmost column
-        sock_z = PITCH/2 + row*PITCH - TOL
-        # Hollow tube: outer wall + inner hole
-        m.tube_y(sock_x, BRICK_H + STUD_H, sock_z, SOCK_OR, SOCK_IR, SOCK_H)
-        # Bottom cap (ring) to support the peg
-        # The stud already provides a base, but add a ring floor
-        # (stud is already there at this position from step 2)
+        sock_cy = BRICK_H / 2                    # mid-height
+        sock_cz = PITCH/2 + row*PITCH - TOL      # each row center
+        m.tube_x(-SOCK_H, sock_cy, sock_cz, SOCK_OR, SOCK_IR, SOCK_H)
 
     # ──────────────────────────────────────────────────────────────
     n_side = ((COLS+1)//2) * 2
@@ -259,8 +284,8 @@ def build_lego_2x6():
     print(f"  Body: {BODY_X:.1f} x {BRICK_H:.1f} x {BODY_Z:.1f} mm")
     print(f"  Top studs: {COLS * ROWS}")
     print(f"  Side studs: {n_side} (front + back)")
-    print(f"  RIGHT = 2 Pegs (diam {PEG_R*2:.1f}mm, height {PEG_H:.0f}mm)")
-    print(f"  LEFT  = 2 Sockets (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
+    print(f"  RIGHT wall = 2 Pegs (diam {PEG_R*2:.1f}mm, length {PEG_H:.0f}mm)")
+    print(f"  LEFT wall  = 2 Sockets (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
     print(f"  Anti-stud tubes: {COLS - 1}")
     print(f"  Triangles: {len(m.tris)}")
     return m
@@ -270,5 +295,5 @@ if __name__ == "__main__":
     m = build_lego_2x6()
     m.save_stl("lego_2x6.stl")
     m.save_3mf("lego_2x6.3mf")
-    print("\nDone! Pegs on right, sockets on left.")
-    print("Print 2 — drop Brick A's pegs into Brick B's sockets to spin!")
+    print("\nDone! Pegs on right wall, sockets on left wall.")
+    print("Print 2 — slide Brick A's pegs into Brick B's sockets to spin!")
