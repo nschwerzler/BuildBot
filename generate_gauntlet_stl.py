@@ -315,6 +315,15 @@ def generate():
 
     hollow_tube(m, profiles, segs=48)
 
+    # Thin flat knuckle guard plate on top
+    # A flat slab sitting on top of the hand end
+    last_y = profiles[-1][0]
+    hand_rx = 40   # matches hand width
+    plate_thick = 3.0   # thin plate
+    box(m,
+        -hand_rx - 5,   last_y - 30,   20,        # x0, y0, z0
+         hand_rx + 5,   last_y + 5,    20 + plate_thick)  # x1, y1, z1
+
     return m
 
 
