@@ -1,16 +1,12 @@
 """
-LEGO 2x6 Technic Hinge Brick Generator
-========================================
-Feature-packed 2x6 brick with:
+LEGO 2x6 Hinge Brick Generator
+================================
+Clean 2x6 brick with:
   - 12 top studs
   - 12 side studs (front & back, all columns)
   - Hinge PEG flush on RIGHT end wall
   - Hinge SOCKET flush on LEFT end wall
-  - 5 Technic-style reinforcement rings on front & back faces
-  - End-wall mini-studs on left & right walls
-  - Cross-rib lattice underneath
-  - Corner reinforcement pillars
-  - Grip ridges between top studs
+  - Decorative rings on front & back faces
   - Anti-stud tubes underneath
   - Hollow interior
 
@@ -45,14 +41,7 @@ SOCK_OR    = 2.8     # socket outer radius (5.6mm OD)
 SOCK_IR    = 1.65    # socket inner radius (3.3mm ID, peg + clearance)
 SOCK_DEPTH = 5.5     # socket depth (slightly longer than peg)
 
-# ── Extra feature dims ──
-GRIP_H     = 0.4     # grip ridge height above top plate
-GRIP_W     = 0.6     # grip ridge width
-PILLAR_SZ  = 2.0     # corner pillar size
-MINI_STUD_R = 1.5    # mini stud radius for end walls
-MINI_STUD_H = 1.0    # mini stud height
-RAIL_H     = 1.0     # bottom rail height
-RAIL_W     = 1.0     # bottom rail width
+# ── Decorative ring dims ──
 RING_R     = 2.0     # decorative ring outer radius
 RING_THICK = 0.5     # decorative ring thickness
 
@@ -279,22 +268,7 @@ def build_lego_2x6():
     m.tube_x(-SOCK_DEPTH, cy, cz, SOCK_OR, SOCK_IR, SOCK_DEPTH)
 
     # ==============================================================
-    #  8. END-WALL MINI-STUDS
-    # ==============================================================
-    #  Small studs on the left and right end walls for extra grip
-    #  when connecting bricks end-to-end traditionally.
-    #
-    for row in range(ROWS):
-        sz = PITCH/2 + row*PITCH - TOL
-        # Right end wall — above and below the peg
-        m.cyl_x(BODY_X, cy + PEG_R + 1.5, sz, MINI_STUD_R, MINI_STUD_H)
-        m.cyl_x(BODY_X, cy - PEG_R - 1.5, sz, MINI_STUD_R, MINI_STUD_H)
-        # Left end wall — above and below the socket
-        m.cyl_x(-MINI_STUD_H, cy + SOCK_OR + 1.0, sz, MINI_STUD_R, MINI_STUD_H)
-        m.cyl_x(-MINI_STUD_H, cy - SOCK_OR - 1.0, sz, MINI_STUD_R, MINI_STUD_H)
-
-    # ==============================================================
-    #  9. DECORATIVE RINGS — front & back faces
+    #  8. DECORATIVE RINGS — front & back faces
     # ==============================================================
     #  Raised rings between each stud column on front/back walls.
     #  Like Technic decorations but purely cosmetic (no holes).
@@ -306,71 +280,18 @@ def build_lego_2x6():
         # Back face ring
         m.cyl_z(rx, cy, BODY_Z, RING_R, RING_THICK)
 
-    # ==============================================================
-    #  10. BOTTOM SIDE RAILS
-    # ==============================================================
-    #  Raised rails running the full length on the bottom edges
-    #  of front and back faces. Looks like a chassis.
-    #
-    m.box(0, 0, -RAIL_W, BODY_X, RAIL_H, 0)               # front rail
-    m.box(0, 0, BODY_Z, BODY_X, RAIL_H, BODY_Z + RAIL_W)  # back rail
-
-    # ==============================================================
-    #  11. CROSS-RIB LATTICE — underneath for strength
-    # ==============================================================
-    #  Diagonal cross-ribs between the anti-stud tubes for extra
-    #  structural rigidity. Two per bay (X-pattern).
-    #
-    for col in range(COLS - 2):
-        x0 = PITCH + col*PITCH - TOL
-        x1 = PITCH + (col+1)*PITCH - TOL
-        # Cross rib from front-left to back-right of each bay
-        m.box(x0-RIB_W/2, 0, WALL, x1+RIB_W/2, th*0.2, WALL + RIB_W)
-        m.box(x0-RIB_W/2, 0, BODY_Z-WALL-RIB_W, x1+RIB_W/2, th*0.2, BODY_Z-WALL)
-
-    # ==============================================================
-    #  9. GRIP RIDGES — between top studs along the length
-    # ==============================================================
-    #  Small raised ridges between each pair of studs on top.
-    #  Gives a textured grip and looks cool.
-    #
-    for col in range(COLS - 1):
-        rx = PITCH + col*PITCH - TOL      # between columns
-        for row in range(ROWS):
-            rz = PITCH/2 + row*PITCH - TOL
-            m.box(rx - GRIP_W/2, BRICK_H, rz - sr*0.6,
-                  rx + GRIP_W/2, BRICK_H + GRIP_H, rz + sr*0.6)
-
-    # ==============================================================
-    #  10. CORNER REINFORCEMENT PILLARS — 4 corners underneath
-    # ==============================================================
-    #  Thicker corner posts for structural strength.
-    #
-    ps = PILLAR_SZ
-    m.box(0, 0, 0, ps, th, ps)                                        # front-left
-    m.box(BODY_X - ps, 0, 0, BODY_X, th, ps)                          # front-right
-    m.box(0, 0, BODY_Z - ps, ps, th, BODY_Z)                          # back-left
-    m.box(BODY_X - ps, 0, BODY_Z - ps, BODY_X, th, BODY_Z)            # back-right
-
     # ──────────────────────────────────────────────────────────────
     n_side = COLS * 2
     n_rings = (COLS - 1) * 2
-    n_end_studs = ROWS * 4 * 2
-    print(f"LEGO 2x{COLS} Technic Hinge Brick:")
+    print(f"LEGO 2x{COLS} Hinge Brick:")
     print(f"  Body: {BODY_X:.1f} x {BRICK_H:.1f} x {BODY_Z:.1f} mm")
     print(f"  Top studs: {COLS * ROWS}")
     print(f"  Side studs: {n_side} (front + back)")
-    print(f"  End-wall mini-studs: {n_end_studs}")
     print(f"  RIGHT end = Peg (diam {PEG_R*2:.1f}mm, {PEG_L:.0f}mm long)")
     print(f"  LEFT end  = Socket (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
     print(f"  Decorative rings: {n_rings} (front + back)")
-    print(f"  Grip ridges: {(COLS-1) * ROWS}")
-    print(f"  Bottom rails: 2 (front + back)")
-    print(f"  Corner pillars: 4")
-    print(f"  Cross-ribs: {(COLS-2)*2}")
     print(f"  Anti-stud tubes: {COLS - 1}")
     print(f"  Triangles: {len(m.tris)}")
-    return m
     return m
 
 
@@ -378,6 +299,5 @@ if __name__ == "__main__":
     m = build_lego_2x6()
     m.save_stl("lego_2x6.stl")
     m.save_3mf("lego_2x6.3mf")
-    print("\nDone! Feature-packed hinge brick.")
+    print("\nDone! Hinge brick with decorative rings.")
     print("Peg on right end, socket on left end.")
-    print("Decorative rings, end-wall studs, grip ridges, rails, cross-ribs.")
