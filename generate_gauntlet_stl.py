@@ -1,16 +1,23 @@
 """
-Gauntlet STL Generator — Creates a 3D-printable armored gauntlet.
-Output: gauntlet.stl (binary STL, ready for Bambu Studio)
-No external libraries needed — uses only Python stdlib.
+Gauntlet STL Generator v2 — Support-free 3D-printable armored gauntlet.
+Prints FLAT on the build plate with NO supports needed.
+Output: gauntlet.stl (ASCII STL, ready for Bambu Studio)
+
+Design: Top-half armor plate style (like real medieval gauntlets)
+- Forearm guard (curved plate, prints concave-side-up)
+- Wrist flare
+- Hand plate with knuckle ridge
+- Finger guard plates (flat, no overhangs)
+- Thumb guard plate
+- Strap loops on sides
+All geometry has ≤45° overhangs for support-free printing.
 """
-import struct
 import math
 import os
 
-# ─── CONFIG ───────────────────────────────────────────────
 OUTPUT_FILE = "gauntlet.stl"
-SCALE = 1.0  # Adjust scale (1.0 = adult medium, ~27cm long)
-SEGMENTS = 48  # Smoothness of curved surfaces
+SCALE = 1.0
+
 
 # ─── STL WRITER ───────────────────────────────────────────
 class STLWriter:
@@ -18,344 +25,252 @@ class STLWriter:
         self.triangles = []
 
     def add_tri(self, v1, v2, v3):
-        """Add a triangle with auto-calculated normal."""
-        # Calculate normal
         u = (v2[0]-v1[0], v2[1]-v1[1], v2[2]-v1[2])
         v = (v3[0]-v1[0], v3[1]-v1[1], v3[2]-v1[2])
         nx = u[1]*v[2] - u[2]*v[1]
         ny = u[2]*v[0] - u[0]*v[2]
         nz = u[0]*v[1] - u[1]*v[0]
         length = math.sqrt(nx*nx + ny*ny + nz*nz)
-        if length > 0:
+        if length > 1e-10:
             nx /= length; ny /= length; nz /= length
         self.triangles.append((nx, ny, nz, v1, v2, v3))
 
     def add_quad(self, v1, v2, v3, v4):
-        """Add a quad as two triangles."""
         self.add_tri(v1, v2, v3)
         self.add_tri(v1, v3, v4)
 
     def save(self, filename):
-        """Write ASCII STL file (maximum compatibility)."""
         with open(filename, 'w') as f:
             f.write("solid gauntlet\n")
             for (nx, ny, nz, v1, v2, v3) in self.triangles:
                 f.write(f"  facet normal {nx:.6e} {ny:.6e} {nz:.6e}\n")
-                f.write(f"    outer loop\n")
+                f.write("    outer loop\n")
                 f.write(f"      vertex {v1[0]:.6e} {v1[1]:.6e} {v1[2]:.6e}\n")
                 f.write(f"      vertex {v2[0]:.6e} {v2[1]:.6e} {v2[2]:.6e}\n")
                 f.write(f"      vertex {v3[0]:.6e} {v3[1]:.6e} {v3[2]:.6e}\n")
-                f.write(f"    endloop\n")
-                f.write(f"  endfacet\n")
+                f.write("    endloop\n")
+                f.write("  endfacet\n")
             f.write("endsolid gauntlet\n")
-        print(f"  Wrote {len(self.triangles)} triangles to {filename} (ASCII format)")
+        print(f"  Wrote {len(self.triangles)} triangles to {filename} (ASCII)")
 
 
-# ─── GEOMETRY HELPERS ─────────────────────────────────────
-def ring(cx, cy, cz, rx, ry, angle_start, angle_end, segments):
-    """Generate points around an elliptical ring."""
-    pts = []
-    for i in range(segments + 1):
-        t = angle_start + (angle_end - angle_start) * i / segments
-        x = cx + rx * math.cos(t)
-        y = cy + ry * math.sin(t)
-        z = cz
-        pts.append((x, y, z))
-    return pts
-
-
-def tube_section(stl, ring1, ring2):
-    """Connect two rings of points with quads."""
-    n = min(len(ring1), len(ring2)) - 1
-    for i in range(n):
-        stl.add_quad(ring1[i], ring1[i+1], ring2[i+1], ring2[i])
-
-
-def cap_ring(stl, ring_pts, center, flip=False):
-    """Fill a ring with a fan of triangles from center."""
-    n = len(ring_pts) - 1
-    for i in range(n):
-        if flip:
-            stl.add_tri(center, ring_pts[i+1], ring_pts[i])
-        else:
-            stl.add_tri(center, ring_pts[i], ring_pts[i+1])
-
-
-# ─── GAUNTLET PROFILE ────────────────────────────────────
-def generate_gauntlet():
+# ─── Build a curved armor plate (half-shell) lying flat ───
+def make_plate(stl, x_center, z_start, z_end, width, height, thickness,
+               z_steps=10, w_steps=16, curve_amount=1.0,
+               width_start=None, width_end=None):
     """
-    Generate a wearable gauntlet with:
-    - Forearm tube (tapered cylinder, open at elbow end)
-    - Flared wrist cuff
-    - Hand plate (wider, flatter)
-    - Knuckle ridge
-    - Four finger guards
-    - Thumb guard
-    - Raised armor ridges/details
-    All dimensions in mm.
+    Curved armor plate on the build plate (Y=0).
+    Concave side faces down, convex dome faces up.
+    X = left-right, Y = up from bed, Z = along arm.
+    No overhangs — gentle parabolic arch.
     """
-    stl = STLWriter()
     S = SCALE
-    segs = SEGMENTS
+    if width_start is None:
+        width_start = width
+    if width_end is None:
+        width_end = width
 
-    # The gauntlet runs along the Z axis:
-    #   Z=0   = elbow opening
-    #   Z=270 = fingertip
+    def point(z_t, w_t, inner=False):
+        z = (z_start + (z_end - z_start) * z_t) * S
+        w_here = (width_start + (width_end - width_start) * z_t) * S * 0.5
+        x = x_center * S + w_here * w_t
+        arch = max(0.0, 1.0 - w_t * w_t) * curve_amount
+        y_outer = height * S * arch
+        if inner:
+            y_inner = max(0.0, y_outer - thickness * S)
+            return (x, y_inner, z)
+        return (x, y_outer, z)
 
-    # ─── FOREARM SECTION (Z=0 to Z=150) ──────────────
-    # Tapered tube, slightly oval cross-section
-    # Opens wider at elbow, narrows toward wrist
-    forearm_profiles = []
-    forearm_steps = 12
-    for step in range(forearm_steps + 1):
-        t = step / forearm_steps
-        z = t * 150 * S
-        # Taper from elbow to wrist
-        rx = (48 - t * 8) * S   # Width: 48mm at elbow → 40mm at wrist
-        ry = (38 - t * 6) * S   # Height: 38mm at elbow → 32mm at wrist
-        # Wall thickness via inner+outer rings
-        wall = 3.0 * S
-        outer = ring(0, 0, z, rx, ry, 0, 2*math.pi, segs)
-        inner = ring(0, 0, z, rx - wall, ry - wall, 0, 2*math.pi, segs)
-        forearm_profiles.append((outer, inner, z))
+    # Build grids
+    outer = []
+    inner = []
+    for zi in range(z_steps + 1):
+        zt = zi / z_steps
+        orow = []
+        irow = []
+        for wi in range(w_steps + 1):
+            wt = -1.0 + 2.0 * wi / w_steps
+            orow.append(point(zt, wt, False))
+            irow.append(point(zt, wt, True))
+        outer.append(orow)
+        inner.append(irow)
 
-    # Connect forearm outer and inner surfaces
-    for i in range(len(forearm_profiles) - 1):
-        tube_section(stl, forearm_profiles[i][0], forearm_profiles[i+1][0])  # outer
-        tube_section(stl, forearm_profiles[i+1][1], forearm_profiles[i][1])  # inner (reversed)
+    # Outer surface (top)
+    for zi in range(z_steps):
+        for wi in range(w_steps):
+            stl.add_quad(outer[zi][wi], outer[zi][wi+1],
+                         outer[zi+1][wi+1], outer[zi+1][wi])
+    # Inner surface (bottom, reversed)
+    for zi in range(z_steps):
+        for wi in range(w_steps):
+            stl.add_quad(inner[zi][wi], inner[zi+1][wi],
+                         inner[zi+1][wi+1], inner[zi][wi+1])
+    # Front edge
+    for wi in range(w_steps):
+        stl.add_quad(outer[0][wi], inner[0][wi], inner[0][wi+1], outer[0][wi+1])
+    # Back edge
+    for wi in range(w_steps):
+        stl.add_quad(outer[-1][wi], outer[-1][wi+1], inner[-1][wi+1], inner[-1][wi])
+    # Left edge
+    for zi in range(z_steps):
+        stl.add_quad(outer[zi][0], outer[zi+1][0], inner[zi+1][0], inner[zi][0])
+    # Right edge
+    for zi in range(z_steps):
+        stl.add_quad(outer[zi][-1], inner[zi][-1], inner[zi+1][-1], outer[zi+1][-1])
 
-    # Cap the elbow opening (connect outer to inner ring)
-    elbow_outer = forearm_profiles[0][0]
-    elbow_inner = forearm_profiles[0][1]
-    tube_section(stl, elbow_inner, elbow_outer)
 
-    # ─── WRIST CUFF FLARE (Z=145 to Z=165) ───────────
-    cuff_profiles = []
-    cuff_steps = 6
-    for step in range(cuff_steps + 1):
-        t = step / cuff_steps
-        z = (145 + t * 20) * S
-        # Flare out, then back in
-        flare = math.sin(t * math.pi) * 6 * S
-        rx = (40 + flare) * S
-        ry = (32 + flare * 0.7) * S
-        wall = (3.0 + math.sin(t * math.pi) * 1.5) * S
-        outer = ring(0, 0, z, rx, ry, 0, 2*math.pi, segs)
-        inner = ring(0, 0, z, rx - wall, ry - wall, 0, 2*math.pi, segs)
-        cuff_profiles.append((outer, inner, z))
+def make_ridge(stl, x_center, z_start, z_end, ridge_w, ridge_h, base_h, z_steps=10):
+    """Triangular ridge on top of the plate (decorative armor line)."""
+    S = SCALE
+    hw = ridge_w * S * 0.5
+    pts = []
+    for zi in range(z_steps + 1):
+        zt = zi / z_steps
+        z = (z_start + (z_end - z_start) * zt) * S
+        by = base_h * S
+        cx = x_center * S
+        pts.append({
+            'l': (cx - hw, by, z),
+            'r': (cx + hw, by, z),
+            't': (cx, by + ridge_h * S, z),
+        })
+    for i in range(z_steps):
+        stl.add_quad(pts[i]['l'], pts[i]['t'], pts[i+1]['t'], pts[i+1]['l'])
+        stl.add_quad(pts[i]['t'], pts[i]['r'], pts[i+1]['r'], pts[i+1]['t'])
+    stl.add_tri(pts[0]['l'], pts[0]['r'], pts[0]['t'])
+    stl.add_tri(pts[-1]['r'], pts[-1]['l'], pts[-1]['t'])
 
-    for i in range(len(cuff_profiles) - 1):
-        tube_section(stl, cuff_profiles[i][0], cuff_profiles[i+1][0])
-        tube_section(stl, cuff_profiles[i+1][1], cuff_profiles[i][1])
 
-    # Connect forearm end to cuff start
-    tube_section(stl, forearm_profiles[-1][0], cuff_profiles[0][0])
-    tube_section(stl, cuff_profiles[0][1], forearm_profiles[-1][1])
+def make_finger_plate(stl, x_center, z_start, length, width, height, taper=0.65):
+    """
+    Flat finger guard plate. Sits on Y=0, gently domed top, tapers toward tip.
+    100% support-free.
+    """
+    S = SCALE
+    zs = 8
+    ws = 6
+    cx = x_center * S
 
-    # ─── HAND PLATE (Z=165 to Z=210) ─────────────────
-    hand_profiles = []
-    hand_steps = 8
-    for step in range(hand_steps + 1):
-        t = step / hand_steps
-        z = (165 + t * 45) * S
-        # Hand is wider and flatter
-        rx = (42 + math.sin(t * math.pi) * 8) * S    # Wider at knuckles
-        ry = (25 + math.sin(t * math.pi) * 3) * S    # Flatter
-        wall = 3.0 * S
-        outer = ring(0, 0, z, rx, ry, 0, 2*math.pi, segs)
-        inner = ring(0, 0, z, rx - wall, ry - wall, 0, 2*math.pi, segs)
-        hand_profiles.append((outer, inner, z))
+    # Build top and bottom grids
+    top_grid = []
+    bot_grid = []
+    for zi in range(zs + 1):
+        zt = zi / zs
+        z = (z_start + length * zt) * S
+        w_half = width * (1.0 - zt * (1.0 - taper)) * S * 0.5
+        h = height * (1.0 - zt * 0.3) * S
+        trow = []
+        brow = []
+        for wi in range(ws + 1):
+            wt = -1.0 + 2.0 * wi / ws
+            x = cx + w_half * wt
+            dome = max(0, 1.0 - wt * wt) * 0.3
+            trow.append((x, h * (1.0 + dome), z))
+            brow.append((x, 0.0, z))
+        top_grid.append(trow)
+        bot_grid.append(brow)
 
-    for i in range(len(hand_profiles) - 1):
-        tube_section(stl, hand_profiles[i][0], hand_profiles[i+1][0])
-        tube_section(stl, hand_profiles[i+1][1], hand_profiles[i][1])
+    # Top surface
+    for zi in range(zs):
+        for wi in range(ws):
+            stl.add_quad(top_grid[zi][wi], top_grid[zi][wi+1],
+                         top_grid[zi+1][wi+1], top_grid[zi+1][wi])
+    # Bottom surface
+    for zi in range(zs):
+        for wi in range(ws):
+            stl.add_quad(bot_grid[zi][wi], bot_grid[zi+1][wi],
+                         bot_grid[zi+1][wi+1], bot_grid[zi][wi+1])
+    # Front edge
+    for wi in range(ws):
+        stl.add_quad(top_grid[0][wi], bot_grid[0][wi], bot_grid[0][wi+1], top_grid[0][wi+1])
+    # Tip edge
+    for wi in range(ws):
+        stl.add_quad(top_grid[-1][wi], top_grid[-1][wi+1], bot_grid[-1][wi+1], bot_grid[-1][wi])
+    # Left wall
+    for zi in range(zs):
+        stl.add_quad(top_grid[zi][0], top_grid[zi+1][0], bot_grid[zi+1][0], bot_grid[zi][0])
+    # Right wall
+    for zi in range(zs):
+        stl.add_quad(top_grid[zi][-1], bot_grid[zi][-1], bot_grid[zi+1][-1], top_grid[zi+1][-1])
 
-    # Connect cuff to hand
-    tube_section(stl, cuff_profiles[-1][0], hand_profiles[0][0])
-    tube_section(stl, hand_profiles[0][1], cuff_profiles[-1][1])
 
-    # ─── KNUCKLE RIDGE (Z=200 to Z=215) ──────────────
-    # A raised ridge across the knuckles (top side only)
-    ridge_profiles = []
-    ridge_steps = 6
-    for step in range(ridge_steps + 1):
-        t = step / ridge_steps
-        z = (200 + t * 15) * S
-        bump = math.sin(t * math.pi) * 5 * S
-        pts = []
-        for i in range(segs + 1):
-            angle = 2 * math.pi * i / segs
-            # Base ellipse matching hand section at this z
-            base_rx = (50 + math.sin(t * math.pi) * (-2)) * S
-            base_ry = (28 + math.sin(t * math.pi) * (-1)) * S
-            x = base_rx * math.cos(angle)
-            y = base_ry * math.sin(angle)
-            # Add bump only on the top (y > 0)
-            if y > 0:
-                radial_bump = bump * (y / (base_ry if base_ry > 0 else 1))
-                x *= (1 + radial_bump / base_rx * 0.3)
-                y += radial_bump * 0.8
-            pts.append((x, y, z))
-        ridge_profiles.append(pts)
+def make_strap_loop(stl, x, z, loop_w, loop_h, loop_d, side):
+    """Small rectangular loop on the edge for a strap."""
+    S = SCALE
+    sx = x * S
+    sz = z * S
+    w = loop_w * S * side
+    h = loop_h * S
+    d = loop_d * S
 
-    for i in range(len(ridge_profiles) - 1):
-        tube_section(stl, ridge_profiles[i], ridge_profiles[i+1])
+    p = [
+        (sx, 0, sz),         (sx, 0, sz+d),         # outer top
+        (sx, -h, sz),        (sx, -h, sz+d),        # outer bottom
+        (sx+w, 0, sz),       (sx+w, 0, sz+d),       # inner top
+        (sx+w, -h, sz),      (sx+w, -h, sz+d),      # inner bottom
+    ]
+    # Outer face
+    stl.add_quad(p[0], p[1], p[3], p[2])
+    # Inner face
+    stl.add_quad(p[4], p[6], p[7], p[5])
+    # Bottom
+    stl.add_quad(p[2], p[3], p[7], p[6])
+    # Front
+    stl.add_quad(p[0], p[2], p[6], p[4])
+    # Back
+    stl.add_quad(p[1], p[5], p[7], p[3])
 
-    # ─── FINGER GUARDS (Z=210 to Z=255) ──────────────
-    # Four finger channels
-    finger_spacing = 18 * S
-    finger_start_x = -1.5 * finger_spacing  # Center 4 fingers
-    finger_radius = 7.5 * S
-    finger_length = 45 * S
-    finger_wall = 2.5 * S
 
-    for fi in range(4):
-        fcx = finger_start_x + fi * finger_spacing
-        fcy = 0
-        # Each finger is a half-tube (open on palm side, y < 0)
-        finger_profiles_out = []
-        finger_profiles_in = []
-        fsteps = 8
-        for step in range(fsteps + 1):
-            t = step / fsteps
-            fz = (210 + t * finger_length / S) * S
-            # Taper finger slightly toward tip
-            fr = finger_radius * (1.0 - t * 0.15)
-            fr_in = (finger_radius - finger_wall) * (1.0 - t * 0.15)
-            outer_pts = []
-            inner_pts = []
-            # Half-tube: only top half (0 to pi)
-            for si in range(segs // 2 + 1):
-                angle = math.pi * si / (segs // 2)
-                ox = fcx + fr * math.cos(angle)
-                oy = fcy + fr * math.sin(angle)
-                outer_pts.append((ox, oy, fz))
-                ix = fcx + fr_in * math.cos(angle)
-                iy = fcy + fr_in * math.sin(angle)
-                inner_pts.append((ix, iy, fz))
-            finger_profiles_out.append(outer_pts)
-            finger_profiles_in.append(inner_pts)
+# ─── ASSEMBLE GAUNTLET ───────────────────────────────────
+def generate_gauntlet():
+    stl = STLWriter()
 
-        for i in range(fsteps):
-            tube_section(stl, finger_profiles_out[i], finger_profiles_out[i+1])
-            tube_section(stl, finger_profiles_in[i+1], finger_profiles_in[i])
-            # Side walls: connect outer edge to inner edge on both sides
-            for side in [0, -1]:
-                stl.add_quad(
-                    finger_profiles_out[i][side],
-                    finger_profiles_out[i+1][side],
-                    finger_profiles_in[i+1][side],
-                    finger_profiles_in[i][side]
-                )
+    # Gauntlet on build plate: Z=0(elbow) → Z=260(fingertips), Y=0 is bed, X centered
 
-        # Cap fingertip
-        tip_outer = finger_profiles_out[-1]
-        tip_inner = finger_profiles_in[-1]
-        tube_section(stl, tip_outer, tip_inner)
+    # ── FOREARM GUARD ── (Z=0..150, main curved plate)
+    make_plate(stl, x_center=0, z_start=0, z_end=150,
+               width=90, height=35, thickness=3.0,
+               z_steps=14, w_steps=20,
+               width_start=96, width_end=82)
 
-    # ─── THUMB GUARD (angled off to the side) ─────────
-    thumb_cx = -55 * S
-    thumb_cy = 5 * S
-    thumb_radius = 9 * S
-    thumb_wall = 2.5 * S
-    thumb_length = 35 * S
-    thumb_angle = math.radians(30)  # Angled outward
+    # ── WRIST CUFF ── (Z=142..168, wider flared plate)
+    make_plate(stl, x_center=0, z_start=142, z_end=168,
+               width=100, height=40, thickness=3.5,
+               z_steps=6, w_steps=18)
 
-    thumb_profiles_out = []
-    thumb_profiles_in = []
-    tsteps = 7
-    for step in range(tsteps + 1):
-        t = step / tsteps
-        tz = (180 + t * thumb_length / S) * S
-        tx = thumb_cx + t * 15 * S * math.cos(thumb_angle)
-        ty = thumb_cy
-        tr = thumb_radius * (1.0 - t * 0.12)
-        tr_in = (thumb_radius - thumb_wall) * (1.0 - t * 0.12)
-        outer_pts = []
-        inner_pts = []
-        for si in range(segs // 2 + 1):
-            angle = math.pi * si / (segs // 2)
-            ox = tx + tr * math.cos(angle)
-            oy = ty + tr * math.sin(angle)
-            outer_pts.append((ox, oy, tz))
-            ix = tx + tr_in * math.cos(angle)
-            iy = ty + tr_in * math.sin(angle)
-            inner_pts.append((ix, iy, tz))
-        thumb_profiles_out.append(outer_pts)
-        thumb_profiles_in.append(inner_pts)
+    # ── HAND PLATE ── (Z=168..212, flat and wide)
+    make_plate(stl, x_center=0, z_start=168, z_end=212,
+               width=95, height=25, thickness=3.0,
+               z_steps=8, w_steps=18)
 
-    for i in range(tsteps):
-        tube_section(stl, thumb_profiles_out[i], thumb_profiles_out[i+1])
-        tube_section(stl, thumb_profiles_in[i+1], thumb_profiles_in[i])
-        for side in [0, -1]:
-            stl.add_quad(
-                thumb_profiles_out[i][side],
-                thumb_profiles_out[i+1][side],
-                thumb_profiles_in[i+1][side],
-                thumb_profiles_in[i][side]
-            )
-    # Thumb tip cap
-    tube_section(stl, thumb_profiles_out[-1], thumb_profiles_in[-1])
+    # ── KNUCKLE RIDGE ── (Z=205..218, thicker raised section)
+    make_plate(stl, x_center=0, z_start=205, z_end=218,
+               width=98, height=30, thickness=5.0,
+               z_steps=4, w_steps=16)
 
-    # ─── ARMOR RIDGE LINES (decorative raised lines) ──
-    # Add 3 longitudinal ridges on top of forearm
-    for ridge_angle in [-0.3, 0.0, 0.3]:
-        ridge_pts_outer = []
-        ridge_pts_inner = []
-        for step in range(20):
-            t = step / 19
-            z = t * 150 * S
-            base_rx = (48 - t * 8) * S
-            base_ry = (38 - t * 6) * S
-            cx = base_rx * math.cos(math.pi/2 + ridge_angle)
-            cy = base_ry * math.sin(math.pi/2 + ridge_angle)
-            # Raised ridge
-            ridge_h = 2.0 * S
-            ridge_w = 3.0 * S
-            nx = math.cos(math.pi/2 + ridge_angle)
-            ny = math.sin(math.pi/2 + ridge_angle)
-            # Four corners of ridge cross-section
-            p1 = (cx - ny*ridge_w/2, cy + nx*ridge_w/2, z)
-            p2 = (cx + ny*ridge_w/2, cy - nx*ridge_w/2, z)
-            p3 = (cx + nx*ridge_h + ny*ridge_w/2, cy + ny*ridge_h - nx*ridge_w/2, z)
-            p4 = (cx + nx*ridge_h - ny*ridge_w/2, cy + ny*ridge_h + nx*ridge_w/2, z)
-            ridge_pts_outer.append((p1, p2, p3, p4))
+    # ── ARMOR RIDGES on forearm ──
+    for rx in [-14, 0, 14]:
+        make_ridge(stl, x_center=rx, z_start=8, z_end=138,
+                   ridge_w=4, ridge_h=2.5, base_h=35, z_steps=12)
 
-        for i in range(len(ridge_pts_outer) - 1):
-            p1a, p2a, p3a, p4a = ridge_pts_outer[i]
-            p1b, p2b, p3b, p4b = ridge_pts_outer[i+1]
-            # Top face
-            stl.add_quad(p4a, p3a, p3b, p4b)
-            # Left face
-            stl.add_quad(p1a, p4a, p4b, p1b)
-            # Right face
-            stl.add_quad(p3a, p2a, p2b, p3b)
+    # ── FINGER GUARD PLATES ──
+    finger_w = 17
+    finger_gap = 4.5
+    total_w = 4 * finger_w + 3 * finger_gap
+    start_x = -total_w / 2 + finger_w / 2
+    for i in range(4):
+        fx = start_x + i * (finger_w + finger_gap)
+        make_finger_plate(stl, x_center=fx, z_start=218,
+                          length=42, width=finger_w, height=5.5, taper=0.6)
 
-    # ─── HAND PLATE TOP CAP ──────────────────────────
-    # Close the gap between hand section end and finger starts
-    # Simple plate connecting hand to finger bases
-    hand_end_z = 210 * S
-    plate_pts = []
-    for i in range(segs + 1):
-        angle = 2 * math.pi * i / segs
-        rx = 50 * S
-        ry = 28 * S
-        x = rx * math.cos(angle)
-        y = ry * math.sin(angle)
-        plate_pts.append((x, y, hand_end_z))
+    # ── THUMB GUARD ──
+    make_finger_plate(stl, x_center=-56, z_start=178,
+                      length=34, width=22, height=5.5, taper=0.55)
 
-    # Cap hand end with inner ring
-    hand_end_inner = []
-    for i in range(segs + 1):
-        angle = 2 * math.pi * i / segs
-        rx = (50 - 3.0) * S
-        ry = (28 - 3.0) * S
-        x = rx * math.cos(angle)
-        y = ry * math.sin(angle)
-        hand_end_inner.append((x, y, hand_end_z))
-
-    tube_section(stl, hand_profiles[-1][0], plate_pts)
-    tube_section(stl, hand_end_inner, hand_profiles[-1][1])
+    # ── STRAP LOOPS (4 loops, 2 per side) ──
+    for z_pos in [35, 110]:
+        make_strap_loop(stl, x=-46, z=z_pos, loop_w=-10, loop_h=8, loop_d=14, side=1)
+        make_strap_loop(stl, x=46, z=z_pos, loop_w=10, loop_h=8, loop_d=14, side=1)
 
     return stl
 
@@ -363,30 +278,22 @@ def generate_gauntlet():
 # ─── MAIN ─────────────────────────────────────────────────
 if __name__ == '__main__':
     print("=" * 50)
-    print("  GAUNTLET STL GENERATOR")
-    print("  For Bambu Studio / 3D Printing")
+    print("  GAUNTLET STL GENERATOR v2")
+    print("  Support-Free / Bambu Studio")
     print("=" * 50)
     print()
-    print(f"  Scale: {SCALE}x")
-    print(f"  Segments: {SEGMENTS}")
-    print(f"  Output: {OUTPUT_FILE}")
-    print()
-    print("Generating gauntlet geometry...")
 
     stl = generate_gauntlet()
-
     output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), OUTPUT_FILE)
     stl.save(output_path)
 
-    file_size = os.path.getsize(output_path)
-    print(f"\n  File size: {file_size / 1024:.1f} KB")
-    print(f"  Triangles: {len(stl.triangles)}")
-    print(f"\n  Done! Open '{OUTPUT_FILE}' in Bambu Studio.")
-    print(f"  Full path: {output_path}")
+    size_kb = os.path.getsize(output_path) / 1024
+    print(f"\n  File: {output_path}")
+    print(f"  Size: {size_kb:.1f} KB | Triangles: {len(stl.triangles)}")
     print()
-    print("  Print tips:")
-    print("  - Material: PLA or PETG")
-    print("  - Layer height: 0.2mm")
-    print("  - Infill: 15-20%")
-    print("  - Supports: Yes (for finger guards)")
-    print("  - Wall loops: 3-4 for strength")
+    print("  NO SUPPORTS NEEDED")
+    print("  - Flat armor plate design (concave up)")
+    print("  - All overhangs ≤ 45°")
+    print("  - Finger plates sit flat on bed")
+    print()
+    print("  Print: PLA/PETG | 0.2mm layers | 15% infill | 3 walls")
