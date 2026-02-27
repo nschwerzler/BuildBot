@@ -255,24 +255,25 @@ def build_lego_2x6():
     # ==============================================================
     #  6. FOLDABLE HINGE — RIGHT WALL (short peg arm)
     # ==============================================================
-    #  Single arm + peg, solidly attached to the right wall via
-    #  a thick living hinge bridge.  Folds UP flat against top.
-    #
-    #     WALL ╠══bridge══╣ ARM |===PEG===>
+    #  All bridges OVERLAP 0.5mm into both wall and arm blocks
+    #  so there are no coincident-face gaps.
     #
     arm_cy = BRICK_H / 2       # mid-height of brick
     arm_cz = BODY_Z / 2        # centered between the two rows
     lhw2   = LH_WIDTH / 2      # half-width of hinge bridge
+    OL     = 0.5               # overlap penetration into wall/arm
 
-    # Thick hinge bridge — attached flush to wall, clearly connected
-    bridge_len = 1.5
-    m.box(BODY_X,              arm_cy - LH_THICK/2, arm_cz - lhw2,
-          BODY_X + bridge_len, arm_cy + LH_THICK/2, arm_cz + lhw2)
+    # Bridge: starts 0.5mm INSIDE wall, ends 0.5mm INSIDE arm
+    bridge_len = 2.0           # visible span between wall and arm
+    br_x0 = BODY_X - OL        # penetrates into right wall
+    br_x1 = BODY_X + bridge_len + OL  # penetrates into arm
+    m.box(br_x0, arm_cy - LH_THICK/2, arm_cz - lhw2,
+          br_x1, arm_cy + LH_THICK/2, arm_cz + lhw2)
 
-    # Arm block (solid plate, 3mm thick × 7mm tall × 7mm wide)
+    # Arm block (solid plate)
     pax0 = BODY_X + bridge_len
     pax1 = pax0 + 3.0
-    par  = 3.5   # half of 7mm
+    par  = 3.5
     m.box(pax0, arm_cy - par, arm_cz - par,
           pax1, arm_cy + par, arm_cz + par)
 
@@ -282,35 +283,37 @@ def build_lego_2x6():
     # ==============================================================
     #  7. FOLDABLE HINGE — LEFT WALL (socket arm, two-stage fold)
     # ==============================================================
-    #  Arm with socket.  TWO thick living hinges:
-    #    Hinge 1: folds arm UP (thin in Y)
-    #    Hinge 2: turns socket OUTWARD (thin in Z)
+    #  All bridges overlap 0.5mm into adjacent blocks.
     #
-    #  <===SOCKET=╣ ARM2 ╠══h2══╣ ARM1 ╠══h1══╣ WALL
-    #
-    # First hinge bridge (at wall, thin in Y for fold-up)
-    m.box(-bridge_len, arm_cy - LH_THICK/2, arm_cz - lhw2,
-          0,           arm_cy + LH_THICK/2, arm_cz + lhw2)
+    # First hinge bridge (at wall, overlaps into wall and arm1)
+    h1_x0 = -(bridge_len + OL)      # extends past arm1
+    h1_x1 = OL                       # penetrates into left wall
+    m.box(h1_x0, arm_cy - LH_THICK/2, arm_cz - lhw2,
+          h1_x1, arm_cy + LH_THICK/2, arm_cz + lhw2)
 
     # Arm segment 1 (solid block between the two hinges)
-    s1x0 = -bridge_len - 4.0
+    s1x1 = -bridge_len
+    s1x0 = s1x1 - 4.0
     s1r  = 3.5
-    m.box(s1x0,        arm_cy - s1r, arm_cz - s1r,
-          -bridge_len, arm_cy + s1r, arm_cz + s1r)
+    m.box(s1x0, arm_cy - s1r, arm_cz - s1r,
+          s1x1, arm_cy + s1r, arm_cz + s1r)
 
-    # Second hinge bridge (thin in Z for turn-outward)
-    h2_len = 1.5
-    m.box(s1x0 - h2_len, arm_cy - lhw2, arm_cz - LH_THICK/2,
-          s1x0,          arm_cy + lhw2, arm_cz + LH_THICK/2)
+    # Second hinge bridge (overlaps into arm1 and arm2)
+    h2_span = 2.0
+    h2_x0 = s1x0 - h2_span - OL   # extends past arm2
+    h2_x1 = s1x0 + OL             # penetrates into arm1
+    m.box(h2_x0, arm_cy - lhw2, arm_cz - LH_THICK/2,
+          h2_x1, arm_cy + lhw2, arm_cz + LH_THICK/2)
 
-    # Arm segment 2 — socket mount block (solid)
-    s2x0 = s1x0 - h2_len - 3.0
+    # Arm segment 2 — socket mount block
+    s2x1 = s1x0 - h2_span
+    s2x0 = s2x1 - 3.0
     s2r  = 3.5
-    m.box(s2x0,          arm_cy - s2r, arm_cz - s2r,
-          s1x0 - h2_len, arm_cy + s2r, arm_cz + s2r)
+    m.box(s2x0, arm_cy - s2r, arm_cz - s2r,
+          s2x1, arm_cy + s2r, arm_cz + s2r)
 
-    # Socket tube opening to the left
-    m.tube_x(s2x0 - SOCK_L, arm_cy, arm_cz, SOCK_OR, SOCK_IR, SOCK_L)
+    # Socket tube (overlaps 0.5mm into arm2)
+    m.tube_x(s2x0 - SOCK_L, arm_cy, arm_cz, SOCK_OR, SOCK_IR, SOCK_L + OL)
 
     # ──────────────────────────────────────────────────────────────
     n_side = COLS * 2
