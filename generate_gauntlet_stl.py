@@ -328,53 +328,58 @@ def generate():
     # Clean tube — full 360 wrap, no cutouts
     slices = hollow_tube(m, profiles, segs=48)
 
-    # --- Solid knuckle block at the hand end ---
-    # Close off the top half of the last slice with a solid plate.
-    # This creates the flat knuckle guard shield.
-    # Top half = angles roughly 0 to pi (the +Z side = top of hand).
+    # --- BIG solid knuckle block at the hand end ---
+    # A thick shield plate covering the top half, extending well past the tube.
     last_outer, last_inner = slices[-1]
     last_y = profiles[-1][0]
     last_rx = profiles[-1][1]
     last_rz = profiles[-1][2]
     last_w = profiles[-1][3]
 
-    # Build a solid plate extending forward from the last ring.
-    # The plate is a flat slab: same elliptical outline as the last slice's
-    # top half, extruded forward by plate_depth.
-    plate_depth = 8.0   # How far the knuckle block sticks out
+    # Make the plate MUCH bigger than the tube cross-section
+    plate_depth = 25.0    # sticks out 25mm forward
+    plate_rx = last_rx + 8   # 8mm wider on each side
+    plate_rz = last_rz + 10  # 10mm taller on top
+    plate_w = 5.0            # 5mm thick walls
     plate_y = last_y + plate_depth
 
     segs = 48
-    # Collect top-half vertices (angles 0 to pi = segments 0 to segs//2)
-    # Build the plate as a thick slab on the top half
     top_start = 0
-    top_end = segs // 2  # half circle = top
+    top_end = segs // 2  # top half
 
-    # Outer and inner rings at the plate front face
+    # Build front face ring (larger than the tube)
     front_outer = []
     front_inner = []
-    rx_i = max(1.0, last_rx - last_w)
-    rz_i = max(1.0, last_rz - last_w)
+    frx_i = max(1.0, plate_rx - plate_w)
+    frz_i = max(1.0, plate_rz - plate_w)
     for i in range(segs):
         a = 2.0 * math.pi * i / segs
         ca, sa = math.cos(a), math.sin(a)
-        front_outer.append((last_rx * ca, plate_y, last_rz * sa))
-        front_inner.append((rx_i * ca, plate_y, rz_i * sa))
+        front_outer.append((plate_rx * ca, plate_y, plate_rz * sa))
+        front_inner.append((frx_i * ca, plate_y, frz_i * sa))
 
-    # Connect back face (last slice) to front face for the top half
+    # Build back face ring at the tube end (also enlarged to match plate)
+    back_outer = []
+    back_inner = []
+    for i in range(segs):
+        a = 2.0 * math.pi * i / segs
+        ca, sa = math.cos(a), math.sin(a)
+        back_outer.append((plate_rx * ca, last_y, plate_rz * sa))
+        back_inner.append((frx_i * ca, last_y, frz_i * sa))
+
+    # Connect the enlarged plate sides (back to front) for top half
     for si in range(top_start, top_end):
         si_next = (si + 1) % segs
         if si_next > top_end:
             continue
-        # Outer wall of plate (sides)
-        m.quad(last_outer[si], front_outer[si],
-               front_outer[si_next], last_outer[si_next])
-        # Inner wall of plate (sides)
-        m.quad(last_inner[si], last_inner[si_next],
+        # Outer wall
+        m.quad(back_outer[si], front_outer[si],
+               front_outer[si_next], back_outer[si_next])
+        # Inner wall
+        m.quad(back_inner[si], back_inner[si_next],
                front_inner[si_next], front_inner[si])
 
-    # Front face of the plate (close it off with solid fill)
-    # Fill the annular top-half front face
+    # Front face (solid fill)
     for si in range(top_start, top_end):
         si_next = (si + 1) % segs
         if si_next > top_end:
@@ -382,13 +387,32 @@ def generate():
         m.quad(front_outer[si], front_outer[si_next],
                front_inner[si_next], front_inner[si])
 
-    # Side walls at the edges of the top half (where it meets the open bottom)
-    # Left edge (at angle 0 = +X side)
-    m.quad(last_outer[top_start], last_inner[top_start],
+    # Back face (solid fill — closes off behind the plate)
+    for si in range(top_start, top_end):
+        si_next = (si + 1) % segs
+        if si_next > top_end:
+            continue
+        m.quad(back_outer[si], back_inner[si],
+               back_inner[si_next], back_outer[si_next])
+
+    # Side walls at the edges of the top half
+    m.quad(back_outer[top_start], back_inner[top_start],
            front_inner[top_start], front_outer[top_start])
-    # Right edge (at angle pi = -X side)
-    m.quad(last_outer[top_end], front_outer[top_end],
-           front_inner[top_end], last_inner[top_end])
+    m.quad(back_outer[top_end], front_outer[top_end],
+           front_inner[top_end], back_inner[top_end])
+
+    # Connect the plate back face to the tube's last ring
+    # (bridge the gap between tube outer and plate outer on the top half)
+    for si in range(top_start, top_end):
+        si_next = (si + 1) % segs
+        if si_next > top_end:
+            continue
+        # Outer bridge
+        m.quad(last_outer[si], back_outer[si],
+               back_outer[si_next], last_outer[si_next])
+        # Inner bridge
+        m.quad(last_inner[si], last_inner[si_next],
+               back_inner[si_next], back_inner[si])
 
     # No separate finger tubes or thumb tubes.
     # Real gauntlets end at the knuckles - fingers are free.
