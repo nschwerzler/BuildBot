@@ -3,18 +3,16 @@ LEGO 2x6 Hinge Brick Generator
 ================================
 Functional 2x6 brick with:
   - 12 top studs
-  - Side studs on front & back faces
-  - Hinge PEG (male) on RIGHT side wall
-  - Hinge SOCKET (female) on LEFT side wall
+  - Side studs on ALL columns, front & back faces
+  - Foldable peg arm on RIGHT wall  (single living hinge, folds up)
+  - Foldable socket arm on LEFT wall (two living hinges, folds up + turns out)
   - Anti-stud tubes underneath
   - Hollow interior
 
-Two identical bricks chain together:
-  Brick A's right PIN slides into Brick B's left FORK -> spins freely!
+Folded flat  = normal brick for walls (just studs visible).
+Folded out   = connector!  Chain bricks side-by-side:
 
-        +--------------+        +--------------+
-  FORK =|  BRICK A     |= PIN --> FORK =|  BRICK B     |= PIN
-        +--------------+        +--------------+
+  <==SOCKET|--arm--| BRICK A |--arm--|PEG==>  <==SOCKET|--arm--| BRICK B ...
 """
 import math
 import os
@@ -36,15 +34,17 @@ RIB_W     = 0.8
 TOL       = 0.1
 
 # ── Hinge dims ──
-# Simple peg-and-socket hinge on the SIDE WALLS:
-#   RIGHT wall: two pegs sticking out horizontally
-#   LEFT wall: two hollow sockets that the pegs slide into
-#   Chain bricks side-by-side: Brick A's pegs -> Brick B's sockets -> spins!
-PEG_R       = 1.5         # peg radius (3mm diameter)
-PEG_H       = 6.0         # peg height above brick top
-SOCK_OR     = 2.8         # socket outer radius
-SOCK_IR     = 1.65        # socket inner radius (peg + 0.15mm clearance)
-SOCK_H      = 6.0         # socket height
+# Foldable living-hinge arms on side walls:
+#   RIGHT wall: short arm + peg, SINGLE living hinge (folds up flat)
+#   LEFT wall:  longer arm + socket, TWO living hinges (folds up + turns outward)
+#   Folded flat = clean wall brick.  Fold out = connector!
+PEG_R      = 1.5     # peg radius (3mm diam)
+PEG_L      = 4.0     # peg length sticking out
+SOCK_OR    = 2.8     # socket outer radius (5.6mm OD)
+SOCK_IR    = 1.65    # socket inner radius (3.3mm ID, peg + clearance)
+SOCK_L     = 4.0     # socket depth
+LH_THICK   = 0.35    # living hinge thickness (thin enough to flex in PLA)
+LH_SPAN    = 0.5     # living hinge span (gap between wall and arm)
 
 # ── Derived ──
 BODY_X = COLS * PITCH - TOL * 2
@@ -234,8 +234,8 @@ def build_lego_2x6():
             m.cyl_y(PITCH/2 + col*PITCH - TOL, BRICK_H,
                     PITCH/2 + row*PITCH - TOL, sr, STUD_H)
 
-    # ── 3. SIDE STUDS — 3 per face (every other column, cleaner look) ──
-    for col in range(0, COLS, 2):
+    # ── 3. SIDE STUDS — all columns on front & back faces ──
+    for col in range(COLS):
         cx = PITCH/2 + col*PITCH - TOL
         m.cyl_z(cx, cy, -STUD_H, sr, STUD_H)           # front face
         m.cyl_z(cx, cy, BODY_Z, sr, STUD_H)             # back face
@@ -253,39 +253,73 @@ def build_lego_2x6():
         m.box(cx-RIB_W/2, 0, cz + tro, cx+RIB_W/2, th*0.3, BODY_Z - WALL)
 
     # ==============================================================
-    #  6. HINGE PEGS (male) — RIGHT SIDE WALL
+    #  6. FOLDABLE HINGE — RIGHT WALL (short peg arm)
     # ==============================================================
-    #  Two solid pegs sticking out horizontally from the right wall.
-    #  These slide into the sockets on another brick's left side.
+    #  Single arm with peg, connected by a living hinge.
+    #  Living hinge is thin in Y -> arm folds UP flat against wall.
     #
-    #     brick  ──┤ o  o  <- pegs sticking right
+    #     WALL |--hinge--| ARM |===PEG===>
     #
-    for row in range(ROWS):
-        peg_cy = BRICK_H / 2                    # mid-height of brick
-        peg_cz = PITCH/2 + row*PITCH - TOL      # each row center
-        m.cyl_x(BODY_X, peg_cy, peg_cz, PEG_R, PEG_H)
+    arm_cy = BRICK_H / 2       # mid-height of brick
+    arm_cz = BODY_Z / 2        # centered between the two rows
+
+    # Living hinge bridge (thin in Y so it flexes up/down)
+    m.box(BODY_X,            arm_cy - LH_THICK/2, arm_cz - 2.0,
+          BODY_X + LH_SPAN,  arm_cy + LH_THICK/2, arm_cz + 2.0)
+
+    # Arm plate (5mm × 5mm face, 2mm thick)
+    pax0 = BODY_X + LH_SPAN
+    pax1 = pax0 + 2.0
+    par  = 2.5
+    m.box(pax0, arm_cy - par, arm_cz - par,
+          pax1, arm_cy + par, arm_cz + par)
+
+    # Peg extending right from arm
+    m.cyl_x(pax1, arm_cy, arm_cz, PEG_R, PEG_L)
 
     # ==============================================================
-    #  7. HINGE SOCKETS (female) — LEFT SIDE WALL
+    #  7. FOLDABLE HINGE — LEFT WALL (socket arm, two-stage fold)
     # ==============================================================
-    #  Two hollow tubes mounted on the left wall, opening facing left.
-    #  Another brick's pegs slide in from the left and spin freely.
+    #  Longer arm with socket.  TWO living hinges:
+    #    Hinge 1 (at wall): thin in Y -> folds arm UP against wall
+    #    Hinge 2 (mid-arm): thin in Z -> turns socket OUTWARD
     #
-    #     o  o ├──  brick   <- sockets opening left
+    #  <===SOCKET=| ARM2 |--h2--| ARM1 |--h1--| WALL
     #
-    for row in range(ROWS):
-        sock_cy = BRICK_H / 2                    # mid-height
-        sock_cz = PITCH/2 + row*PITCH - TOL      # each row center
-        m.tube_x(-SOCK_H, sock_cy, sock_cz, SOCK_OR, SOCK_IR, SOCK_H)
+    # First living hinge (folds up, thin in Y, fold axis along Z)
+    h1x0 = -LH_SPAN
+    m.box(h1x0,  arm_cy - LH_THICK/2, arm_cz - 2.0,
+          0,     arm_cy + LH_THICK/2, arm_cz + 2.0)
+
+    # Arm segment 1 (bridge between the two hinges, 5mm × 5mm × 3mm)
+    s1x0 = h1x0 - 3.0
+    s1r  = 2.5
+    m.box(s1x0, arm_cy - s1r, arm_cz - s1r,
+          h1x0, arm_cy + s1r, arm_cz + s1r)
+
+    # Second living hinge (turns outward, thin in Z, fold axis along Y)
+    h2x0 = s1x0 - LH_SPAN
+    m.box(h2x0,  arm_cy - 2.0, arm_cz - LH_THICK/2,
+          s1x0,  arm_cy + 2.0, arm_cz + LH_THICK/2)
+
+    # Arm segment 2 — socket mount (6mm × 6mm × 2.5mm)
+    s2x0 = h2x0 - 2.5
+    s2r  = 3.0
+    m.box(s2x0, arm_cy - s2r, arm_cz - s2r,
+          h2x0, arm_cy + s2r, arm_cz + s2r)
+
+    # Socket tube opening to the left
+    m.tube_x(s2x0 - SOCK_L, arm_cy, arm_cz, SOCK_OR, SOCK_IR, SOCK_L)
 
     # ──────────────────────────────────────────────────────────────
-    n_side = ((COLS+1)//2) * 2
-    print(f"LEGO 2x{COLS} Hinge Brick:")
+    n_side = COLS * 2
+    print(f"LEGO 2x{COLS} Foldable-Hinge Brick:")
     print(f"  Body: {BODY_X:.1f} x {BRICK_H:.1f} x {BODY_Z:.1f} mm")
     print(f"  Top studs: {COLS * ROWS}")
-    print(f"  Side studs: {n_side} (front + back)")
-    print(f"  RIGHT wall = 2 Pegs (diam {PEG_R*2:.1f}mm, length {PEG_H:.0f}mm)")
-    print(f"  LEFT wall  = 2 Sockets (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
+    print(f"  Side studs: {n_side} (front + back, all columns)")
+    print(f"  RIGHT = Foldable peg arm (diam {PEG_R*2:.1f}mm, {PEG_L:.0f}mm long)")
+    print(f"  LEFT  = Foldable socket arm (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
+    print(f"  Living hinges: {LH_THICK}mm thick (foldable)")
     print(f"  Anti-stud tubes: {COLS - 1}")
     print(f"  Triangles: {len(m.tris)}")
     return m
@@ -295,5 +329,6 @@ if __name__ == "__main__":
     m = build_lego_2x6()
     m.save_stl("lego_2x6.stl")
     m.save_3mf("lego_2x6.3mf")
-    print("\nDone! Pegs on right wall, sockets on left wall.")
-    print("Print 2 — slide Brick A's pegs into Brick B's sockets to spin!")
+    print("\nDone! Foldable hinge arms on both side walls.")
+    print("Fold flat for plain wall brick, fold out to connect!")
+    print("RIGHT arm: folds up (peg). LEFT arm: folds up + turns outward (socket).")
