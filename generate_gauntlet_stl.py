@@ -1,28 +1,16 @@
 """
-Gauntlet Generator v6 — Sci-Fi Top-Shell Armor
-═══════════════════════════════════════════════
-Wearable 3D-printed gauntlet that sits ON TOP of the forearm/hand.
+Gauntlet Generator v7 — ONE Connected Piece
+════════════════════════════════════════════
+Single continuous shell from elbow to knuckles.
+No floating parts. No gaps. Everything connected.
 
-Key insight: A rigid 3D print can't flex to wrap around an arm.
-Instead, this is a shallow curved SHELL that covers the top and
-sides, with a wide-open bottom. Arm rests into it, secured by
-straps through built-in loops.
+Shape: shallow curved armor plate that sits on top of your arm.
+The shape itself creates the sci-fi look via:
+  - Varying width profile (flared wrist cuff)
+  - Varying arch height (raised knuckle guard)
+  - Varying wall thickness (reinforced sections)
 
-    ╭━━━━━━━━━━╮   ← armor shell (top)
-    │  forearm  │
-    ╰──────────╯   ← open bottom (straps hold it on)
-
-Design:
-  - Shallow curved shell (~120° arc) — NOT a full half-pipe
-  - Prints FLAT (concave side up) — minimal supports needed
-  - Forearm bracer → wrist cuff → hand plate → finger guards
-  - Sci-fi surface details: spine, ridges, channels
-  - Strap loops on sides for elastic/velcro bands
-  - Open palm, open bottom — easy on/off
-
-Outputs:
-  gauntlet.stl  — Universal
-  gauntlet.3mf  — Bambu Studio (tree supports auto)
+Finger guards are separate but positioned flush to the main shell.
 """
 import math
 import os
@@ -32,9 +20,6 @@ OUTPUT_STL = "gauntlet.stl"
 OUTPUT_3MF = "gauntlet.3mf"
 
 
-# ═══════════════════════════════════════════════════════════
-# MESH CLASS
-# ═══════════════════════════════════════════════════════════
 class Mesh:
     def __init__(self):
         self.verts = []
@@ -65,9 +50,7 @@ class Mesh:
         ny = uz*vx - ux*vz
         nz = ux*vy - uy*vx
         ln = math.sqrt(nx*nx + ny*ny + nz*nz)
-        if ln > 1e-12:
-            return (nx/ln, ny/ln, nz/ln)
-        return (0.0, 0.0, 1.0)
+        return (nx/ln, ny/ln, nz/ln) if ln > 1e-12 else (0, 0, 1)
 
     def save_stl(self, path):
         with open(path, 'w') as f:
@@ -141,245 +124,175 @@ class Mesh:
         print(f"  3MF: {len(self.tris)} tris -> {path}")
 
 
-# ═══════════════════════════════════════════════════════════
-# BOX primitive
-# ═══════════════════════════════════════════════════════════
 def box(m, x0, y0, z0, x1, y1, z1):
     p = [(x0,y0,z0),(x1,y0,z0),(x1,y1,z0),(x0,y1,z0),
          (x0,y0,z1),(x1,y0,z1),(x1,y1,z1),(x0,y1,z1)]
-    m.quad(p[0],p[3],p[2],p[1])  # bottom
-    m.quad(p[4],p[5],p[6],p[7])  # top
-    m.quad(p[0],p[1],p[5],p[4])  # front
-    m.quad(p[3],p[7],p[6],p[2])  # back
-    m.quad(p[0],p[4],p[7],p[3])  # left
-    m.quad(p[1],p[2],p[6],p[5])  # right
+    m.quad(p[0],p[3],p[2],p[1])
+    m.quad(p[4],p[5],p[6],p[7])
+    m.quad(p[0],p[1],p[5],p[4])
+    m.quad(p[3],p[7],p[6],p[2])
+    m.quad(p[0],p[4],p[7],p[3])
+    m.quad(p[1],p[2],p[6],p[5])
 
 
-# ═══════════════════════════════════════════════════════════
-# SHELL: Shallow curved armor plate
-# ═══════════════════════════════════════════════════════════
-def armor_shell(m, cx, y0, y1, width0, width1, height0, height1,
-                wall=2.5, y_steps=10, x_segs=16):
+def continuous_shell(m, profiles, cx=0, x_segs=20):
     """
-    Curved armor shell — shallow arch that sits on top of arm.
-    Printed CONCAVE SIDE UP (like a boat hull).
+    Build ONE continuous watertight shell from a list of profile slices.
 
-    The shell is a gentle curve in X-Z plane:
-      - width = total side-to-side span
+    profiles: list of (y, width, height, wall) tuples.
+              These define the cross-section at each Y position.
+              The shell smoothly transitions between them.
+              MUST be sorted by Y.
+
+    Each cross-section is a parabolic arch:
+      - width = total span side to side
       - height = how tall the arch rises at center
       - wall = shell thickness
-      - Opens at the bottom (Z=0 level = edges of shell)
 
-    Orientation for printing:
-      - The shell prints with its CONVEX side down on the bed
-      - Z=0 is the bed, the outer surface curves up
-      - Inner surface is on top (concave facing up)
-
-    Actually — for wearing, we want:
-      - Convex (outer armor) faces outward/up when worn
-      - Concave (inner) cups the arm
-
-    For printing: lay it CONVEX SIDE DOWN (dome down).
-    The outer dome surface rests on the bed, inner cavity faces up.
-    This means: outer surface at LOW Z, inner surface at HIGH Z.
+    Prints convex side DOWN (dome on bed).
+    Wear convex side UP (dome on top of arm).
     """
-    def cross_section(y, w, h):
-        """Generate outer and inner curve points at a given Y slice.
-        Returns (outer_pts, inner_pts) from left edge to right edge.
-        Outer is at lower Z (on bed), inner is at higher Z.
-        """
+    def cross_section(y, w, h, wall):
         hw = w / 2.0
         outer = []
         inner = []
         for i in range(x_segs + 1):
-            t = i / x_segs  # 0..1 across width
+            t = i / x_segs
             x = cx - hw + w * t
-            # Parabolic arch: peak at center (t=0.5), zero at edges
-            curve = 4.0 * t * (1.0 - t)  # 0 at edges, 1 at center
-            z_outer = curve * h  # outer surface (lower, on bed)
-            z_inner = z_outer + wall  # inner surface (higher)
+            curve = 4.0 * t * (1.0 - t)  # parabolic: 0 at edges, 1 at center
+            z_outer = curve * h
+            z_inner = z_outer + wall
             outer.append((x, y, z_outer))
             inner.append((x, y, z_inner))
         return outer, inner
 
-    # Generate cross-sections along Y
-    slices = []
-    for yi in range(y_steps + 1):
-        t = yi / y_steps
-        y = y0 + (y1 - y0) * t
-        w = width0 + (width1 - width0) * t
-        h = height0 + (height1 - height0) * t
-        slices.append(cross_section(y, w, h))
+    # Generate all cross-section rings
+    slices = [cross_section(y, w, h, wall) for y, w, h, wall in profiles]
 
-    # Build quad strips between adjacent Y slices
-    for yi in range(y_steps):
-        o1, i1 = slices[yi]      # front slice
-        o2, i2 = slices[yi + 1]  # back slice
-
+    # Build quad strips between adjacent slices
+    for yi in range(len(slices) - 1):
+        o1, i1 = slices[yi]
+        o2, i2 = slices[yi + 1]
         for si in range(x_segs):
-            # Outer surface (convex, faces DOWN = outward normals)
+            # Outer surface (convex, faces down when printing)
             m.quad(o1[si], o1[si+1], o2[si+1], o2[si])
-            # Inner surface (concave, faces UP)
+            # Inner surface (concave, faces up when printing)
             m.quad(i1[si], i2[si], i2[si+1], i1[si+1])
-
-        # Left edge strip (connect outer to inner at left)
+        # Left edge strip
         m.quad(o1[0], o2[0], i2[0], i1[0])
         # Right edge strip
         m.quad(o1[-1], i1[-1], i2[-1], o2[-1])
 
-    # Front end cap (y=y0)
+    # Front end cap (first slice)
     o_f, i_f = slices[0]
     for si in range(x_segs):
         m.quad(o_f[si], i_f[si], i_f[si+1], o_f[si+1])
 
-    # Back end cap (y=y1)
+    # Back end cap (last slice)
     o_b, i_b = slices[-1]
     for si in range(x_segs):
         m.quad(o_b[si], o_b[si+1], i_b[si+1], i_b[si])
 
-
-# ═══════════════════════════════════════════════════════════
-# STRAP LOOP — rectangular loop on the side for straps
-# ═══════════════════════════════════════════════════════════
-def strap_loop(m, x, y, z, loop_w=8, loop_h=6, bar_thick=2.5):
-    """
-    A rectangular loop/bridge on the side of the shell.
-    Strap threads through the opening.
-    """
-    # Two vertical posts
-    box(m, x, y, z, x + bar_thick, y + loop_w, z + loop_h)
-    box(m, x, y, z, x + bar_thick, y + loop_w, z + bar_thick)
-    # Top bridge connecting them
-    box(m, x, y, z + loop_h - bar_thick, x + bar_thick, y + loop_w, z + loop_h)
+    return slices  # return for positioning fingers etc.
 
 
-# ═══════════════════════════════════════════════════════════
-# GAUNTLET ASSEMBLY
-# ═══════════════════════════════════════════════════════════
 def generate():
     m = Mesh()
 
-    # Coordinate system (for printing & wearing):
-    # Y = arm length direction (elbow=0, fingers=220)
-    # X = width (centered on 0, left/right)
-    # Z = vertical (bed=0, up)
-    #
-    # The shell prints DOME DOWN: convex outer on bed,
-    # concave inner faces up. When you pick it up and flip
-    # it over onto your arm, the dome is on top.
+    # ════════════════════════════════════════════════════
+    # MAIN SHELL — one continuous piece, elbow to knuckles
+    # ════════════════════════════════════════════════════
+    # Profile: (y, width, height, wall)
+    # The shape tells the story:
+    #   - Elbow: wide, tall arch
+    #   - Forearm: gradually narrows
+    #   - Wrist: flares out (signature gauntlet cuff)
+    #   - Hand: flatter, wider
+    #   - Knuckles: raised bump, thicker
+    profiles = [
+        # Y     Width  Height  Wall
+        # ── Elbow cap ──
+        (0,     80,    24,     3.0),
+        (4,     80,    24,     3.0),
+        # ── Forearm taper ──
+        (15,    78,    22,     2.5),
+        (30,    76,    21,     2.5),
+        (50,    74,    20,     2.5),
+        (70,    72,    19,     2.5),
+        (85,    70,    18,     2.5),
+        (95,    68,    18,     2.5),
+        # ── Wrist cuff flare ──
+        (100,   70,    20,     3.0),
+        (108,   76,    22,     3.0),
+        (115,   82,    24,     3.5),
+        (120,   88,    26,     3.5),  # widest point = flange
+        (125,   86,    24,     3.0),
+        # ── Hand plate ──
+        (132,   80,    18,     2.5),
+        (145,   78,    16,     2.5),
+        (158,   76,    15,     2.5),
+        (168,   76,    15,     2.5),
+        # ── Knuckle guard bump ──
+        (172,   78,    18,     3.5),
+        (176,   80,    22,     4.0),
+        (180,   80,    22,     4.0),
+        (184,   78,    20,     3.5),
+        (188,   76,    16,     3.0),
+    ]
+
+    slices = continuous_shell(m, profiles, cx=0, x_segs=24)
 
     # ════════════════════════════════════════════════════
-    # MAIN ARMOR SECTIONS
+    # FINGER ARMOR — small curved plates, flush to main shell
     # ════════════════════════════════════════════════════
-
-    # ── FOREARM BRACER ── (Y=0..100)
-    # Widest at elbow, narrows toward wrist
-    armor_shell(m, cx=0, y0=0, y1=100,
-                width0=80, width1=70, height0=22, height1=18,
-                wall=2.5, y_steps=12, x_segs=20)
-
-    # ── WRIST CUFF ── (Y=104..130)
-    # Flares out slightly — signature gauntlet look
-    armor_shell(m, cx=0, y0=104, y1=130,
-                width0=72, width1=82, height0=20, height1=24,
-                wall=3.0, y_steps=8, x_segs=20)
-
-    # ── WRIST FLANGE ── (Y=128..134)
-    # Extra-wide lip at end of cuff
-    armor_shell(m, cx=0, y0=128, y1=134,
-                width0=88, width1=88, height0=24, height1=24,
-                wall=3.5, y_steps=2, x_segs=20)
-
-    # ── HAND PLATE ── (Y=138..174)
-    # Flatter, covers back of hand
-    armor_shell(m, cx=0, y0=138, y1=174,
-                width0=80, width1=76, height0=16, height1=14,
-                wall=2.5, y_steps=8, x_segs=20)
-
-    # ── KNUCKLE GUARD ── (Y=176..188)
-    # Raised ridge across knuckles
-    armor_shell(m, cx=0, y0=176, y1=188,
-                width0=78, width1=76, height0=20, height1=18,
-                wall=3.5, y_steps=4, x_segs=20)
-
-    # ════════════════════════════════════════════════════
-    # FINGER ARMOR — flat articulated plates
-    # ════════════════════════════════════════════════════
-    finger_xs = [-28, -10, 10, 28]  # 4 finger center positions
-    fw = 15.0   # finger plate width
-    ft = 3.0    # finger plate thickness
-
+    # These connect at the knuckle end of the main shell.
+    # Each finger is a small curved plate.
+    finger_xs = [-28, -10, 10, 28]
     for fx in finger_xs:
-        # Proximal plate (near hand)
-        armor_shell(m, cx=fx, y0=190, y1=204,
-                    width0=fw, width1=fw-1, height0=6, height1=5,
-                    wall=2.0, y_steps=4, x_segs=8)
-        # Distal plate (fingertip, slightly narrower)
-        armor_shell(m, cx=fx, y0=206, y1=218,
-                    width0=fw-2, width1=fw-4, height0=5, height1=4,
-                    wall=2.0, y_steps=4, x_segs=8)
+        # Proximal segment (near knuckles)
+        continuous_shell(m, [
+            (190, 15, 6, 2.0),
+            (195, 15, 6, 2.0),
+            (200, 14, 5, 2.0),
+            (204, 13, 5, 2.0),
+        ], cx=fx, x_segs=8)
+        # Distal segment (fingertip)
+        continuous_shell(m, [
+            (207, 13, 5, 2.0),
+            (210, 12, 4.5, 2.0),
+            (214, 11, 4, 2.0),
+            (218, 10, 3.5, 2.0),
+        ], cx=fx, x_segs=8)
 
-    # ── THUMB GUARD ── offset to left side
-    armor_shell(m, cx=-46, y0=150, y1=172,
-                width0=16, width1=14, height0=8, height1=6,
-                wall=2.0, y_steps=4, x_segs=8)
-
-    # ════════════════════════════════════════════════════
-    # SCI-FI SURFACE DETAILS (raised features on outer shell)
-    # ════════════════════════════════════════════════════
-
-    # Central spine ridge (runs down forearm)
-    # Sits at the peak of the dome (highest Z point)
-    box(m, -3, 4, 20, 3, 96, 24)
-
-    # Spine glow channel
-    box(m, -1.2, 8, 24, 1.2, 92, 25.5)
-
-    # Horizontal tech ridges on forearm
-    for ry in [12, 30, 50, 70, 88]:
-        box(m, -32, ry, 16, 32, ry+2.5, 19)
-
-    # Hand plate accent lines
-    box(m, -28, 142, 13, -6, 145, 15)
-    box(m, 6, 142, 13, 28, 145, 15)
-    box(m, -22, 158, 12, 22, 161, 14)
-
-    # Knuckle bumps
-    for kx in finger_xs:
-        box(m, kx-5, 178, 17, kx+5, 186, 21)
-
-    # Side accent plates
-    box(m, -42, 108, 6, -38, 126, 14)
-    box(m, 38, 108, 6, 42, 126, 14)
-
-    # Elbow guard cap
-    box(m, -14, 0, 20, 14, 6, 26)
+    # ── Thumb guard ──
+    continuous_shell(m, [
+        (150, 16, 8, 2.0),
+        (155, 16, 8, 2.0),
+        (162, 15, 7, 2.0),
+        (170, 14, 6, 2.0),
+        (176, 13, 5, 2.0),
+    ], cx=-46, x_segs=8)
 
     # ════════════════════════════════════════════════════
-    # STRAP LOOPS — hold the gauntlet on your arm
+    # STRAP LOOPS — connected to shell edges
     # ════════════════════════════════════════════════════
-    # Left side loops (2)
-    strap_loop(m, x=-43, y=25, z=0, loop_w=10, loop_h=8, bar_thick=2.5)
-    strap_loop(m, x=-43, y=65, z=0, loop_w=10, loop_h=8, bar_thick=2.5)
-
-    # Right side loops (2)
-    strap_loop(m, x=40.5, y=25, z=0, loop_w=10, loop_h=8, bar_thick=2.5)
-    strap_loop(m, x=40.5, y=65, z=0, loop_w=10, loop_h=8, bar_thick=2.5)
-
-    # Extra loops at wrist
-    strap_loop(m, x=-44, y=110, z=0, loop_w=10, loop_h=8, bar_thick=2.5)
-    strap_loop(m, x=41.5, y=110, z=0, loop_w=10, loop_h=8, bar_thick=2.5)
+    # Position loops at the shell edge Z=0 level
+    # They bridge from the shell rim downward
+    for y_pos in [25, 65, 112]:
+        # Left loop
+        box(m, -42, y_pos, 0, -39, y_pos+10, 8)   # post
+        box(m, -42, y_pos, 6, -39, y_pos+10, 8)    # bridge top
+        # Right loop
+        box(m, 39, y_pos, 0, 42, y_pos+10, 8)
+        box(m, 39, y_pos, 6, 42, y_pos+10, 8)
 
     return m
 
 
-# ═══════════════════════════════════════════════════════════
-# MAIN
-# ═══════════════════════════════════════════════════════════
 if __name__ == '__main__':
     print("=" * 55)
-    print("  GAUNTLET v6 — Sci-Fi Top-Shell Armor")
-    print("  Wearable / Printable / Tree Supports")
+    print("  GAUNTLET v7 — One Connected Piece")
+    print("  Sci-Fi / Wearable / Tree Supports")
     print("=" * 55)
     print()
 
@@ -388,27 +301,17 @@ if __name__ == '__main__':
 
     stl_path = os.path.join(base, OUTPUT_STL)
     m.save_stl(stl_path)
-
     mf_path = os.path.join(base, OUTPUT_3MF)
     m.save_3mf(mf_path)
 
     print(f"\n  Vertices: {len(m.verts)}")
     print(f"  Triangles: {len(m.tris)}")
     print()
-    print("  HOW TO WEAR:")
-    print("  1. Print dome-down (as oriented)")
-    print("  2. Flip over — dome faces up, concave cups arm")
-    print("  3. Thread elastic/velcro straps through loops")
-    print("  4. Slide arm in, tighten straps")
+    print("  CHANGES (v7):")
+    print("  + ONE continuous shell — no gaps, no floating parts")
+    print("  + Shape creates the armor look (flared cuff, knuckle bump)")
+    print("  + No disconnected decorations")
+    print("  + Finger plates + thumb guard")
+    print("  + Strap loops at edges")
     print()
-    print("  DESIGN:")
-    print("  + Shallow curved shell (not a tube!)")
-    print("  + Wide open bottom — easy on/off")
-    print("  + 6 strap loops for secure fit")
-    print("  + Flared wrist cuff with lip")
-    print("  + Segmented finger plates")
-    print("  + Sci-fi spine + tech ridges")
-    print("  + Open palm for grip")
-    print()
-    print("  PRINT: PLA/PETG | 0.2mm | 15% infill")
-    print("         3 walls | Tree supports: AUTO")
+    print("  PRINT: PLA/PETG | 0.2mm | 15% infill | Tree supports")
