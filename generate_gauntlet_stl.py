@@ -1,26 +1,20 @@
 """
-Gauntlet Generator v4
-═══════════════════════
-Proper 3D half-pipe armored gauntlet for 3D printing.
-
-Outputs:
-  gauntlet.3mf  — Bambu Studio project (tree supports pre-configured)
-  gauntlet.stl  — Universal STL for any slicer
+Gauntlet Generator v5 — Sci-Fi Tech Armor
+══════════════════════════════════════════
+A proper sci-fi gauntlet that wraps around the forearm/hand.
 
 Design:
-  - Half-pipe (semicircular arch) segments — proper 3D depth
-  - Segmented plates with articulation gaps
-  - Open bottom: arm slides in from below
-  - Open palm: full grip freedom
-  - Finger & thumb guards (half-tube channels)
-  - Universal adult fit, scalable in slicer
-  - Watertight manifold mesh (zero non-manifold edges)
+  - Half-pipe shell wrapping around the arm (opens at palm side)
+  - Surface ridges and raised spine for sci-fi tech look
+  - Flared wrist cuff with lip/rim
+  - Raised angular knuckle guard
+  - Segmented finger armor plates (not tubes)
+  - Thumb guard plate
+  - Open palm for grip
 
-Orientation (slicer): X=width, Y=length, Z=height.
-Arch opening faces DOWN at Z=0 (bed).
-Tree supports handle the arch overhangs automatically.
-
-Compatible: Bambu A1, A1 Mini, P1S, P1P, X1C — any FDM printer.
+Outputs:
+  gauntlet.stl  — Universal STL
+  gauntlet.3mf  — Bambu Studio project (tree supports auto-enabled)
 """
 import math
 import os
@@ -31,7 +25,7 @@ OUTPUT_3MF = "gauntlet.3mf"
 
 
 # ═══════════════════════════════════════════════════════════
-# MESH CLASS — indexed triangles with vertex deduplication
+# MESH CLASS
 # ═══════════════════════════════════════════════════════════
 class Mesh:
     def __init__(self):
@@ -40,7 +34,7 @@ class Mesh:
         self._vmap = {}
 
     def v(self, x, y, z):
-        key = (round(x, 3), round(y, 3), round(z, 3))
+        key = (round(x, 4), round(y, 4), round(z, 4))
         if key not in self._vmap:
             self._vmap[key] = len(self.verts)
             self.verts.append(key)
@@ -67,7 +61,6 @@ class Mesh:
             return (nx/ln, ny/ln, nz/ln)
         return (0.0, 0.0, 1.0)
 
-    # ─── STL OUTPUT ───────────────────────────────────
     def save_stl(self, path):
         with open(path, 'w') as f:
             f.write("solid gauntlet\n")
@@ -83,9 +76,8 @@ class Mesh:
                 f.write(f"      vertex {c[0]:.6e} {c[1]:.6e} {c[2]:.6e}\n")
                 f.write("    endloop\n  endfacet\n")
             f.write("endsolid gauntlet\n")
-        print(f"  STL: {len(self.tris)} tris, {os.path.getsize(path)//1024} KB → {path}")
+        print(f"  STL: {len(self.tris)} tris → {path}")
 
-    # ─── 3MF OUTPUT (with Bambu tree support config) ──
     def save_3mf(self, path):
         vlines = []
         for x, y, z in self.verts:
@@ -134,9 +126,8 @@ class Mesh:
             '</Relationships>'
         )
 
-        # Bambu Studio / PrusaSlicer config: TREE SUPPORTS AUTO-ENABLED
         slicer_cfg = (
-            '; Gauntlet — tree supports pre-configured\n'
+            '; Gauntlet — tree supports\n'
             'enable_support = 1\n'
             'support_type = tree(auto)\n'
             'support_on_build_plate_only = 0\n'
@@ -148,29 +139,58 @@ class Mesh:
             zf.writestr('_rels/.rels', rels)
             zf.writestr('3D/3dmodel.model', model_xml)
             zf.writestr('Metadata/Slic3r_PE.config', slicer_cfg)
-
-        print(f"  3MF: {len(self.tris)} tris, {os.path.getsize(path)//1024} KB → {path}")
-        print(f"       Tree supports: ENABLED")
+        print(f"  3MF: {len(self.tris)} tris → {path}")
 
 
 # ═══════════════════════════════════════════════════════════
-# GEOMETRY: Watertight half-pipe (semicircular arch solid)
+# PRIMITIVE: Watertight box (6 faces, 12 tris)
+# ═══════════════════════════════════════════════════════════
+def box(m, x0, y0, z0, x1, y1, z1):
+    """Axis-aligned watertight box. All normals face outward."""
+    p = [
+        (x0, y0, z0),  # 0: left  front bottom
+        (x1, y0, z0),  # 1: right front bottom
+        (x1, y1, z0),  # 2: right back  bottom
+        (x0, y1, z0),  # 3: left  back  bottom
+        (x0, y0, z1),  # 4: left  front top
+        (x1, y0, z1),  # 5: right front top
+        (x1, y1, z1),  # 6: right back  top
+        (x0, y1, z1),  # 7: left  back  top
+    ]
+    # Bottom (-Z)
+    m.quad(p[0], p[3], p[2], p[1])
+    # Top (+Z)
+    m.quad(p[4], p[5], p[6], p[7])
+    # Front (-Y)
+    m.quad(p[0], p[1], p[5], p[4])
+    # Back (+Y)
+    m.quad(p[3], p[7], p[6], p[2])
+    # Left (-X)
+    m.quad(p[0], p[4], p[7], p[3])
+    # Right (+X)
+    m.quad(p[1], p[2], p[6], p[5])
+
+
+# ═══════════════════════════════════════════════════════════
+# PRIMITIVE: Watertight half-pipe shell
 # ═══════════════════════════════════════════════════════════
 def half_pipe(m, cx, y0, y1, rx0, rz0, rx1, rz1,
-              wall=3.0, y_steps=8, segs=20):
+              wall=3.0, arc_deg=180, y_steps=8, segs=20):
     """
-    Closed watertight half-pipe solid.
-    Arch curves UP in Z, opening faces DOWN at Z=0.
-    Elliptical cross-section: rx = half-width, rz = arch height.
-    Tapers from (rx0,rz0) at y0 to (rx1,rz1) at y1.
+    Half-pipe shell (arch). Arch curves UP, opening faces DOWN at Z=0.
+    arc_deg: how far around it wraps (180 = full semicircle).
     """
+    arc_rad = math.radians(arc_deg)
+    start_a = (math.pi - arc_rad) / 2
+
     def ring(y, rx, rz):
         rx_in = max(0.5, rx - wall)
         rz_in = max(0.5, rz - wall)
         outer = []
         inner = []
         for i in range(segs + 1):
-            a = math.pi * i / segs  # 0 → π
+            t = i / segs
+            a = start_a + arc_rad * t
             ca, sa = math.cos(a), math.sin(a)
             outer.append((cx + rx * ca, y, rz * sa))
             inner.append((cx + rx_in * ca, y, rz_in * sa))
@@ -187,24 +207,21 @@ def half_pipe(m, cx, y0, y1, rx0, rz0, rx1, rz1,
     for yi in range(y_steps):
         o1, i1 = rings[yi]
         o2, i2 = rings[yi + 1]
-
         for si in range(segs):
-            # Outer surface (normal outward)
+            # Outer surface
             m.quad(o1[si], o2[si], o2[si+1], o1[si+1])
-            # Inner surface (normal inward = outward from wall solid)
+            # Inner surface
             m.quad(i1[si], i1[si+1], i2[si+1], i2[si])
-
-        # Right rim strip at Z≈0 (angle=0 edge)
+        # Rim strips
         m.quad(i1[0], i2[0], o2[0], o1[0])
-        # Left rim strip at Z≈0 (angle=π edge)
         m.quad(o1[-1], o2[-1], i2[-1], i1[-1])
 
-    # Front end cap (y=y0, half-annulus facing -Y)
+    # Front end cap (y=y0)
     o_f, i_f = rings[0]
     for si in range(segs):
         m.quad(i_f[si], o_f[si], o_f[si+1], i_f[si+1])
 
-    # Back end cap (y=y1, half-annulus facing +Y)
+    # Back end cap (y=y1)
     o_b, i_b = rings[-1]
     for si in range(segs):
         m.quad(o_b[si], i_b[si], i_b[si+1], o_b[si+1])
@@ -216,56 +233,97 @@ def half_pipe(m, cx, y0, y1, rx0, rz0, rx1, rz1,
 def generate():
     m = Mesh()
 
-    # All dimensions in mm.
-    # Y axis = arm length (elbow→fingers), X = width, Z = height.
-    # Half-pipe arch: opening at Z=0 (bed), arch peaks upward.
-    #
-    # Segmented with 2mm articulation gaps between sections.
-    # Universal adult fit (~medium). Scale in slicer for other sizes.
+    # Y = arm length (elbow at Y=0, fingertips at Y=220)
+    # X = width (centered on 0)
+    # Z = height (bed at Z=0, top of gauntlet is positive Z)
+    # Arch opens downward — arm slides in from below
 
-    # ── FOREARM GUARD ── (Y=0..110)
-    # Tapers from elbow (wider) to wrist (narrower)
-    half_pipe(m, cx=0, y0=0, y1=110,
-              rx0=44, rz0=30, rx1=38, rz1=26,
-              wall=2.5, y_steps=12, segs=24)
+    # ════════════════════════════════════════════════════
+    # MAIN ARMOR SHELL
+    # ════════════════════════════════════════════════════
 
-    # ── WRIST CUFF ── (Y=112..132)
-    # Flared outward slightly for style and comfort
-    half_pipe(m, cx=0, y0=112, y1=132,
-              rx0=40, rz0=32, rx1=42, rz1=28,
-              wall=3.0, y_steps=6, segs=24)
+    # ── FOREARM ── (Y=0..100)
+    half_pipe(m, cx=0, y0=0, y1=100,
+              rx0=42, rz0=30, rx1=36, rz1=26,
+              wall=2.5, arc_deg=180, y_steps=12, segs=24)
 
-    # ── HAND PLATE ── (Y=134..170)
-    # Wider and flatter — covers back of hand
-    half_pipe(m, cx=0, y0=134, y1=170,
-              rx0=44, rz0=24, rx1=42, rz1=22,
-              wall=2.5, y_steps=8, segs=24)
+    # ── WRIST CUFF ── (Y=102..126)
+    half_pipe(m, cx=0, y0=102, y1=126,
+              rx0=38, rz0=32, rx1=44, rz1=30,
+              wall=3.5, arc_deg=180, y_steps=6, segs=24)
 
-    # ── KNUCKLE GUARD ── (Y=172..184)
-    # Thicker, slightly raised bump across knuckles
-    half_pipe(m, cx=0, y0=172, y1=184,
-              rx0=45, rz0=26, rx1=44, rz1=25,
-              wall=4.0, y_steps=4, segs=24)
+    # ── Wrist flange/lip ── (Y=124..128)
+    half_pipe(m, cx=0, y0=124, y1=128,
+              rx0=47, rz0=32, rx1=47, rz1=32,
+              wall=4.0, arc_deg=180, y_steps=2, segs=24)
 
-    # ── FINGER GUARDS ── (Y=186..216)
-    # 4 individual half-tube channels, tapered toward tips
-    fw = 16.0    # finger channel width (diameter)
-    fg = 3.5     # gap between fingers
-    total_fw = 4 * fw + 3 * fg
-    finger_start_x = -total_fw / 2 + fw / 2
+    # ── HAND PLATE ── (Y=130..168)
+    half_pipe(m, cx=0, y0=130, y1=168,
+              rx0=42, rz0=22, rx1=40, rz1=20,
+              wall=2.5, arc_deg=170, y_steps=8, segs=24)
 
-    for i in range(4):
-        fx = finger_start_x + i * (fw + fg)
-        fr = fw / 2  # half-width = radius
-        half_pipe(m, cx=fx, y0=186, y1=216,
-                  rx0=fr, rz0=fr, rx1=fr*0.65, rz1=fr*0.65,
-                  wall=2.0, y_steps=6, segs=12)
+    # ── KNUCKLE GUARD ── (Y=170..182)
+    half_pipe(m, cx=0, y0=170, y1=182,
+              rx0=43, rz0=26, rx1=42, rz1=25,
+              wall=4.0, arc_deg=170, y_steps=4, segs=24)
 
-    # ── THUMB GUARD ── (Y=148..178)
-    # Offset to the left, angled outward
-    half_pipe(m, cx=-50, y0=148, y1=178,
-              rx0=10, rz0=10, rx1=8, rz1=8,
-              wall=2.0, y_steps=6, segs=12)
+    # ════════════════════════════════════════════════════
+    # FINGER ARMOR — segmented plates
+    # ════════════════════════════════════════════════════
+
+    finger_positions = [-26, -9, 8, 25]
+    fw = 14.0   # plate width
+    ft = 3.5    # plate thickness
+
+    for fx in finger_positions:
+        z_base = 18
+        # Proximal segment
+        box(m,
+            fx - fw/2, 184, z_base,
+            fx + fw/2, 200, z_base + ft)
+        # Distal segment (slightly narrower)
+        box(m,
+            fx - fw/2 + 1, 202, z_base + 0.5,
+            fx + fw/2 - 1, 216, z_base + ft - 0.2)
+
+    # ── THUMB GUARD ──
+    box(m, -48, 148, 8, -36, 170, 12)
+    box(m, -47, 172, 8.5, -37, 184, 11.5)
+
+    # ════════════════════════════════════════════════════
+    # SCI-FI SURFACE DETAILS
+    # ════════════════════════════════════════════════════
+
+    # Central spine ridge
+    box(m, -3, 5, 29, 3, 95, 33)
+    # Spine glow channel
+    box(m, -1.5, 10, 33, 1.5, 90, 34.5)
+
+    # Horizontal tech ridges on forearm
+    for ry in [15, 35, 55, 75]:
+        box(m, -30, ry, 24, 30, ry + 3, 27)
+
+    # Diagonal accent lines on hand plate
+    box(m, -25, 135, 20, -5, 138, 22.5)
+    box(m, 5, 135, 20, 25, 138, 22.5)
+    box(m, -20, 150, 19, 20, 153, 21.5)
+
+    # Knuckle bumps
+    for kx in finger_positions:
+        box(m, kx - 5, 172, 24, kx + 5, 180, 28)
+
+    # Wrist accent plates
+    box(m, -46, 108, 10, -40, 122, 18)
+    box(m, 40, 108, 10, 46, 122, 18)
+
+    # Elbow guard bump
+    box(m, -12, 0, 28, 12, 8, 34)
+
+    # Strap slot guides (inside)
+    box(m, -35, 30, 0, -28, 36, 2)
+    box(m, 28, 30, 0, 35, 36, 2)
+    box(m, -35, 70, 0, -28, 76, 2)
+    box(m, 28, 70, 0, 35, 76, 2)
 
     return m
 
@@ -275,8 +333,8 @@ def generate():
 # ═══════════════════════════════════════════════════════════
 if __name__ == '__main__':
     print("=" * 55)
-    print("  GAUNTLET v4 — 3D Half-Pipe Armor")
-    print("  Tree Supports / Any Bambu Printer")
+    print("  GAUNTLET v5 — Sci-Fi Tech Armor")
+    print("  Tree Supports / Bambu A1 + P1S")
     print("=" * 55)
     print()
 
@@ -291,21 +349,16 @@ if __name__ == '__main__':
 
     print(f"\n  Vertices: {len(m.verts)}")
     print(f"  Triangles: {len(m.tris)}")
-    print(f"  Size: ~90 × 216 × 35 mm")
     print()
-    print("  FEATURES:")
-    print("  ✓ Proper 3D half-pipe arch (not flat!)")
-    print("  ✓ Segmented armor plates with gaps")
-    print("  ✓ Open bottom — arm slides in")
-    print("  ✓ Open palm — full grip / grabbable")
-    print("  ✓ Watertight manifold (0 errors)")
-    print("  ✓ Tree supports pre-configured (3MF)")
-    print()
-    print("  COMPATIBLE PRINTERS:")
-    print("  ✓ Bambu A1 / A1 Mini (scale to 85%)")
-    print("  ✓ Bambu P1S / P1P")
-    print("  ✓ Bambu X1 / X1C")
-    print("  ✓ Any FDM printer (use .stl)")
+    print("  DESIGN:")
+    print("  + Wrapping half-pipe armor shell")
+    print("  + Flared wrist cuff with lip")
+    print("  + Raised knuckle guard")
+    print("  + Segmented finger armor plates")
+    print("  + Central spine ridge + tech ridges")
+    print("  + Sci-fi surface details")
+    print("  + Open palm for grip")
+    print("  + Strap slots for fit")
     print()
     print("  PRINT: PLA/PETG | 0.2mm | 15% infill")
     print("         3 walls | Tree supports: AUTO")
