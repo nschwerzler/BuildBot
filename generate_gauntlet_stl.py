@@ -326,7 +326,69 @@ def generate():
     ]
 
     # Clean tube — full 360 wrap, no cutouts
-    hollow_tube(m, profiles, segs=48)
+    slices = hollow_tube(m, profiles, segs=48)
+
+    # --- Solid knuckle block at the hand end ---
+    # Close off the top half of the last slice with a solid plate.
+    # This creates the flat knuckle guard shield.
+    # Top half = angles roughly 0 to pi (the +Z side = top of hand).
+    last_outer, last_inner = slices[-1]
+    last_y = profiles[-1][0]
+    last_rx = profiles[-1][1]
+    last_rz = profiles[-1][2]
+    last_w = profiles[-1][3]
+
+    # Build a solid plate extending forward from the last ring.
+    # The plate is a flat slab: same elliptical outline as the last slice's
+    # top half, extruded forward by plate_depth.
+    plate_depth = 8.0   # How far the knuckle block sticks out
+    plate_y = last_y + plate_depth
+
+    segs = 48
+    # Collect top-half vertices (angles 0 to pi = segments 0 to segs//2)
+    # Build the plate as a thick slab on the top half
+    top_start = 0
+    top_end = segs // 2  # half circle = top
+
+    # Outer and inner rings at the plate front face
+    front_outer = []
+    front_inner = []
+    rx_i = max(1.0, last_rx - last_w)
+    rz_i = max(1.0, last_rz - last_w)
+    for i in range(segs):
+        a = 2.0 * math.pi * i / segs
+        ca, sa = math.cos(a), math.sin(a)
+        front_outer.append((last_rx * ca, plate_y, last_rz * sa))
+        front_inner.append((rx_i * ca, plate_y, rz_i * sa))
+
+    # Connect back face (last slice) to front face for the top half
+    for si in range(top_start, top_end):
+        si_next = (si + 1) % segs
+        if si_next > top_end:
+            continue
+        # Outer wall of plate (sides)
+        m.quad(last_outer[si], front_outer[si],
+               front_outer[si_next], last_outer[si_next])
+        # Inner wall of plate (sides)
+        m.quad(last_inner[si], last_inner[si_next],
+               front_inner[si_next], front_inner[si])
+
+    # Front face of the plate (close it off with solid fill)
+    # Fill the annular top-half front face
+    for si in range(top_start, top_end):
+        si_next = (si + 1) % segs
+        if si_next > top_end:
+            continue
+        m.quad(front_outer[si], front_outer[si_next],
+               front_inner[si_next], front_inner[si])
+
+    # Side walls at the edges of the top half (where it meets the open bottom)
+    # Left edge (at angle 0 = +X side)
+    m.quad(last_outer[top_start], last_inner[top_start],
+           front_inner[top_start], front_outer[top_start])
+    # Right edge (at angle pi = -X side)
+    m.quad(last_outer[top_end], front_outer[top_end],
+           front_inner[top_end], last_inner[top_end])
 
     # No separate finger tubes or thumb tubes.
     # Real gauntlets end at the knuckles - fingers are free.
