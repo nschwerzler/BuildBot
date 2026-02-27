@@ -43,8 +43,8 @@ PEG_L      = 4.0     # peg length sticking out
 SOCK_OR    = 2.8     # socket outer radius (5.6mm OD)
 SOCK_IR    = 1.65    # socket inner radius (3.3mm ID, peg + clearance)
 SOCK_L     = 4.0     # socket depth
-LH_THICK   = 0.35    # living hinge thickness (thin enough to flex in PLA)
-LH_SPAN    = 0.5     # living hinge span (gap between wall and arm)
+LH_THICK   = 1.5     # living hinge thickness (visible but still bendable)
+LH_WIDTH   = 6.0     # living hinge width in Z (wide bridge)
 
 # ── Derived ──
 BODY_X = COLS * PITCH - TOL * 2
@@ -255,58 +255,59 @@ def build_lego_2x6():
     # ==============================================================
     #  6. FOLDABLE HINGE — RIGHT WALL (short peg arm)
     # ==============================================================
-    #  Single arm with peg, connected by a living hinge.
-    #  Living hinge is thin in Y -> arm folds UP flat against wall.
+    #  Single arm + peg, solidly attached to the right wall via
+    #  a thick living hinge bridge.  Folds UP flat against top.
     #
-    #     WALL |--hinge--| ARM |===PEG===>
+    #     WALL ╠══bridge══╣ ARM |===PEG===>
     #
     arm_cy = BRICK_H / 2       # mid-height of brick
     arm_cz = BODY_Z / 2        # centered between the two rows
+    lhw2   = LH_WIDTH / 2      # half-width of hinge bridge
 
-    # Living hinge bridge (thin in Y so it flexes up/down)
-    m.box(BODY_X,            arm_cy - LH_THICK/2, arm_cz - 2.0,
-          BODY_X + LH_SPAN,  arm_cy + LH_THICK/2, arm_cz + 2.0)
+    # Thick hinge bridge — attached flush to wall, clearly connected
+    bridge_len = 1.5
+    m.box(BODY_X,              arm_cy - LH_THICK/2, arm_cz - lhw2,
+          BODY_X + bridge_len, arm_cy + LH_THICK/2, arm_cz + lhw2)
 
-    # Arm plate (5mm × 5mm face, 2mm thick)
-    pax0 = BODY_X + LH_SPAN
-    pax1 = pax0 + 2.0
-    par  = 2.5
+    # Arm block (solid plate, 3mm thick × 7mm tall × 7mm wide)
+    pax0 = BODY_X + bridge_len
+    pax1 = pax0 + 3.0
+    par  = 3.5   # half of 7mm
     m.box(pax0, arm_cy - par, arm_cz - par,
           pax1, arm_cy + par, arm_cz + par)
 
-    # Peg extending right from arm
+    # Peg extending right from arm center
     m.cyl_x(pax1, arm_cy, arm_cz, PEG_R, PEG_L)
 
     # ==============================================================
     #  7. FOLDABLE HINGE — LEFT WALL (socket arm, two-stage fold)
     # ==============================================================
-    #  Longer arm with socket.  TWO living hinges:
-    #    Hinge 1 (at wall): thin in Y -> folds arm UP against wall
-    #    Hinge 2 (mid-arm): thin in Z -> turns socket OUTWARD
+    #  Arm with socket.  TWO thick living hinges:
+    #    Hinge 1: folds arm UP (thin in Y)
+    #    Hinge 2: turns socket OUTWARD (thin in Z)
     #
-    #  <===SOCKET=| ARM2 |--h2--| ARM1 |--h1--| WALL
+    #  <===SOCKET=╣ ARM2 ╠══h2══╣ ARM1 ╠══h1══╣ WALL
     #
-    # First living hinge (folds up, thin in Y, fold axis along Z)
-    h1x0 = -LH_SPAN
-    m.box(h1x0,  arm_cy - LH_THICK/2, arm_cz - 2.0,
-          0,     arm_cy + LH_THICK/2, arm_cz + 2.0)
+    # First hinge bridge (at wall, thin in Y for fold-up)
+    m.box(-bridge_len, arm_cy - LH_THICK/2, arm_cz - lhw2,
+          0,           arm_cy + LH_THICK/2, arm_cz + lhw2)
 
-    # Arm segment 1 (bridge between the two hinges, 5mm × 5mm × 3mm)
-    s1x0 = h1x0 - 3.0
-    s1r  = 2.5
-    m.box(s1x0, arm_cy - s1r, arm_cz - s1r,
-          h1x0, arm_cy + s1r, arm_cz + s1r)
+    # Arm segment 1 (solid block between the two hinges)
+    s1x0 = -bridge_len - 4.0
+    s1r  = 3.5
+    m.box(s1x0,        arm_cy - s1r, arm_cz - s1r,
+          -bridge_len, arm_cy + s1r, arm_cz + s1r)
 
-    # Second living hinge (turns outward, thin in Z, fold axis along Y)
-    h2x0 = s1x0 - LH_SPAN
-    m.box(h2x0,  arm_cy - 2.0, arm_cz - LH_THICK/2,
-          s1x0,  arm_cy + 2.0, arm_cz + LH_THICK/2)
+    # Second hinge bridge (thin in Z for turn-outward)
+    h2_len = 1.5
+    m.box(s1x0 - h2_len, arm_cy - lhw2, arm_cz - LH_THICK/2,
+          s1x0,          arm_cy + lhw2, arm_cz + LH_THICK/2)
 
-    # Arm segment 2 — socket mount (6mm × 6mm × 2.5mm)
-    s2x0 = h2x0 - 2.5
-    s2r  = 3.0
-    m.box(s2x0, arm_cy - s2r, arm_cz - s2r,
-          h2x0, arm_cy + s2r, arm_cz + s2r)
+    # Arm segment 2 — socket mount block (solid)
+    s2x0 = s1x0 - h2_len - 3.0
+    s2r  = 3.5
+    m.box(s2x0,          arm_cy - s2r, arm_cz - s2r,
+          s1x0 - h2_len, arm_cy + s2r, arm_cz + s2r)
 
     # Socket tube opening to the left
     m.tube_x(s2x0 - SOCK_L, arm_cy, arm_cz, SOCK_OR, SOCK_IR, SOCK_L)
