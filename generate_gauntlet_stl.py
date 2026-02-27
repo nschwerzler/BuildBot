@@ -124,11 +124,29 @@ class Mesh:
             'support_on_build_plate_only = 0\n'
             'support_threshold_angle = 30\n'
         )
+        # Bambu Studio reads print settings from Metadata/plate_1.config
+        plate_cfg = (
+            '; plate config\n'
+            'enable_support = 1\n'
+            'support_type = tree(auto)\n'
+            'support_on_build_plate_only = 0\n'
+            'support_threshold_angle = 30\n'
+        )
+        # Bambu project config
+        project_cfg = (
+            '; project config\n'
+            'enable_support = 1\n'
+            'support_type = tree(auto)\n'
+            'support_on_build_plate_only = 0\n'
+            'support_threshold_angle = 30\n'
+        )
         with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as zf:
             zf.writestr('[Content_Types].xml', content_types)
             zf.writestr('_rels/.rels', rels)
             zf.writestr('3D/3dmodel.model', model_xml)
             zf.writestr('Metadata/Slic3r_PE.config', slicer_cfg)
+            zf.writestr('Metadata/plate_1.config', plate_cfg)
+            zf.writestr('Metadata/project_config.config', project_cfg)
         kb = os.path.getsize(path) // 1024
         print(f"  3MF: {len(self.tris)} tris, {kb} KB -> {path}")
 
