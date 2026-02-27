@@ -1,18 +1,18 @@
 """
-LEGO 2x6 Hinge Brick Generator
-================================
-Functional 2x6 brick with:
+LEGO 2x6 Technic Hinge Brick Generator
+========================================
+Feature-packed 2x6 brick with:
   - 12 top studs
-  - Side studs on ALL columns, front & back faces
-  - Foldable peg arm on RIGHT wall  (single living hinge, folds up)
-  - Foldable socket arm on LEFT wall (two living hinges, folds up + turns out)
+  - 12 side studs (front & back, all columns)
+  - Hinge PEG flush on RIGHT end wall
+  - Hinge SOCKET flush on LEFT end wall
+  - 5 Technic-style pin holes through the sides
+  - Corner reinforcement pillars
+  - Grip ridges between top studs
   - Anti-stud tubes underneath
   - Hollow interior
 
-Folded flat  = normal brick for walls (just studs visible).
-Folded out   = connector!  Chain bricks side-by-side:
-
-  <==SOCKET|--arm--| BRICK A |--arm--|PEG==>  <==SOCKET|--arm--| BRICK B ...
+Chain bricks:  Brick A RIGHT peg -> Brick B LEFT socket -> spins!
 """
 import math
 import os
@@ -34,14 +34,22 @@ RIB_W     = 0.8
 TOL       = 0.1
 
 # ── Hinge dims ──
-# Solid arms extending from side walls:
-#   RIGHT wall: arm + peg
-#   LEFT wall:  arm + socket
+# Flush connectors on end walls:
+#   RIGHT end: peg sticking out
+#   LEFT end:  socket (hollow tube)
 PEG_R      = 1.5     # peg radius (3mm diam)
-PEG_L      = 4.0     # peg length sticking out
+PEG_L      = 5.0     # peg length sticking out
 SOCK_OR    = 2.8     # socket outer radius (5.6mm OD)
 SOCK_IR    = 1.65    # socket inner radius (3.3mm ID, peg + clearance)
-SOCK_L     = 4.0     # socket depth
+SOCK_DEPTH = 5.5     # socket depth (slightly longer than peg)
+
+# ── Technic pin hole dims ──
+PIN_HOLE_R = 2.45    # Technic pin hole radius (4.9mm diam)
+
+# ── Extra feature dims ──
+GRIP_H     = 0.4     # grip ridge height above top plate
+GRIP_W     = 0.6     # grip ridge width
+PILLAR_SZ  = 2.0     # corner pillar size
 
 # ── Derived ──
 BODY_X = COLS * PITCH - TOL * 2
@@ -250,49 +258,73 @@ def build_lego_2x6():
         m.box(cx-RIB_W/2, 0, cz + tro, cx+RIB_W/2, th*0.3, BODY_Z - WALL)
 
     # ==============================================================
-    #  6. HINGE ARM — RIGHT WALL (peg)
+    #  6. HINGE PEG — flush on RIGHT end wall
     # ==============================================================
-    #  ONE single box from INSIDE the right wall all the way out,
-    #  no separate bridge/arm pieces.  Then peg on the end.
+    #  Peg sticks straight out of the right wall center.
+    #  No arms, no bridges — just a cylinder from the wall face.
     #
-    arm_cy = BRICK_H / 2       # mid-height
-    arm_cz = BODY_Z / 2        # centered between rows
-    arm_hr = 3.5               # arm half-height and half-width
-
-    # Single arm box: starts 1mm inside right wall, extends 5mm out
-    r_arm_x0 = BODY_X - WALL   # starts inside the wall
-    r_arm_x1 = BODY_X + 5.0    # extends 5mm past wall
-    m.box(r_arm_x0, arm_cy - arm_hr, arm_cz - arm_hr,
-          r_arm_x1, arm_cy + arm_hr, arm_cz + arm_hr)
-
-    # Peg on the end
-    m.cyl_x(r_arm_x1, arm_cy, arm_cz, PEG_R, PEG_L)
+    m.cyl_x(BODY_X, cy, cz, PEG_R, PEG_L)
 
     # ==============================================================
-    #  7. HINGE ARM — LEFT WALL (socket)
+    #  7. HINGE SOCKET — flush on LEFT end wall
     # ==============================================================
-    #  ONE single box from INSIDE the left wall extending out,
-    #  then socket tube on the end.
+    #  Socket (hollow tube) built into the left wall, opening left.
+    #  Peg from another brick slides in and spins.
     #
-    l_arm_x1 = WALL            # starts inside the left wall
-    l_arm_x0 = -8.0            # extends 8mm past wall
-    m.box(l_arm_x0, arm_cy - arm_hr, arm_cz - arm_hr,
-          l_arm_x1, arm_cy + arm_hr, arm_cz + arm_hr)
+    m.tube_x(-SOCK_DEPTH, cy, cz, SOCK_OR, SOCK_IR, SOCK_DEPTH)
 
-    # Socket tube on the end
-    m.tube_x(l_arm_x0 - SOCK_L, arm_cy, arm_cz, SOCK_OR, SOCK_IR, SOCK_L)
-    # Solid cap connecting socket to arm (overlaps into arm)
-    m.cyl_x(l_arm_x0 - 0.5, arm_cy, arm_cz, SOCK_OR, 0.5)
+    # ==============================================================
+    #  8. TECHNIC PIN HOLES — through the brick front-to-back
+    # ==============================================================
+    #  5 holes between the 6 stud columns, like Technic bricks.
+    #  Each is a hollow tube running through the full Z depth.
+    #
+    for col in range(COLS - 1):
+        hx = PITCH + col*PITCH - TOL    # between columns
+        m.tube_y(hx, cy - PIN_HOLE_R, cz,
+                 PIN_HOLE_R + 0.8, PIN_HOLE_R, BODY_Z)
+        # Reinforcement ring around each hole on front face
+        m.cyl_z(hx, cy, -0.3, PIN_HOLE_R + 0.8, 0.3)
+        # Reinforcement ring on back face
+        m.cyl_z(hx, cy, BODY_Z, PIN_HOLE_R + 0.8, 0.3)
+
+    # ==============================================================
+    #  9. GRIP RIDGES — between top studs along the length
+    # ==============================================================
+    #  Small raised ridges between each pair of studs on top.
+    #  Gives a textured grip and looks cool.
+    #
+    for col in range(COLS - 1):
+        rx = PITCH + col*PITCH - TOL      # between columns
+        for row in range(ROWS):
+            rz = PITCH/2 + row*PITCH - TOL
+            m.box(rx - GRIP_W/2, BRICK_H, rz - sr*0.6,
+                  rx + GRIP_W/2, BRICK_H + GRIP_H, rz + sr*0.6)
+
+    # ==============================================================
+    #  10. CORNER REINFORCEMENT PILLARS — 4 corners underneath
+    # ==============================================================
+    #  Thicker corner posts for structural strength.
+    #
+    ps = PILLAR_SZ
+    m.box(0, 0, 0, ps, th, ps)                                        # front-left
+    m.box(BODY_X - ps, 0, 0, BODY_X, th, ps)                          # front-right
+    m.box(0, 0, BODY_Z - ps, ps, th, BODY_Z)                          # back-left
+    m.box(BODY_X - ps, 0, BODY_Z - ps, BODY_X, th, BODY_Z)            # back-right
 
     # ──────────────────────────────────────────────────────────────
     n_side = COLS * 2
-    print(f"LEGO 2x{COLS} Hinge Brick:")
+    n_holes = COLS - 1
+    print(f"LEGO 2x{COLS} Technic Hinge Brick:")
     print(f"  Body: {BODY_X:.1f} x {BRICK_H:.1f} x {BODY_Z:.1f} mm")
     print(f"  Top studs: {COLS * ROWS}")
-    print(f"  Side studs: {n_side} (front + back, all columns)")
-    print(f"  RIGHT = Peg arm (diam {PEG_R*2:.1f}mm, {PEG_L:.0f}mm long)")
-    print(f"  LEFT  = Socket arm (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
-    print(f"  Anti-stud tubes: {COLS - 1}")
+    print(f"  Side studs: {n_side} (front + back)")
+    print(f"  RIGHT end = Peg (diam {PEG_R*2:.1f}mm, {PEG_L:.0f}mm long)")
+    print(f"  LEFT end  = Socket (OD {SOCK_OR*2:.1f}mm, ID {SOCK_IR*2:.1f}mm)")
+    print(f"  Technic pin holes: {n_holes}")
+    print(f"  Grip ridges: {n_holes * ROWS}")
+    print(f"  Corner pillars: 4")
+    print(f"  Anti-stud tubes: {n_holes}")
     print(f"  Triangles: {len(m.tris)}")
     return m
 
@@ -301,6 +333,6 @@ if __name__ == "__main__":
     m = build_lego_2x6()
     m.save_stl("lego_2x6.stl")
     m.save_3mf("lego_2x6.3mf")
-    print("\nDone! Foldable hinge arms on both side walls.")
-    print("Fold flat for plain wall brick, fold out to connect!")
-    print("RIGHT arm: folds up (peg). LEFT arm: folds up + turns outward (socket).")
+    print("\nDone! Peg on right end, socket on left end.")
+    print("Technic pin holes, grip ridges, corner pillars.")
+    print("Print 2 — slide Brick A's peg into Brick B's socket to spin!")
