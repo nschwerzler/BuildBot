@@ -1,16 +1,23 @@
 """
-Gauntlet v8 — Angular Flat-Panel Armor
-═══════════════════════════════════════
-NO MORE DOMES. Flat top, angled sides, sharp edges.
+Gauntlet v9 - Hollow Torus Armor
+=================================
+Full 360 degree hollow tube your arm slides through.
+Like a stretched donut / bracelet shape.
 
-Cross-section:
-       ┌──────────────┐       ← flat top plate
-      /                \      ← angled side walls
-     │                  │     ← short vertical rim
-     └──────────────────┘     ← open bottom (arm goes here)
+Cross-section at any point is a ring (annulus):
+    outer circle wall - gap - inner circle wall
 
-This is built entirely from flat quads — no curves.
-One connected piece from elbow to hand.
+Your arm goes through the center hole.
+Open at both ends (elbow entry, fingers exit).
+
+The tube radius and shape varies along the length:
+  - Forearm section: oval, tapers
+  - Wrist cuff: flares out
+  - Hand section: wider, flatter oval
+  - Knuckle bump: raised
+  - Palm cutout: bottom section removed so you can grip
+
+Prints standing up (Y axis vertical). Tree supports handle it.
 """
 import math
 import os
@@ -65,7 +72,8 @@ class Mesh:
                 f.write(f"      vertex {c[0]:.6e} {c[1]:.6e} {c[2]:.6e}\n")
                 f.write("    endloop\n  endfacet\n")
             f.write("endsolid gauntlet\n")
-        print(f"  STL: {len(self.tris)} tris -> {path}")
+        kb = os.path.getsize(path) // 1024
+        print(f"  STL: {len(self.tris)} tris, {kb} KB -> {path}")
 
     def save_3mf(self, path):
         vlines = [f'          <vertex x="{x}" y="{y}" z="{z}"/>'
@@ -121,94 +129,137 @@ class Mesh:
             zf.writestr('_rels/.rels', rels)
             zf.writestr('3D/3dmodel.model', model_xml)
             zf.writestr('Metadata/Slic3r_PE.config', slicer_cfg)
-        print(f"  3MF: {len(self.tris)} tris -> {path}")
+        kb = os.path.getsize(path) // 1024
+        print(f"  3MF: {len(self.tris)} tris, {kb} KB -> {path}")
 
 
-def angular_shell(m, profiles):
+def hollow_tube(m, profiles, segs=32, palm_cut_start=None, palm_cut_end=None,
+                palm_cut_arc=120):
     """
-    Build a connected angular armor shell from profile slices.
+    Build a hollow tube (torus cross-section) from profile slices.
 
-    Each profile defines the cross-section at a Y position:
-        (y, top_w, bot_w, height, side_drop, wall)
+    profiles: list of (y, rx_out, rz_out, wall) tuples
+      y = position along arm length
+      rx_out = outer radius in X direction (half-width)
+      rz_out = outer radius in Z direction (half-height)
+      wall = shell thickness
 
-    Cross-section (looking from front, Y pointing into screen):
+    segs = number of segments around the circumference
+    palm_cut_* = optional range to cut out the bottom for palm grip
 
-          outer_tl ────────── outer_tr        ← top plate (width = top_w)
-          /                        \          ← angled side walls
-    outer_bl                     outer_br     ← bottom edge (width = bot_w)
-    outer_ll ──────────────── outer_lr        ← vertical rim (side_drop deep)
-
-    Inner surface is offset inward by 'wall' thickness.
-
-    Z coordinates:
-      - outer_lr/outer_ll at Z=0 (bottom rim, sits on bed when printing upside down)
-      - outer_bl/outer_br at Z=side_drop
-      - outer_tl/outer_tr at Z=height (top of armor)
+    The tube is an elliptical cylinder. At each Y slice the cross-section
+    is an elliptical annulus (outer ellipse - inner ellipse).
     """
-    def cross(y, top_w, bot_w, h, sd, wall):
-        """Returns 8 outer points and 8 inner points for the cross-section.
-        Going: left-rim-bottom, left-bottom, left-top, right-top, right-bottom, right-rim-bottom
-        That's 6 outer points and 6 inner points.
-        """
-        tw, bw = top_w / 2, bot_w / 2
-        tw_i = (top_w - 2*wall) / 2
-        bw_i = (bot_w - 2*wall) / 2
+    # Which angular range to keep. Full circle = 0 to 2*pi.
+    # For palm cutout, we skip some segments at the bottom (angle ~= 3*pi/2 area).
+    # Angle 0 = right (+X), pi/2 = top (+Z), pi = left (-X), 3*pi/2 = bottom (-Z)
 
-        # Outer points (counterclockwise from bottom-left rim)
-        outer = [
-            (-bw, y, 0),          # 0: left rim bottom
-            (-bw, y, sd),         # 1: left bottom (end of vertical rim)
-            (-tw, y, h),          # 2: left top
-            ( tw, y, h),          # 3: right top
-            ( bw, y, sd),         # 4: right bottom
-            ( bw, y, 0),          # 5: right rim bottom
-        ]
-        # Inner points (same shape, inset by wall)
-        inner = [
-            (-bw_i, y, wall),         # 0: left rim bottom inner
-            (-bw_i, y, sd),           # 1: left bottom inner
-            (-tw_i, y, h - wall),     # 2: left top inner
-            ( tw_i, y, h - wall),     # 3: right top inner
-            ( bw_i, y, sd),           # 4: right bottom inner
-            ( bw_i, y, wall),         # 5: right rim bottom inner
-        ]
+    def ring(y, rx_o, rz_o, wall):
+        rx_i = max(1.0, rx_o - wall)
+        rz_i = max(1.0, rz_o - wall)
+        outer = []
+        inner = []
+        for i in range(segs):
+            a = 2.0 * math.pi * i / segs
+            ca, sa = math.cos(a), math.sin(a)
+            outer.append((rx_o * ca, y, rz_o * sa))
+            inner.append((rx_i * ca, y, rz_i * sa))
         return outer, inner
 
-    slices = [cross(*p) for p in profiles]
+    # Determine which segments to skip for palm cutout
+    # Bottom of the tube is at angle 3*pi/2 (270 degrees) = -Z direction
+    # We cut a symmetric arc centered at the bottom
+    palm_cut_segs = set()
+    if palm_cut_start is not None:
+        cut_half = math.radians(palm_cut_arc) / 2.0
+        center_angle = 3.0 * math.pi / 2.0  # bottom
+        for i in range(segs):
+            a = 2.0 * math.pi * i / segs
+            # Angle distance to bottom center
+            diff = abs(a - center_angle)
+            if diff > math.pi:
+                diff = 2 * math.pi - diff
+            if diff < cut_half:
+                palm_cut_segs.add(i)
 
-    n_pts = 6  # points per cross-section side
+    # Generate all rings
+    slices = []
+    for p in profiles:
+        y, rx, rz, w = p
+        slices.append(ring(y, rx, rz, w))
 
+    def in_palm_cut(yi, si):
+        """Check if this segment should be cut out for palm."""
+        if palm_cut_start is None:
+            return False
+        y = profiles[yi][0]
+        return palm_cut_start <= y <= palm_cut_end and si in palm_cut_segs
+
+    # Build tube walls between adjacent Y slices
     for yi in range(len(slices) - 1):
         o1, i1 = slices[yi]
         o2, i2 = slices[yi + 1]
 
-        # Outer surface: connect adjacent profile segments
-        for si in range(n_pts - 1):
-            m.quad(o1[si], o1[si+1], o2[si+1], o2[si])
+        for si in range(segs):
+            si_next = (si + 1) % segs
 
-        # Inner surface: reversed winding
-        for si in range(n_pts - 1):
-            m.quad(i1[si], i2[si], i2[si+1], i1[si+1])
+            # Check if this quad or the next is in the palm cutout
+            cut1 = in_palm_cut(yi, si) or in_palm_cut(yi, si_next)
+            cut2 = in_palm_cut(yi + 1, si) or in_palm_cut(yi + 1, si_next)
 
-        # Bottom rim strip (connect outer[0] to inner[0] and outer[5] to inner[5])
-        # Left bottom edge
-        m.quad(o1[0], o2[0], i2[0], i1[0])
-        # Right bottom edge
-        m.quad(i1[-1], i2[-1], o2[-1], o1[-1])
+            if cut1 and cut2:
+                continue  # fully in cutout, skip
 
-    # Front end cap (first slice) — close the opening
+            # Outer surface (normals point outward)
+            m.quad(o1[si], o2[si], o2[si_next], o1[si_next])
+            # Inner surface (normals point inward = toward arm)
+            m.quad(i1[si], i1[si_next], i2[si_next], i2[si])
+
+    # End caps (annular rings at each end)
+    # Front cap (first Y slice)
     o_f, i_f = slices[0]
-    for si in range(n_pts - 1):
-        m.quad(o_f[si], i_f[si], i_f[si+1], o_f[si+1])
-    # Bottom strip of front cap
-    m.quad(o_f[0], o_f[-1], i_f[-1], i_f[0])
+    for si in range(segs):
+        si_next = (si + 1) % segs
+        if not (in_palm_cut(0, si) or in_palm_cut(0, si_next)):
+            m.quad(o_f[si], i_f[si], i_f[si_next], o_f[si_next])
 
-    # Back end cap (last slice)
+    # Back cap (last Y slice)
     o_b, i_b = slices[-1]
-    for si in range(n_pts - 1):
-        m.quad(o_b[si], o_b[si+1], i_b[si+1], i_b[si])
-    # Bottom strip of back cap
-    m.quad(o_b[0], i_b[0], i_b[-1], o_b[-1])
+    last_yi = len(slices) - 1
+    for si in range(segs):
+        si_next = (si + 1) % segs
+        if not (in_palm_cut(last_yi, si) or in_palm_cut(last_yi, si_next)):
+            m.quad(o_b[si], o_b[si_next], i_b[si_next], i_b[si])
+
+    # Palm cutout edges: where the cutout starts/ends along Y,
+    # seal the edges with wall strips
+    if palm_cut_start is not None:
+        # Find the boundary segments (edge of cutout)
+        cut_edges = []
+        for si in range(segs):
+            if si in palm_cut_segs:
+                si_prev = (si - 1) % segs
+                si_next = (si + 1) % segs
+                if si_prev not in palm_cut_segs:
+                    cut_edges.append(si)  # left edge of cut
+                if si_next not in palm_cut_segs:
+                    cut_edges.append(si_next)  # right edge of cut
+
+        # Seal the Y-direction edges of the palm cutout
+        for yi in range(len(slices) - 1):
+            y1 = profiles[yi][0]
+            y2 = profiles[yi + 1][0]
+            o1, i1 = slices[yi]
+            o2, i2 = slices[yi + 1]
+
+            in1 = palm_cut_start <= y1 <= palm_cut_end
+            in2 = palm_cut_start <= y2 <= palm_cut_end
+
+            if in1 and in2:
+                # Both slices in the cut zone - seal the circumferential edges
+                for edge_si in cut_edges:
+                    if edge_si < segs:
+                        m.quad(o1[edge_si], o2[edge_si], i2[edge_si], i1[edge_si])
 
     return slices
 
@@ -227,229 +278,141 @@ def box(m, x0, y0, z0, x1, y1, z1):
 def generate():
     m = Mesh()
 
-    # Profile: (y, top_width, bottom_width, height, side_drop, wall)
+    # Coordinate system:
+    # X = left/right (width), Z = up/down (height), Y = arm length
+    # Arm slides in along Y axis through the center of the tube.
+    # Z=0 is the center; negative Z = palm side, positive Z = top of hand
     #
-    # top_width: width of the flat top plate
-    # bottom_width: width at the bottom edge (wider = more coverage)
-    # height: total height from bed to top
-    # side_drop: height of the vertical rim at bottom edges
-    # wall: shell thickness
-    #
-    # Cross-section shape:
-    #     ┌──top_w──┐
-    #    /            \      ← angled walls
-    #   │   bot_w      │
-    #   └──────────────┘     ← side_drop rim
+    # The tube is elliptical: rx (X radius) controls width,
+    # rz (Z radius) controls height.
 
+    # Main gauntlet tube profile:
+    # (y, rx_outer, rz_outer, wall_thickness)
     profiles = [
-        # ── Elbow guard (wider, taller) ──
-        # y    top_w  bot_w  height  side_drop  wall
-        (0,    50,    80,    35,     8,         3.0),
-        (5,    50,    80,    35,     8,         3.0),
-        (10,   48,    78,    34,     8,         2.5),
+        # -- Elbow end (wider, rounder) --
+        (0,    44,   38,   3.0),
+        (5,    44,   38,   3.0),
+        (12,   43,   37,   2.8),
 
-        # ── Forearm (tapers gradually) ──
-        (25,   46,    76,    32,     8,         2.5),
-        (40,   44,    74,    30,     7,         2.5),
-        (55,   42,    72,    28,     7,         2.5),
-        (70,   40,    70,    27,     7,         2.5),
-        (85,   38,    68,    26,     7,         2.5),
-        (95,   36,    66,    25,     6,         2.5),
+        # -- Forearm (gradual taper) --
+        (25,   42,   36,   2.5),
+        (40,   40,   34,   2.5),
+        (55,   38,   32,   2.5),
+        (70,   36,   30,   2.5),
+        (85,   35,   29,   2.5),
+        (95,   34,   28,   2.5),
 
-        # ── Wrist cuff (flares out — signature look) ──
-        (100,  38,    68,    26,     6,         3.0),
-        (106,  42,    74,    28,     7,         3.0),
-        (112,  48,    82,    32,     8,         3.5),
-        (118,  52,    88,    34,     10,        3.5),  # flange peak
-        (122,  50,    86,    33,     9,         3.0),
-        (126,  46,    80,    30,     8,         3.0),
+        # -- Wrist cuff (flares outward) --
+        (100,  35,   29,   3.0),
+        (106,  38,   31,   3.0),
+        (112,  42,   34,   3.5),
+        (118,  46,   36,   3.5),   # flange peak
+        (122,  44,   35,   3.0),
+        (126,  40,   32,   3.0),
 
-        # ── Hand plate (flatter, wide) ──
-        (132,  44,    78,    24,     6,         2.5),
-        (142,  42,    76,    22,     6,         2.5),
-        (152,  42,    76,    22,     6,         2.5),
-        (162,  42,    76,    22,     6,         2.5),
+        # -- Hand section (wider, flatter oval) --
+        (132,  42,   28,   2.5),
+        (142,  42,   26,   2.5),
+        (152,  42,   26,   2.5),
+        (160,  42,   26,   2.5),
 
-        # ── Knuckle guard (raised bump) ──
-        (168,  44,    78,    26,     7,         3.5),
-        (173,  46,    80,    30,     8,         4.0),
-        (178,  46,    80,    30,     8,         4.0),
-        (183,  44,    78,    26,     7,         3.5),
-        (188,  42,    76,    22,     6,         2.5),
+        # -- Knuckle guard (raised bump) --
+        (166,  43,   28,   3.5),
+        (172,  44,   32,   4.0),
+        (176,  44,   32,   4.0),
+        (180,  43,   30,   3.5),
+        (186,  42,   26,   2.5),
     ]
 
-    angular_shell(m, profiles)
+    # Palm cutout: from hand section to end, remove bottom arc
+    # so fingers can grip. Cut ~120 degrees of the bottom.
+    hollow_tube(m, profiles, segs=36,
+                palm_cut_start=132, palm_cut_end=186,
+                palm_cut_arc=140)
 
-    # ── FINGER PLATES ── (small angular shells, touching main body)
+    # -- Finger guards (small tubes, no palm cut) --
     finger_xs = [-27, -9, 9, 27]
     for fx in finger_xs:
+        # Small elliptical tube per finger
         fp = [
-            # y    top_w  bot_w  height  sd   wall
-            (190,  12,    16,    20,     4,   2.0),
-            (196,  12,    16,    19,     4,   2.0),
-            (202,  11,    15,    18,     4,   2.0),
+            (188, 7, 7, 2.0),
+            (194, 7, 7, 2.0),
+            (200, 6, 6, 2.0),
+            (206, 5.5, 5.5, 2.0),
+            (212, 5, 5, 2.0),
         ]
-        # Offset X by shifting all points
-        fp_shifted = [(y, tw, bw, h, sd, w) for y, tw, bw, h, sd, w in fp]
-        # Build each finger as small shell, X-shifted
-        # Need to manually build since angular_shell is centered at x=0
-        # Use profile but with center offset
-        for yi in range(len(fp_shifted) - 1):
-            y1, tw1, bw1, h1, sd1, w1 = fp_shifted[yi]
-            y2, tw2, bw2, h2, sd2, w2 = fp_shifted[yi + 1]
-            # Front slice
-            thw1, bhw1 = tw1/2, bw1/2
-            thw1i, bhw1i = (tw1-2*w1)/2, (bw1-2*w1)/2
-            # Back slice
-            thw2, bhw2 = tw2/2, bw2/2
-            thw2i, bhw2i = (tw2-2*w2)/2, (bw2-2*w2)/2
+        # Offset each finger tube to its X position
+        # Build manually with X offset
+        f_slices = []
+        for y, rx, rz, w in fp:
+            rx_i = max(0.5, rx - w)
+            rz_i = max(0.5, rz - w)
+            outer = []
+            inner = []
+            for i in range(16):
+                a = 2.0 * math.pi * i / 16
+                ca, sa = math.cos(a), math.sin(a)
+                outer.append((fx + rx * ca, y, rz * sa))
+                inner.append((fx + rx_i * ca, y, rz_i * sa))
+            f_slices.append((outer, inner))
 
-            o1 = [(fx-bhw1,y1,0),(fx-bhw1,y1,sd1),(fx-thw1,y1,h1),
-                  (fx+thw1,y1,h1),(fx+bhw1,y1,sd1),(fx+bhw1,y1,0)]
-            i1 = [(fx-bhw1i,y1,w1),(fx-bhw1i,y1,sd1),(fx-thw1i,y1,h1-w1),
-                  (fx+thw1i,y1,h1-w1),(fx+bhw1i,y1,sd1),(fx+bhw1i,y1,w1)]
-            o2 = [(fx-bhw2,y2,0),(fx-bhw2,y2,sd2),(fx-thw2,y2,h2),
-                  (fx+thw2,y2,h2),(fx+bhw2,y2,sd2),(fx+bhw2,y2,0)]
-            i2 = [(fx-bhw2i,y2,w2),(fx-bhw2i,y2,sd2),(fx-thw2i,y2,h2-w2),
-                  (fx+thw2i,y2,h2-w2),(fx+bhw2i,y2,sd2),(fx+bhw2i,y2,w2)]
-
-            for si in range(5):
-                m.quad(o1[si], o1[si+1], o2[si+1], o2[si])
-                m.quad(i1[si], i2[si], i2[si+1], i1[si+1])
-            m.quad(o1[0], o2[0], i2[0], i1[0])
-            m.quad(i1[-1], i2[-1], o2[-1], o1[-1])
+        for yi in range(len(f_slices) - 1):
+            o1, i1 = f_slices[yi]
+            o2, i2 = f_slices[yi + 1]
+            for si in range(16):
+                si_n = (si + 1) % 16
+                m.quad(o1[si], o2[si], o2[si_n], o1[si_n])
+                m.quad(i1[si], i1[si_n], i2[si_n], i2[si])
 
         # Front cap
-        y1, tw1, bw1, h1, sd1, w1 = fp_shifted[0]
-        thw1, bhw1 = tw1/2, bw1/2
-        thw1i, bhw1i = (tw1-2*w1)/2, (bw1-2*w1)/2
-        o_f = [(fx-bhw1,y1,0),(fx-bhw1,y1,sd1),(fx-thw1,y1,h1),
-               (fx+thw1,y1,h1),(fx+bhw1,y1,sd1),(fx+bhw1,y1,0)]
-        i_f = [(fx-bhw1i,y1,w1),(fx-bhw1i,y1,sd1),(fx-thw1i,y1,h1-w1),
-               (fx+thw1i,y1,h1-w1),(fx+bhw1i,y1,sd1),(fx+bhw1i,y1,w1)]
-        for si in range(5):
-            m.quad(o_f[si], i_f[si], i_f[si+1], o_f[si+1])
-        m.quad(o_f[0], o_f[-1], i_f[-1], i_f[0])
-
+        o_f, i_f = f_slices[0]
+        for si in range(16):
+            si_n = (si + 1) % 16
+            m.quad(o_f[si], i_f[si], i_f[si_n], o_f[si_n])
         # Back cap
-        y2, tw2, bw2, h2, sd2, w2 = fp_shifted[-1]
-        thw2, bhw2 = tw2/2, bw2/2
-        thw2i, bhw2i = (tw2-2*w2)/2, (bw2-2*w2)/2
-        o_b = [(fx-bhw2,y2,0),(fx-bhw2,y2,sd2),(fx-thw2,y2,h2),
-               (fx+thw2,y2,h2),(fx+bhw2,y2,sd2),(fx+bhw2,y2,0)]
-        i_b = [(fx-bhw2i,y2,w2),(fx-bhw2i,y2,sd2),(fx-thw2i,y2,h2-w2),
-               (fx+thw2i,y2,h2-w2),(fx+bhw2i,y2,sd2),(fx+bhw2i,y2,w2)]
-        for si in range(5):
-            m.quad(o_b[si], o_b[si+1], i_b[si+1], i_b[si])
-        m.quad(o_b[0], i_b[0], i_b[-1], o_b[-1])
+        o_b, i_b = f_slices[-1]
+        for si in range(16):
+            si_n = (si + 1) % 16
+            m.quad(o_b[si], o_b[si_n], i_b[si_n], i_b[si])
 
-        # Fingertip plate (smaller)
-        ftp = [
-            (205, 10, 14, 17, 3, 2.0),
-            (210, 9, 12, 16, 3, 2.0),
-            (216, 8, 10, 15, 3, 2.0),
-        ]
-        for yi in range(len(ftp) - 1):
-            y1, tw1, bw1, h1, sd1, w1 = ftp[yi]
-            y2, tw2, bw2, h2, sd2, w2 = ftp[yi + 1]
-            thw1, bhw1 = tw1/2, bw1/2
-            thw1i, bhw1i = (tw1-2*w1)/2, (bw1-2*w1)/2
-            thw2, bhw2 = tw2/2, bw2/2
-            thw2i, bhw2i = (tw2-2*w2)/2, (bw2-2*w2)/2
+    # -- Thumb tube (offset left, slightly angled) --
+    t_slices = []
+    for y, rx, rz, w in [(148,9,9,2.0),(156,9,8,2.0),(164,8,7,2.0),
+                          (172,7,6,2.0),(180,6,5,2.0)]:
+        tx = -48
+        rx_i = max(0.5, rx - w)
+        rz_i = max(0.5, rz - w)
+        outer = []
+        inner = []
+        for i in range(12):
+            a = 2.0 * math.pi * i / 12
+            ca, sa = math.cos(a), math.sin(a)
+            outer.append((tx + rx * ca, y, rz * sa))
+            inner.append((tx + rx_i * ca, y, rz_i * sa))
+        t_slices.append((outer, inner))
 
-            o1 = [(fx-bhw1,y1,0),(fx-bhw1,y1,sd1),(fx-thw1,y1,h1),
-                  (fx+thw1,y1,h1),(fx+bhw1,y1,sd1),(fx+bhw1,y1,0)]
-            i1 = [(fx-bhw1i,y1,w1),(fx-bhw1i,y1,sd1),(fx-thw1i,y1,h1-w1),
-                  (fx+thw1i,y1,h1-w1),(fx+bhw1i,y1,sd1),(fx+bhw1i,y1,w1)]
-            o2 = [(fx-bhw2,y2,0),(fx-bhw2,y2,sd2),(fx-thw2,y2,h2),
-                  (fx+thw2,y2,h2),(fx+bhw2,y2,sd2),(fx+bhw2,y2,0)]
-            i2 = [(fx-bhw2i,y2,w2),(fx-bhw2i,y2,sd2),(fx-thw2i,y2,h2-w2),
-                  (fx+thw2i,y2,h2-w2),(fx+bhw2i,y2,sd2),(fx+bhw2i,y2,w2)]
-
-            for si in range(5):
-                m.quad(o1[si], o1[si+1], o2[si+1], o2[si])
-                m.quad(i1[si], i2[si], i2[si+1], i1[si+1])
-            m.quad(o1[0], o2[0], i2[0], i1[0])
-            m.quad(i1[-1], i2[-1], o2[-1], o1[-1])
-
-        # Tip front cap
-        y1, tw1, bw1, h1, sd1, w1 = ftp[0]
-        thw1, bhw1 = tw1/2, bw1/2
-        thw1i, bhw1i = (tw1-2*w1)/2, (bw1-2*w1)/2
-        o_f = [(fx-bhw1,y1,0),(fx-bhw1,y1,sd1),(fx-thw1,y1,h1),
-               (fx+thw1,y1,h1),(fx+bhw1,y1,sd1),(fx+bhw1,y1,0)]
-        i_f = [(fx-bhw1i,y1,w1),(fx-bhw1i,y1,sd1),(fx-thw1i,y1,h1-w1),
-               (fx+thw1i,y1,h1-w1),(fx+bhw1i,y1,sd1),(fx+bhw1i,y1,w1)]
-        for si in range(5):
-            m.quad(o_f[si], i_f[si], i_f[si+1], o_f[si+1])
-        m.quad(o_f[0], o_f[-1], i_f[-1], i_f[0])
-
-        # Tip back cap
-        y2, tw2, bw2, h2, sd2, w2 = ftp[-1]
-        thw2, bhw2 = tw2/2, bw2/2
-        thw2i, bhw2i = (tw2-2*w2)/2, (bw2-2*w2)/2
-        o_b = [(fx-bhw2,y2,0),(fx-bhw2,y2,sd2),(fx-thw2,y2,h2),
-               (fx+thw2,y2,h2),(fx+bhw2,y2,sd2),(fx+bhw2,y2,0)]
-        i_b = [(fx-bhw2i,y2,w2),(fx-bhw2i,y2,sd2),(fx-thw2i,y2,h2-w2),
-               (fx+thw2i,y2,h2-w2),(fx+bhw2i,y2,sd2),(fx+bhw2i,y2,w2)]
-        for si in range(5):
-            m.quad(o_b[si], o_b[si+1], i_b[si+1], i_b[si])
-        m.quad(o_b[0], i_b[0], i_b[-1], o_b[-1])
-
-    # ── THUMB GUARD ── (small angular shell, offset left)
-    thumb_profiles = [
-        (148, 14, 18, 18, 4, 2.0),
-        (158, 14, 18, 17, 4, 2.0),
-        (168, 12, 16, 16, 3, 2.0),
-        (176, 10, 14, 14, 3, 2.0),
-    ]
-    # Build thumb shell manually with X offset
-    tx = -46
-    thumb_slices = []
-    for y, tw, bw, h, sd, w in thumb_profiles:
-        thw, bhw = tw/2, bw/2
-        thwi, bhwi = (tw-2*w)/2, (bw-2*w)/2
-        outer = [(tx-bhw,y,0),(tx-bhw,y,sd),(tx-thw,y,h),
-                 (tx+thw,y,h),(tx+bhw,y,sd),(tx+bhw,y,0)]
-        inner = [(tx-bhwi,y,w),(tx-bhwi,y,sd),(tx-thwi,y,h-w),
-                 (tx+thwi,y,h-w),(tx+bhwi,y,sd),(tx+bhwi,y,w)]
-        thumb_slices.append((outer, inner))
-
-    for yi in range(len(thumb_slices) - 1):
-        o1, i1 = thumb_slices[yi]
-        o2, i2 = thumb_slices[yi + 1]
-        for si in range(5):
-            m.quad(o1[si], o1[si+1], o2[si+1], o2[si])
-            m.quad(i1[si], i2[si], i2[si+1], i1[si+1])
-        m.quad(o1[0], o2[0], i2[0], i1[0])
-        m.quad(i1[-1], i2[-1], o2[-1], o1[-1])
-    # Front/back caps
-    o_f, i_f = thumb_slices[0]
-    for si in range(5):
-        m.quad(o_f[si], i_f[si], i_f[si+1], o_f[si+1])
-    m.quad(o_f[0], o_f[-1], i_f[-1], i_f[0])
-    o_b, i_b = thumb_slices[-1]
-    for si in range(5):
-        m.quad(o_b[si], o_b[si+1], i_b[si+1], i_b[si])
-    m.quad(o_b[0], i_b[0], i_b[-1], o_b[-1])
-
-    # ═══════════════════════════════════════════
-    # STRAP LOOPS (connected to side walls)
-    # ═══════════════════════════════════════════
-    for yp in [20, 60, 110]:
-        # Left
-        box(m, -44, yp, 0, -40, yp+12, 2.5)
-        box(m, -44, yp, 6, -40, yp+12, 8.5)
-        # Right
-        box(m, 40, yp, 0, 44, yp+12, 2.5)
-        box(m, 40, yp, 6, 44, yp+12, 8.5)
+    for yi in range(len(t_slices) - 1):
+        o1, i1 = t_slices[yi]
+        o2, i2 = t_slices[yi + 1]
+        for si in range(12):
+            si_n = (si + 1) % 12
+            m.quad(o1[si], o2[si], o2[si_n], o1[si_n])
+            m.quad(i1[si], i1[si_n], i2[si_n], i2[si])
+    o_f, i_f = t_slices[0]
+    for si in range(12):
+        si_n = (si + 1) % 12
+        m.quad(o_f[si], i_f[si], i_f[si_n], o_f[si_n])
+    o_b, i_b = t_slices[-1]
+    for si in range(12):
+        si_n = (si + 1) % 12
+        m.quad(o_b[si], o_b[si_n], i_b[si_n], i_b[si])
 
     return m
 
 
 if __name__ == '__main__':
     print("=" * 55)
-    print("  GAUNTLET v8 — Angular Flat-Panel Armor")
+    print("  GAUNTLET v9 - Hollow Torus Armor")
     print("=" * 55)
     print()
 
@@ -464,10 +427,12 @@ if __name__ == '__main__':
     print(f"\n  Verts: {len(m.verts)}  Tris: {len(m.tris)}")
     print()
     print("  SHAPE:")
-    print("  + Flat top plate with angled side walls")
-    print("  + NOT a dome — angular armor panels")
-    print("  + One connected main shell")
-    print("  + Flared wrist cuff + raised knuckle guard")
-    print("  + Finger armor plates + thumb guard")
-    print("  + Strap loops for fit")
-    print("  + Open palm")
+    print("  + Hollow tube - arm slides through the center")
+    print("  + Full 360 wrap from elbow to wrist")
+    print("  + Palm cutout at hand section for grip")
+    print("  + Flared wrist cuff")
+    print("  + Raised knuckle guard")
+    print("  + Finger tubes + thumb tube")
+    print("  + Elliptical cross-section (natural arm shape)")
+    print()
+    print("  PRINT: PLA/PETG | 0.2mm | 15% infill | Tree supports")
