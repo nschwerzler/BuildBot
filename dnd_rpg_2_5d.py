@@ -2160,6 +2160,75 @@ SKILL_NODE_BONUSES = {
     'beastmaster':  {'all_stats': 3},
 }
 
+# Pool of possible random mystery nodes (good stuff!)
+MYSTERY_NODE_POOL = [
+    {'name': 'Soul Harvest',    'icon': '👻', 'desc': '+5% lifesteal per rank',        'bonus': {'lifesteal_pct': 5}},
+    {'name': 'Iron Skin',       'icon': '🪨', 'desc': '+3 AC per rank',                'bonus': {'ac': 3}},
+    {'name': 'Titan Blood',     'icon': '🩸', 'desc': '+20% Max HP per rank',           'bonus': {'max_hp_pct': 20}},
+    {'name': 'Mana Surge',      'icon': '🌊', 'desc': '+25% Max MP per rank',           'bonus': {'max_mp_pct': 25}},
+    {'name': 'War God',         'icon': '⚔️', 'desc': '+4 STR per rank',                'bonus': {'str': 4}},
+    {'name': 'Mind Fortress',   'icon': '🏰', 'desc': '+4 INT per rank',                'bonus': {'int': 4}},
+    {'name': 'Cat Reflexes',    'icon': '🐱', 'desc': '+4 DEX per rank',                'bonus': {'dex': 4}},
+    {'name': 'Ancient Wisdom',  'icon': '📖', 'desc': '+4 WIS per rank',                'bonus': {'wis': 4}},
+    {'name': 'Dragon Heart',    'icon': '🐲', 'desc': '+4 CON per rank',                'bonus': {'con': 4}},
+    {'name': 'Golden Aura',     'icon': '✨', 'desc': '+30% gold found per rank',       'bonus': {'gold_pct': 30}},
+    {'name': 'XP Overflow',     'icon': '📈', 'desc': '+25% XP gained per rank',        'bonus': {'xp_pct': 25}},
+    {'name': 'Executioner',     'icon': '🪓', 'desc': '+20% crit damage per rank',      'bonus': {'crit_damage_pct': 20}},
+    {'name': 'Spell Weaver',    'icon': '🕸️', 'desc': '+25% skill power per rank',      'bonus': {'skill_power_pct': 25}},
+    {'name': 'Fury',            'icon': '💢', 'desc': '+20% weapon damage per rank',    'bonus': {'damage_pct': 20}},
+    {'name': 'Blessed Strike',  'icon': '☀️', 'desc': '+25% smite damage per rank',     'bonus': {'smite_damage_pct': 25}},
+    {'name': 'Divine Favor',    'icon': '💫', 'desc': '+30% heal power per rank',       'bonus': {'heal_power_pct': 30}},
+    {'name': 'Shadow Cloak',    'icon': '🌑', 'desc': '+3 all stats per rank',          'bonus': {'all_stats': 3}},
+    {'name': 'Arcane Battery',  'icon': '🔋', 'desc': '-2 MP cost per rank',            'bonus': {'mp_cost_reduction': 2}},
+    {'name': 'Colossus',        'icon': '🗿', 'desc': '+5 all stats per rank',          'bonus': {'all_stats': 5}},
+    {'name': 'Phoenix Spirit',  'icon': '🔥', 'desc': '+15% Max HP, +15% skill power',  'bonus': {'max_hp_pct': 15, 'skill_power_pct': 15}},
+]
+
+def get_or_generate_mystery_nodes(entity):
+    """Get existing mystery nodes or generate the next hidden one."""
+    if not hasattr(entity, 'mystery_nodes'):
+        entity.mystery_nodes = []
+    if not hasattr(entity, 'mystery_seed'):
+        entity.mystery_seed = random.randint(0, 999999)
+
+    # Count how many mystery nodes are maxed (rank >= 3)
+    maxed_count = sum(1 for mn in entity.mystery_nodes if entity.skill_tree.get(mn['id'], 0) >= 3)
+
+    # Always have one more mystery node available than the number maxed
+    needed = maxed_count + 1
+    while len(entity.mystery_nodes) < needed:
+        idx = len(entity.mystery_nodes)
+        # Use seed + index for deterministic but unknown-to-player selection
+        rng = random.Random(entity.mystery_seed + idx * 7919)
+        pool = [n for n in MYSTERY_NODE_POOL if n['name'] not in [m['name'] for m in entity.mystery_nodes]]
+        if not pool:
+            pool = list(MYSTERY_NODE_POOL)  # Allow repeats if pool exhausted
+        pick = rng.choice(pool)
+        node = {
+            'id': f'mystery_{idx}',
+            'name': '??? Mystery ???' if entity.skill_tree.get(f'mystery_{idx}', 0) == 0 else pick['name'],
+            'real_name': pick['name'],
+            'icon': '❓' if entity.skill_tree.get(f'mystery_{idx}', 0) == 0 else pick['icon'],
+            'real_icon': pick['icon'],
+            'desc': 'Unknown power... unlock to reveal!' if entity.skill_tree.get(f'mystery_{idx}', 0) == 0 else pick['desc'],
+            'real_desc': pick['desc'],
+            'max_rank': 3,
+            'row': 4 + idx,
+            'col': 1,
+            'requires': [],
+            'bonus': pick['bonus'],
+        }
+        entity.mystery_nodes.append(node)
+    
+    # Update revealed status for any that have been unlocked
+    for mn in entity.mystery_nodes:
+        if entity.skill_tree.get(mn['id'], 0) > 0:
+            mn['name'] = mn['real_name']
+            mn['icon'] = mn['real_icon']
+            mn['desc'] = mn['real_desc']
+    
+    return entity.mystery_nodes
+
 def get_skill_tree_bonus(entity, bonus_type):
     """Get total bonus from skill tree upgrades for a given bonus_type."""
     if not hasattr(entity, 'skill_tree'):
@@ -2174,6 +2243,16 @@ def get_skill_tree_bonus(entity, bonus_type):
         # 'all_stats' contributes to individual stat queries
         if bonus_type in ('str', 'dex', 'int', 'wis', 'con', 'cha') and 'all_stats' in bonuses:
             total += bonuses['all_stats'] * rank
+    # Mystery node bonuses
+    if hasattr(entity, 'mystery_nodes'):
+        for mn in entity.mystery_nodes:
+            mrank = entity.skill_tree.get(mn['id'], 0)
+            if mrank <= 0:
+                continue
+            if bonus_type in mn['bonus']:
+                total += mn['bonus'][bonus_type] * mrank
+            if bonus_type in ('str', 'dex', 'int', 'wis', 'con', 'cha') and 'all_stats' in mn['bonus']:
+                total += mn['bonus']['all_stats'] * mrank
     return total
 
 def apply_skill_tree_stats(entity):
@@ -2205,18 +2284,37 @@ def apply_skill_tree_stats(entity):
         base_ac += entity.equipment['armor']['ac_bonus']
     entity.ac = base_ac + ac_bonus
 
+def is_tree_completed(entity):
+    """Check if the capstone (bottom row) node is maxed, unlocking infinite upgrades."""
+    tree = SKILL_TREES.get(entity.char_class, [])
+    if not tree:
+        return False
+    capstone = max(tree, key=lambda n: n['row'])
+    return entity.skill_tree.get(capstone['id'], 0) >= capstone['max_rank']
+
 def can_upgrade_node(entity, node_id):
     """Check if an entity can upgrade a skill tree node."""
+    # Check mystery nodes
+    if node_id.startswith('mystery_'):
+        if not is_tree_completed(entity):
+            return False  # Must complete starter tree first
+        if entity.skill_points <= 0:
+            return False
+        # Mystery nodes always upgradeable if tree is done
+        return True
+
     tree = SKILL_TREES.get(entity.char_class, [])
     node = next((n for n in tree if n['id'] == node_id), None)
     if not node:
         return False
     current_rank = entity.skill_tree.get(node_id, 0)
-    if current_rank >= node['max_rank']:
+    tree_done = is_tree_completed(entity)
+    # Once tree is completed, all nodes are infinite; otherwise respect max_rank
+    if not tree_done and current_rank >= node['max_rank']:
         return False
     if entity.skill_points <= 0:
         return False
-    # Check prerequisites
+    # Check prerequisites (still need at least 1 rank in required nodes)
     for req_id in node['requires']:
         if entity.skill_tree.get(req_id, 0) <= 0:
             return False
@@ -2228,7 +2326,27 @@ def upgrade_node(entity, node_id):
         return False
     entity.skill_tree[node_id] = entity.skill_tree.get(node_id, 0) + 1
     entity.skill_points -= 1
-    # Apply stat bonuses immediately
+
+    # Mystery node stat application
+    if node_id.startswith('mystery_'):
+        mystery_nodes = get_or_generate_mystery_nodes(entity)
+        for mn in mystery_nodes:
+            if mn['id'] == node_id:
+                # Reveal the node now that it's unlocked
+                mn['name'] = mn['real_name']
+                mn['icon'] = mn['real_icon']
+                mn['desc'] = mn['real_desc']
+                # Apply stat bonuses
+                for stat in ('str', 'dex', 'int', 'wis', 'con', 'cha'):
+                    if stat in mn['bonus']:
+                        entity.stats[stat.upper()] += mn['bonus'][stat]
+                    if 'all_stats' in mn['bonus']:
+                        entity.stats[stat.upper()] += mn['bonus']['all_stats']
+                break
+        apply_skill_tree_stats(entity)
+        return True
+
+    # Regular node stat application
     bonuses = SKILL_NODE_BONUSES.get(node_id, {})
     for stat in ('str', 'dex', 'int', 'wis', 'con', 'cha'):
         if stat in bonuses:
@@ -2460,8 +2578,7 @@ class Game:
                 boss.y = boss_room[1] + boss_room[3] // 2
                 self.enemies.append(boss)
 
-            # Exit back to normal on stairs (next floor will be normal)
-            self.in_upside_down = False
+            # NOTE: in_upside_down stays True until player takes stairs
         else:
             enemy_types_by_floor = {
                 1: ['slime', 'kobold', 'bat_swarm'],
@@ -2588,6 +2705,9 @@ class Game:
 
         elif tile == TileType.STAIRS:
             self.floor_num += 1
+            if self.in_upside_down:
+                self.in_upside_down = False
+                self.add_message("🌅 You escape the Upside Down! Back to the normal world.", C_GREEN)
             self.save_game()
             self.generate_floor()
             return
@@ -2983,6 +3103,8 @@ class Game:
                     'stats': dict(e.stats),
                     'skill_points': e.skill_points,
                     'skill_tree': dict(e.skill_tree),
+                    'mystery_nodes': getattr(e, 'mystery_nodes', []),
+                    'mystery_seed': getattr(e, 'mystery_seed', 0),
                     'inventory': list(e.inventory),
                     'equipment': {k: (dict(v) if v else None) for k, v in e.equipment.items()},
                     'skills': list(e.skills),
@@ -3025,6 +3147,8 @@ class Game:
                 ent.ac = d.get('ac', ent.ac)
                 ent.skill_points = d.get('skill_points', 0)
                 ent.skill_tree = d.get('skill_tree', {})
+                ent.mystery_nodes = d.get('mystery_nodes', [])
+                ent.mystery_seed = d.get('mystery_seed', random.randint(0, 999999))
                 ent.inventory = d.get('inventory', [])
                 ent.equipment = {k: (dict(v) if v else None) for k, v in d.get('equipment', {}).items()}
                 ent.skills = d.get('skills', ent.skills)
@@ -3973,12 +4097,12 @@ class Game:
             screen.blit(tt, (tx + 10, tab_y + 7))
 
         # Draw skill tree nodes
-        tree_area_x = 100
-        tree_area_y = 140
-        node_w = 220
-        node_h = 65
-        col_spacing = 260
-        row_spacing = 100
+        tree_area_x = 60
+        tree_area_y = 130
+        node_w = 280
+        node_h = 85
+        col_spacing = 320
+        row_spacing = 120
 
         mx, my = pygame.mouse.get_pos()
 
@@ -4007,7 +4131,8 @@ class Game:
             is_hovered = nx <= mx <= nx + node_w and ny <= my <= ny + node_h
 
             # Node color
-            if rank >= node['max_rank']:
+            tree_done = is_tree_completed(member)
+            if not tree_done and rank >= node['max_rank']:
                 bg_col = (30, 70, 30)  # Maxed — green
                 border_col = (80, 200, 80)
             elif rank > 0:
@@ -4033,8 +4158,12 @@ class Game:
             screen.blit(nt, (nx + 10, ny + 8))
 
             # Rank
-            rank_text = f"{rank}/{node['max_rank']}"
-            rank_col = C_GREEN if rank >= node['max_rank'] else (C_GOLD if rank > 0 else (100, 90, 110))
+            if tree_done:
+                rank_text = f"{rank}/∞"
+                rank_col = (150, 120, 255) if rank > node['max_rank'] else C_GREEN
+            else:
+                rank_text = f"{rank}/{node['max_rank']}"
+                rank_col = C_GREEN if rank >= node['max_rank'] else (C_GOLD if rank > 0 else (100, 90, 110))
             rt = self.font_sm.render(rank_text, True, rank_col)
             screen.blit(rt, (nx + node_w - 40, ny + 8))
 
@@ -4046,6 +4175,76 @@ class Game:
             if can_up and (is_selected or is_hovered):
                 hint = self.font_xs.render("[Click or ENTER to upgrade]", True, C_GOLD)
                 screen.blit(hint, (nx + 10, ny + 48))
+
+        # ── MYSTERY NODES (appear after completing starter tree) ──
+        tree_done = is_tree_completed(member)
+        if tree_done:
+            mystery_nodes = get_or_generate_mystery_nodes(member)
+            # Separator line
+            sep_y = tree_area_y + 4 * row_spacing - 15
+            pygame.draw.line(screen, (100, 60, 160), (tree_area_x, sep_y), (tree_area_x + 2 * col_spacing + node_w, sep_y), 2)
+            sep_label = self.font_sm.render("✨ MYSTERY NODES — Tree Mastered! ✨", True, (180, 120, 255))
+            screen.blit(sep_label, (tree_area_x + col_spacing - sep_label.get_width() // 2 + node_w // 2, sep_y - 18))
+
+            # Connection line from capstone to first mystery
+            capstone = max(tree, key=lambda n: n['row'])
+            cx = tree_area_x + capstone['col'] * col_spacing + node_w // 2
+            cy = tree_area_y + capstone['row'] * row_spacing + node_h // 2
+
+            for mi, mn in enumerate(mystery_nodes):
+                mnx = tree_area_x + 1 * col_spacing  # Center column
+                mny = tree_area_y + (4 + mi) * row_spacing + 10
+                mrank = member.skill_tree.get(mn['id'], 0)
+                can_up_m = can_upgrade_node(member, mn['id'])
+
+                # Connection line
+                if mi == 0:
+                    pygame.draw.line(screen, (120, 80, 200), (cx, cy), (mnx + node_w // 2, mny + node_h // 2), 2)
+                else:
+                    prev_y = tree_area_y + (4 + mi - 1) * row_spacing + 10 + node_h // 2
+                    pygame.draw.line(screen, (120, 80, 200), (mnx + node_w // 2, prev_y), (mnx + node_w // 2, mny + node_h // 2), 2)
+
+                # Node background
+                if mrank > 0:
+                    bg_col = (50, 30, 80)  # Purple — revealed
+                    border_col = (160, 100, 255)
+                elif can_up_m:
+                    bg_col = (45, 25, 60)  # Dark purple — available
+                    border_col = (200, 150, 255)
+                else:
+                    bg_col = (30, 20, 40)  # Very dark — locked
+                    border_col = (70, 50, 90)
+
+                node_total_idx = len(tree) + mi
+                is_sel = (node_total_idx == self.skill_tree_selected)
+                is_hov = mnx <= mx <= mnx + node_w and mny <= my <= mny + node_h
+
+                if is_sel or is_hov:
+                    bg_col = tuple(min(255, c + 25) for c in bg_col)
+                    border_col = C_WHITE
+
+                pygame.draw.rect(screen, bg_col, (mnx, mny, node_w, node_h), border_radius=8)
+                pygame.draw.rect(screen, border_col, (mnx, mny, node_w, node_h), 2, border_radius=8)
+
+                # Icon + name
+                icon_name = f"{mn['icon']} {mn['name']}"
+                nt = self.font_sm.render(icon_name, True, (200, 160, 255) if mrank > 0 else (150, 120, 200))
+                screen.blit(nt, (mnx + 10, mny + 8))
+
+                # Rank
+                rank_text = f"{mrank}/∞"
+                rank_col = (180, 130, 255) if mrank > 0 else (100, 80, 130)
+                rt = self.font_sm.render(rank_text, True, rank_col)
+                screen.blit(rt, (mnx + node_w - 40, mny + 8))
+
+                # Description
+                dt = self.font_xs.render(mn['desc'], True, (160, 140, 190))
+                screen.blit(dt, (mnx + 10, mny + 30))
+
+                # Upgrade hint
+                if can_up_m and (is_sel or is_hov):
+                    hint = self.font_xs.render("[Click or ENTER to upgrade]", True, (200, 150, 255))
+                    screen.blit(hint, (mnx + 10, mny + 48))
 
         # Stats summary on the right
         stats_x = SCREEN_W - 350
@@ -4347,6 +4546,9 @@ def main():
                 elif game.state == GameState.SKILL_TREE:
                     member = game.party[game.skill_tree_member_idx % len(game.party)]
                     tree = SKILL_TREES.get(member.char_class, [])
+                    tree_done_kb = is_tree_completed(member)
+                    mystery = get_or_generate_mystery_nodes(member) if tree_done_kb else []
+                    total_nodes = len(tree) + len(mystery)
                     if event.key in (pygame.K_t, pygame.K_ESCAPE):
                         game.state = GameState.EXPLORING
                     elif event.key == pygame.K_LEFT:
@@ -4356,14 +4558,20 @@ def main():
                         game.skill_tree_member_idx = (game.skill_tree_member_idx + 1) % len(game.party)
                         game.skill_tree_selected = 0
                     elif event.key == pygame.K_UP:
-                        game.skill_tree_selected = (game.skill_tree_selected - 1) % max(1, len(tree))
+                        game.skill_tree_selected = (game.skill_tree_selected - 1) % max(1, total_nodes)
                     elif event.key == pygame.K_DOWN:
-                        game.skill_tree_selected = (game.skill_tree_selected + 1) % max(1, len(tree))
+                        game.skill_tree_selected = (game.skill_tree_selected + 1) % max(1, total_nodes)
                     elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                        if tree and game.skill_tree_selected < len(tree):
-                            node_id = tree[game.skill_tree_selected]['id']
+                        sel = game.skill_tree_selected
+                        if sel < len(tree):
+                            node_id = tree[sel]['id']
                             if upgrade_node(member, node_id):
-                                game.add_message(f"🌟 {member.name} upgraded {tree[game.skill_tree_selected]['name']}!", C_GOLD)
+                                game.add_message(f"🌟 {member.name} upgraded {tree[sel]['name']}!", C_GOLD)
+                                game.save_game()
+                        elif sel < total_nodes:
+                            mn = mystery[sel - len(tree)]
+                            if upgrade_node(member, mn['id']):
+                                game.add_message(f"✨ {member.name} unlocked mystery power: {mn['name']}!", (200, 150, 255))
                                 game.save_game()
                     elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6):
                         idx = event.key - pygame.K_1
@@ -4464,12 +4672,13 @@ def main():
                         # Click skill tree nodes
                         member = game.party[game.skill_tree_member_idx % len(game.party)]
                         tree = SKILL_TREES.get(member.char_class, [])
-                        tree_area_x = 100
-                        tree_area_y = 140
-                        node_w = 220
-                        node_h = 65
-                        col_spacing = 260
-                        row_spacing = 100
+                        tree_area_x = 60
+                        tree_area_y = 130
+                        node_w = 280
+                        node_h = 85
+                        col_spacing = 320
+                        row_spacing = 120
+                        clicked = False
                         for i, node in enumerate(tree):
                             nx = tree_area_x + node['col'] * col_spacing
                             ny = tree_area_y + node['row'] * row_spacing
@@ -4478,7 +4687,20 @@ def main():
                                 if upgrade_node(member, node['id']):
                                     game.add_message(f"🌟 {member.name} upgraded {node['name']}!", C_GOLD)
                                     game.save_game()
+                                clicked = True
                                 break
+                        # Mystery nodes
+                        if not clicked and is_tree_completed(member):
+                            mystery_nodes = get_or_generate_mystery_nodes(member)
+                            for mi, mn in enumerate(mystery_nodes):
+                                mnx = tree_area_x + 1 * col_spacing
+                                mny = tree_area_y + (4 + mi) * row_spacing + 10
+                                if mnx <= mx <= mnx + node_w and mny <= my <= mny + node_h:
+                                    game.skill_tree_selected = len(tree) + mi
+                                    if upgrade_node(member, mn['id']):
+                                        game.add_message(f"✨ {member.name} unlocked mystery power: {mn['name']}!", (200, 150, 255))
+                                        game.save_game()
+                                    break
 
                 elif game.state == GameState.COMBAT and game.combat and game.combat.phase == 'player_turn':
                     current = game.combat.get_current()
