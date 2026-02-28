@@ -4169,6 +4169,22 @@ class Game:
         sp = self.font_md.render(sp_text, True, sp_col)
         screen.blit(sp, (SCREEN_W // 2 - sp.get_width() // 2, 55))
 
+        # "Use All Points" button (next to skill points)
+        if member.skill_points > 0:
+            btn_text = "⚡ USE ALL POINTS"
+            btn_surf = self.font_sm.render(btn_text, True, C_WHITE)
+            btn_w = btn_surf.get_width() + 20
+            btn_h = 28
+            btn_x = SCREEN_W // 2 + sp.get_width() // 2 + 15
+            btn_y = 57
+            bmx, bmy = pygame.mouse.get_pos()
+            is_btn_hov = btn_x <= bmx <= btn_x + btn_w and btn_y <= bmy <= btn_y + btn_h
+            btn_bg = (80, 60, 20) if is_btn_hov else (55, 45, 15)
+            btn_border = C_GOLD if is_btn_hov else (140, 110, 40)
+            pygame.draw.rect(screen, btn_bg, (btn_x, btn_y, btn_w, btn_h), border_radius=6)
+            pygame.draw.rect(screen, btn_border, (btn_x, btn_y, btn_w, btn_h), 2, border_radius=6)
+            screen.blit(btn_surf, (btn_x + 10, btn_y + 5))
+
         # Party member tabs
         tab_y = 85
         tab_x_start = 50
@@ -4760,6 +4776,44 @@ def main():
                                 break
 
                 elif game.state == GameState.SKILL_TREE:
+                    # "Use All Points" button click
+                    member = game.party[game.skill_tree_member_idx % len(game.party)]
+                    sp_text_surf = game.font_md.render(f"✨ Skill Points: {member.skill_points}", True, C_GOLD)
+                    btn_w_calc = game.font_sm.render("⚡ USE ALL POINTS", True, C_WHITE).get_width() + 20
+                    btn_x = SCREEN_W // 2 + sp_text_surf.get_width() // 2 + 15
+                    btn_y = 57
+                    btn_h = 28
+                    if member.skill_points > 0 and btn_x <= mx <= btn_x + btn_w_calc and btn_y <= my <= btn_y + btn_h:
+                        # Dump all points into selected node
+                        tree = SKILL_TREES.get(member.char_class, [])
+                        sel = game.skill_tree_selected
+                        upgraded = 0
+                        if sel < len(tree):
+                            node_id = tree[sel]['id']
+                            while member.skill_points > 0 and can_upgrade_node(member, node_id):
+                                if upgrade_node(member, node_id):
+                                    upgraded += 1
+                                else:
+                                    break
+                            if upgraded:
+                                game.add_message(f"🌟 {member.name} upgraded {tree[sel]['name']} x{upgraded}!", C_GOLD)
+                        elif is_tree_completed(member):
+                            mystery_nodes = get_or_generate_mystery_nodes(member)
+                            mi = sel - len(tree)
+                            if 0 <= mi < len(mystery_nodes):
+                                mn = mystery_nodes[mi]
+                                while member.skill_points > 0 and can_upgrade_node(member, mn['id']):
+                                    if upgrade_node(member, mn['id']):
+                                        upgraded += 1
+                                    else:
+                                        break
+                                if upgraded:
+                                    game.add_message(f"✨ {member.name} powered up {mn['name']} x{upgraded}!", (200, 150, 255))
+                        if upgraded:
+                            game.save_game()
+                    else:
+                        pass
+
                     # Click party member tabs
                     tab_y = 85
                     tab_x_start = 50
