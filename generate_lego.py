@@ -24,7 +24,7 @@ PITCH     = 8.0       # Stud center-to-center (LEGO standard)
 COLS      = 6
 ROWS      = 2
 BRICK_H   = 9.6       # Standard brick body height (= 3 plates × 3.2mm)
-STUD_D    = 4.8 - PRINT_TOL   # Real LEGO = 4.8mm; shrink slightly so studs fit INTO real bricks
+STUD_D    = 4.8 - PRINT_TOL * 3   # Real LEGO = 4.8mm; shrink more for FDM (layer lines add width)
 STUD_H    = 1.8       # Real LEGO stud height (was 1.7)
 SEGS      = 32        # More segments = smoother cylinders for better fit
 WALL      = 1.5       # Side wall thickness (LEGO standard)
