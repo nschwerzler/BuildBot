@@ -2226,8 +2226,52 @@ MYSTERY_NODE_POOL = [
     {'name': 'Mystic',          'icon': '🔯', 'desc': '+4 INT, +4 WIS, +20% MP',        'bonus': {'int': 4, 'wis': 4, 'max_mp_pct': 20}},
 ]
 
+def _generate_random_mystery(rng, idx):
+    """Procedurally generate a unique mystery node for any index beyond the pool."""
+    icons = ['⚔️','🛡️','🔥','❄️','⚡','🌀','💎','🌙','☄️','🌊','🐉','👑','💀','🦁','🗡️','🏹','🪄','💫','🌟','⭐','🔮','🧿','🎯','🪬','🫀','🧬','🦷','🦴','🧲','🪐','🌈','🎆','🎇','🔱','♾️']
+    bonus_types = [
+        ('str', 'STR'), ('int', 'INT'), ('dex', 'DEX'), ('wis', 'WIS'), ('con', 'CON'), ('cha', 'CHA'),
+        ('all_stats', 'all stats'), ('ac', 'AC'), ('max_hp_pct', '% Max HP'), ('max_mp_pct', '% Max MP'),
+        ('damage_pct', '% damage'), ('magic_damage_pct', '% magic dmg'), ('skill_power_pct', '% skill power'),
+        ('crit_damage_pct', '% crit dmg'), ('heal_power_pct', '% heal power'), ('smite_damage_pct', '% smite dmg'),
+        ('lifesteal_pct', '% lifesteal'), ('gold_pct', '% gold'), ('xp_pct', '% XP'), ('mp_cost_reduction', ' MP cost reduction'),
+        ('attack_bonus', ' attack bonus'),
+    ]
+    tier = 1 + idx // 10  # Gets stronger every 10 nodes
+    prefixes = ['Ancient', 'Forbidden', 'Celestial', 'Void', 'Primal', 'Eldritch', 'Mythic', 'Cosmic', 'Abyssal', 'Divine',
+                'Astral', 'Ethereal', 'Infernal', 'Arcane', 'Spectral', 'Draconic', 'Runic', 'Shadow', 'Storm', 'Chaos',
+                'Temporal', 'Nexus', 'Quantum', 'Omega', 'Genesis', 'Oblivion', 'Zenith', 'Apex', 'Ultra', 'Hyper']
+    suffixes = ['Power', 'Force', 'Might', 'Essence', 'Fury', 'Grace', 'Wrath', 'Surge', 'Nova', 'Wave',
+                'Strike', 'Shield', 'Pulse', 'Bloom', 'Edge', 'Core', 'Spark', 'Blaze', 'Flow', 'Aura',
+                'Rift', 'Burst', 'Storm', 'Veil', 'Seal', 'Rune', 'Mark', 'Chain', 'Tide', 'Flame']
+    name = f"{rng.choice(prefixes)} {rng.choice(suffixes)}"
+    icon = rng.choice(icons)
+    # Pick 1-3 random bonuses
+    num_bonuses = rng.choices([1, 2, 3], weights=[40, 40, 20])[0]
+    chosen = rng.sample(bonus_types, min(num_bonuses, len(bonus_types)))
+    bonus = {}
+    desc_parts = []
+    for key, label in chosen:
+        if key == 'all_stats':
+            val = rng.randint(2, 4) + tier
+        elif key in ('ac', 'attack_bonus', 'mp_cost_reduction'):
+            val = rng.randint(1, 3) + tier
+        elif key in ('str', 'int', 'dex', 'wis', 'con', 'cha'):
+            val = rng.randint(3, 6) + tier
+        else:  # percentage bonuses
+            val = rng.randint(10, 30) + tier * 5
+        bonus[key] = val
+        if key == 'mp_cost_reduction':
+            desc_parts.append(f"-{val}{label}")
+        elif '%' in label:
+            desc_parts.append(f"+{val}{label}")
+        else:
+            desc_parts.append(f"+{val} {label}")
+    desc = ', '.join(desc_parts) + ' per rank'
+    return {'name': name, 'icon': icon, 'desc': desc, 'bonus': bonus}
+
 def get_or_generate_mystery_nodes(entity):
-    """Get existing mystery nodes or generate the next hidden one."""
+    """Get existing mystery nodes or generate the next hidden one. Infinite nodes!"""
     if not hasattr(entity, 'mystery_nodes'):
         entity.mystery_nodes = []
     if not hasattr(entity, 'mystery_seed'):
@@ -2240,17 +2284,19 @@ def get_or_generate_mystery_nodes(entity):
     needed = maxed_count + 1
     while len(entity.mystery_nodes) < needed:
         idx = len(entity.mystery_nodes)
-        # Use seed + index for deterministic but unknown-to-player selection
         rng = random.Random(entity.mystery_seed + idx * 7919)
-        pool = [n for n in MYSTERY_NODE_POOL if n['name'] not in [m['name'] for m in entity.mystery_nodes]]
-        if not pool:
-            pool = list(MYSTERY_NODE_POOL)  # Allow repeats if pool exhausted
-        pick = rng.choice(pool)
+        # Use pool first, then procedurally generate forever
+        used_names = {m.get('real_name', m['name']) for m in entity.mystery_nodes}
+        pool = [n for n in MYSTERY_NODE_POOL if n['name'] not in used_names]
+        if pool:
+            pick = rng.choice(pool)
+        else:
+            pick = _generate_random_mystery(rng, idx)
         node = {
             'id': f'mystery_{idx}',
             'name': '??? Mystery ???' if entity.skill_tree.get(f'mystery_{idx}', 0) == 0 else pick['name'],
             'real_name': pick['name'],
-            'icon': '❓' if entity.skill_tree.get(f'mystery_{idx}', 0) == 0 else pick['icon'],
+            'icon': '\u2753' if entity.skill_tree.get(f'mystery_{idx}', 0) == 0 else pick['icon'],
             'real_icon': pick['icon'],
             'desc': 'Unknown power... unlock to reveal!' if entity.skill_tree.get(f'mystery_{idx}', 0) == 0 else pick['desc'],
             'real_desc': pick['desc'],
