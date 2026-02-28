@@ -2162,26 +2162,68 @@ SKILL_NODE_BONUSES = {
 
 # Pool of possible random mystery nodes (good stuff!)
 MYSTERY_NODE_POOL = [
-    {'name': 'Soul Harvest',    'icon': '👻', 'desc': '+5% lifesteal per rank',        'bonus': {'lifesteal_pct': 5}},
-    {'name': 'Iron Skin',       'icon': '🪨', 'desc': '+3 AC per rank',                'bonus': {'ac': 3}},
-    {'name': 'Titan Blood',     'icon': '🩸', 'desc': '+20% Max HP per rank',           'bonus': {'max_hp_pct': 20}},
-    {'name': 'Mana Surge',      'icon': '🌊', 'desc': '+25% Max MP per rank',           'bonus': {'max_mp_pct': 25}},
+    # ── Stat Boosters ──
     {'name': 'War God',         'icon': '⚔️', 'desc': '+4 STR per rank',                'bonus': {'str': 4}},
     {'name': 'Mind Fortress',   'icon': '🏰', 'desc': '+4 INT per rank',                'bonus': {'int': 4}},
     {'name': 'Cat Reflexes',    'icon': '🐱', 'desc': '+4 DEX per rank',                'bonus': {'dex': 4}},
     {'name': 'Ancient Wisdom',  'icon': '📖', 'desc': '+4 WIS per rank',                'bonus': {'wis': 4}},
     {'name': 'Dragon Heart',    'icon': '🐲', 'desc': '+4 CON per rank',                'bonus': {'con': 4}},
+    {'name': 'Silver Tongue',   'icon': '🗣️', 'desc': '+4 CHA per rank',                'bonus': {'cha': 4}},
+    {'name': 'Titan Strength',  'icon': '🦾', 'desc': '+6 STR per rank',                'bonus': {'str': 6}},
+    {'name': 'Psion Mind',      'icon': '🧠', 'desc': '+6 INT per rank',                'bonus': {'int': 6}},
+    {'name': 'Wind Walker',     'icon': '🌬️', 'desc': '+6 DEX per rank',                'bonus': {'dex': 6}},
+    {'name': 'Oracle Eyes',     'icon': '👁️', 'desc': '+6 WIS per rank',                'bonus': {'wis': 6}},
+    {'name': 'Stone Body',      'icon': '🪨', 'desc': '+6 CON per rank',                'bonus': {'con': 6}},
+    # ── All Stats ──
+    {'name': 'Shadow Cloak',    'icon': '🌑', 'desc': '+3 all stats per rank',          'bonus': {'all_stats': 3}},
+    {'name': 'Colossus',        'icon': '🗿', 'desc': '+5 all stats per rank',          'bonus': {'all_stats': 5}},
+    {'name': 'Demigod',         'icon': '⭐', 'desc': '+7 all stats per rank',          'bonus': {'all_stats': 7}},
+    {'name': 'Ascendant',       'icon': '🌌', 'desc': '+10 all stats per rank',         'bonus': {'all_stats': 10}},
+    # ── HP/MP ──
+    {'name': 'Titan Blood',     'icon': '🩸', 'desc': '+20% Max HP per rank',           'bonus': {'max_hp_pct': 20}},
+    {'name': 'Mana Surge',      'icon': '🌊', 'desc': '+25% Max MP per rank',           'bonus': {'max_mp_pct': 25}},
+    {'name': 'Undying Will',    'icon': '💀', 'desc': '+35% Max HP per rank',           'bonus': {'max_hp_pct': 35}},
+    {'name': 'Infinite Well',   'icon': '🕳️', 'desc': '+40% Max MP per rank',           'bonus': {'max_mp_pct': 40}},
+    {'name': 'Vitality Burst',  'icon': '💚', 'desc': '+15% HP, +15% MP per rank',      'bonus': {'max_hp_pct': 15, 'max_mp_pct': 15}},
+    # ── Defense ──
+    {'name': 'Iron Skin',       'icon': '🛡️', 'desc': '+3 AC per rank',                 'bonus': {'ac': 3}},
+    {'name': 'Adamantine Shell','icon': '💎', 'desc': '+5 AC per rank',                 'bonus': {'ac': 5}},
+    {'name': 'Mirror Ward',     'icon': '🪞', 'desc': '+2 AC, +2 CON per rank',         'bonus': {'ac': 2, 'con': 2}},
+    # ── Damage ──
+    {'name': 'Fury',            'icon': '💢', 'desc': '+20% weapon damage per rank',    'bonus': {'damage_pct': 20}},
+    {'name': 'Executioner',     'icon': '🪓', 'desc': '+20% crit damage per rank',      'bonus': {'crit_damage_pct': 20}},
+    {'name': 'Berserker Rage',  'icon': '😡', 'desc': '+30% weapon damage per rank',    'bonus': {'damage_pct': 30}},
+    {'name': 'Death Strike',    'icon': '☠️', 'desc': '+35% crit damage per rank',      'bonus': {'crit_damage_pct': 35}},
+    {'name': 'Bloodlust',       'icon': '🩸', 'desc': '+15% damage, +10% lifesteal',    'bonus': {'damage_pct': 15, 'lifesteal_pct': 10}},
+    # ── Magic ──
+    {'name': 'Spell Weaver',    'icon': '🕸️', 'desc': '+25% skill power per rank',      'bonus': {'skill_power_pct': 25}},
+    {'name': 'Arcane Battery',  'icon': '🔋', 'desc': '-2 MP cost per rank',            'bonus': {'mp_cost_reduction': 2}},
+    {'name': 'Eldritch Surge',  'icon': '🌀', 'desc': '+30% magic damage per rank',     'bonus': {'magic_damage_pct': 30}},
+    {'name': 'Void Channel',    'icon': '🔮', 'desc': '-3 MP cost, +10% magic dmg',     'bonus': {'mp_cost_reduction': 3, 'magic_damage_pct': 10}},
+    {'name': 'Spell Storm',     'icon': '⛈️', 'desc': '+40% skill power per rank',      'bonus': {'skill_power_pct': 40}},
+    # ── Healing ──
+    {'name': 'Divine Favor',    'icon': '💫', 'desc': '+30% heal power per rank',       'bonus': {'heal_power_pct': 30}},
+    {'name': 'Blessed Strike',  'icon': '☀️', 'desc': '+25% smite damage per rank',     'bonus': {'smite_damage_pct': 25}},
+    {'name': 'Angelic Touch',   'icon': '😇', 'desc': '+50% heal power per rank',       'bonus': {'heal_power_pct': 50}},
+    {'name': 'Holy Wrath',      'icon': '⚡', 'desc': '+40% smite damage per rank',     'bonus': {'smite_damage_pct': 40}},
+    # ── Utility ──
+    {'name': 'Soul Harvest',    'icon': '👻', 'desc': '+5% lifesteal per rank',         'bonus': {'lifesteal_pct': 5}},
     {'name': 'Golden Aura',     'icon': '✨', 'desc': '+30% gold found per rank',       'bonus': {'gold_pct': 30}},
     {'name': 'XP Overflow',     'icon': '📈', 'desc': '+25% XP gained per rank',        'bonus': {'xp_pct': 25}},
-    {'name': 'Executioner',     'icon': '🪓', 'desc': '+20% crit damage per rank',      'bonus': {'crit_damage_pct': 20}},
-    {'name': 'Spell Weaver',    'icon': '🕸️', 'desc': '+25% skill power per rank',      'bonus': {'skill_power_pct': 25}},
-    {'name': 'Fury',            'icon': '💢', 'desc': '+20% weapon damage per rank',    'bonus': {'damage_pct': 20}},
-    {'name': 'Blessed Strike',  'icon': '☀️', 'desc': '+25% smite damage per rank',     'bonus': {'smite_damage_pct': 25}},
-    {'name': 'Divine Favor',    'icon': '💫', 'desc': '+30% heal power per rank',       'bonus': {'heal_power_pct': 30}},
-    {'name': 'Shadow Cloak',    'icon': '🌑', 'desc': '+3 all stats per rank',          'bonus': {'all_stats': 3}},
-    {'name': 'Arcane Battery',  'icon': '🔋', 'desc': '-2 MP cost per rank',            'bonus': {'mp_cost_reduction': 2}},
-    {'name': 'Colossus',        'icon': '🗿', 'desc': '+5 all stats per rank',          'bonus': {'all_stats': 5}},
-    {'name': 'Phoenix Spirit',  'icon': '🔥', 'desc': '+15% Max HP, +15% skill power',  'bonus': {'max_hp_pct': 15, 'skill_power_pct': 15}},
+    {'name': 'Fortune',         'icon': '🍀', 'desc': '+50% gold found per rank',       'bonus': {'gold_pct': 50}},
+    {'name': 'Scholar',         'icon': '🎓', 'desc': '+40% XP gained per rank',        'bonus': {'xp_pct': 40}},
+    {'name': 'Treasure Hunter', 'icon': '🗺️', 'desc': '+20% gold, +15% XP per rank',   'bonus': {'gold_pct': 20, 'xp_pct': 15}},
+    # ── Combos ──
+    {'name': 'Phoenix Spirit',  'icon': '🔥', 'desc': '+15% HP, +15% skill power',     'bonus': {'max_hp_pct': 15, 'skill_power_pct': 15}},
+    {'name': 'Battle Mage',     'icon': '🧙', 'desc': '+3 STR, +3 INT, +10% dmg',      'bonus': {'str': 3, 'int': 3, 'damage_pct': 10}},
+    {'name': 'Dark Knight',     'icon': '🖤', 'desc': '+3 STR, +3 CON, +2 AC',          'bonus': {'str': 3, 'con': 3, 'ac': 2}},
+    {'name': 'Arcane Warrior',  'icon': '⚔️', 'desc': '+15% dmg, +15% magic dmg',      'bonus': {'damage_pct': 15, 'magic_damage_pct': 15}},
+    {'name': 'Life Weaver',     'icon': '🌸', 'desc': '+20% heal, +15% HP per rank',    'bonus': {'heal_power_pct': 20, 'max_hp_pct': 15}},
+    {'name': 'Storm Caller',    'icon': '🌩️', 'desc': '+3 DEX, +3 WIS, +15% skill',    'bonus': {'dex': 3, 'wis': 3, 'skill_power_pct': 15}},
+    {'name': 'Blood Mage',      'icon': '🩸', 'desc': '+20% magic dmg, +10% lifesteal', 'bonus': {'magic_damage_pct': 20, 'lifesteal_pct': 10}},
+    {'name': 'Warden',          'icon': '🌲', 'desc': '+4 CON, +3 AC, +10% HP',         'bonus': {'con': 4, 'ac': 3, 'max_hp_pct': 10}},
+    {'name': 'Reaper',          'icon': '💀', 'desc': '+25% crit, +15% lifesteal',      'bonus': {'crit_damage_pct': 25, 'lifesteal_pct': 15}},
+    {'name': 'Mystic',          'icon': '🔯', 'desc': '+4 INT, +4 WIS, +20% MP',        'bonus': {'int': 4, 'wis': 4, 'max_mp_pct': 20}},
 ]
 
 def get_or_generate_mystery_nodes(entity):
