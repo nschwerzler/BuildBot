@@ -189,28 +189,56 @@ class Mesh:
         print(f"  3MF: {len(self.tris)} tris, {os.path.getsize(path)//1024} KB -> {path}")
 
 
-def save_multicolor_3mf(meshes, path):
-    """Save multiple meshes as separate objects in one 3MF (for multi-color printing).
-    meshes = [(mesh, name), ...]  — each gets its own object ID for filament assignment."""
-    resources = []
-    build_items = []
-    for idx, (mesh, name) in enumerate(meshes):
-        obj_id = idx + 1
-        vl = [f'          <vertex x="{x}" y="{y}" z="{z}"/>' for x, y, z in mesh.verts]
-        tl = [f'          <triangle v1="{a}" v2="{b}" v3="{c}"/>' for a, b, c in mesh.tris]
-        resources.append(
-            f'    <object id="{obj_id}" type="model" name="{name}">\n      <mesh>\n'
-            f'        <vertices>\n' + '\n'.join(vl) + '\n        </vertices>\n'
-            f'        <triangles>\n' + '\n'.join(tl) + '\n        </triangles>\n'
-            f'      </mesh>\n    </object>')
-        build_items.append(f'    <item objectid="{obj_id}"/>')
+def save_multicolor_3mf(meshes, colors, path):
+    """Save multiple meshes as ONE object with per-triangle material colors in 3MF.
+    meshes = [(mesh, name), ...]
+    colors = [(r,g,b), ...] — one color per mesh, hex RGB."""
+    # Merge all meshes into one vertex/triangle list, tagging each triangle with material ID
+    all_verts = []
+    all_tris = []  # (v1, v2, v3, material_id)
+    vmap = {}
+    
+    def add_vert(x, y, z):
+        key = (round(x, 4), round(y, 4), round(z, 4))
+        if key not in vmap:
+            vmap[key] = len(all_verts)
+            all_verts.append(key)
+        return vmap[key]
+    
+    for mat_id, (mesh, name) in enumerate(meshes):
+        for ia, ib, ic in mesh.tris:
+            a = mesh.verts[ia]
+            b = mesh.verts[ib]
+            c = mesh.verts[ic]
+            va = add_vert(*a)
+            vb = add_vert(*b)
+            vc = add_vert(*c)
+            all_tris.append((va, vb, vc, mat_id))
+
+    # Build materials
+    mat_lines = []
+    for i, (r, g, b) in enumerate(colors):
+        mat_lines.append(f'          <base name="Color{i}" displaycolor="#{r:02X}{g:02X}{b:02X}"/>')
+
+    vl = [f'          <vertex x="{x}" y="{y}" z="{z}"/>' for x, y, z in all_verts]
+    tl = [f'          <triangle v1="{a}" v2="{b}" v3="{c}" pid="1" p1="{m}"/>' for a, b, c, m in all_tris]
 
     model = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n'
+        '<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"\n'
+        '       xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">\n'
         '  <metadata name="Application">MarioBlockGen</metadata>\n'
-        '  <resources>\n' + '\n'.join(resources) + '\n  </resources>\n'
-        '  <build>\n' + '\n'.join(build_items) + '\n  </build>\n</model>')
+        '  <resources>\n'
+        '    <basematerials id="1">\n' + '\n'.join(mat_lines) + '\n    </basematerials>\n'
+        '    <object id="2" type="model" name="MarioQuestionBlock">\n'
+        '      <mesh>\n'
+        '        <vertices>\n' + '\n'.join(vl) + '\n        </vertices>\n'
+        '        <triangles>\n' + '\n'.join(tl) + '\n        </triangles>\n'
+        '      </mesh>\n'
+        '    </object>\n'
+        '  </resources>\n'
+        '  <build>\n    <item objectid="2"/>\n  </build>\n'
+        '</model>')
     ct = ('<?xml version="1.0" encoding="UTF-8"?>\n'
           '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n'
           '  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\n'
@@ -225,8 +253,7 @@ def save_multicolor_3mf(meshes, path):
         zf.writestr('[Content_Types].xml', ct)
         zf.writestr('_rels/.rels', rels)
         zf.writestr('3D/3dmodel.model', model)
-    total_tris = sum(len(m.tris) for m, _ in meshes)
-    print(f"  3MF (multi-color): {total_tris} tris, {len(meshes)} objects, {os.path.getsize(path)//1024} KB -> {path}")
+    print(f"  3MF (multi-color): {len(all_tris)} tris, {len(colors)} colors, {os.path.getsize(path)//1024} KB -> {path}")
 
 
 def build_mario_block():
@@ -308,7 +335,12 @@ if __name__ == "__main__":
     combined.tris = body.tris + [(a+offset, b+offset, c+offset) for a, b, c in qmark.tris]
     combined._vmap = {}  # not needed for save
     combined.save_stl("mario_question_block.stl")
-    # Multi-color 3MF (2 objects = 2 filament colors)
-    save_multicolor_3mf([(body, "YellowBody"), (qmark, "QuestionMark")], "mario_question_block.3mf")
+    # Multi-color 3MF — single object, per-triangle material colors
+    # Yellow (255, 200, 0) for body, Brown (101, 67, 33) for ? pattern
+    save_multicolor_3mf(
+        [(body, "YellowBody"), (qmark, "QuestionMark")],
+        [(255, 200, 0), (101, 67, 33)],
+        "mario_question_block.3mf"
+    )
     print("\nDone! Mario ? Block ready to print.")
     print("In Bambu Studio: assign YELLOW filament to 'YellowBody', BROWN to 'QuestionMark'.")
