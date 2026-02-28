@@ -4,13 +4,13 @@
     "name": "Hero",
     "char_class": "rogue",
     "level": 13,
-    "xp": 0,
+    "xp": 936,
     "xp_to_level": 12942,
     "hp": 69,
     "max_hp": 69,
-    "mp": 70,
+    "mp": 27,
     "max_mp": 70,
-    "ac": 34,
+    "ac": 38,
     "stats": {
       "STR": 23,
       "DEX": 30,
@@ -837,11 +837,11 @@
       "name": "Ironheart",
       "char_class": "warrior",
       "level": 13,
-      "xp": 0,
+      "xp": 936,
       "xp_to_level": 12942,
       "hp": 109,
       "max_hp": 109,
-      "mp": 63,
+      "mp": 40,
       "max_mp": 63,
       "ac": 20,
       "stats": {
@@ -881,11 +881,11 @@
       "name": "Lumina",
       "char_class": "cleric",
       "level": 13,
-      "xp": 0,
+      "xp": 936,
       "xp_to_level": 12942,
       "hp": 100,
       "max_hp": 100,
-      "mp": 90,
+      "mp": 56,
       "max_mp": 90,
       "ac": 20,
       "stats": {
@@ -922,6 +922,8 @@
       "ai_personality": "fierce"
     }
   ],
-  "gold": 1399,
-  "floor_num": 5
+  "gold": 2563,
+  "floor_num": 6,
+  "in_upside_down": false,
+  "force_regen": true
 }

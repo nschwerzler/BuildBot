@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║       REALMS OF SHADOW — 2.5D DnD RPG Adventure            ║
+║       REALMS OF SHADOWS — 2.5D DnD RPG Adventure            ║
 ║   Isometric dungeon crawling with AI party members          ║
 ╚══════════════════════════════════════════════════════════════╝
 """
@@ -1776,15 +1776,17 @@ class DungeonGenerator:
                 if self.tiles[ty][tx] == TileType.FLOOR:
                     self.tiles[ty][tx] = TileType.TRAP
 
-        # Stranger Things Portal — 30% chance on floors 3+, placed in a middle room
+        # Stranger Things Portal — always on floor 6, 30% chance on floors 3+
         self.st_portal_pos = None
-        if self.floor_num >= 3 and random.random() < 0.30 and len(self.rooms) > 2:
-            portal_room = random.choice(self.rooms[1:-1])
-            px = portal_room[0] + portal_room[2] // 2
-            py = portal_room[1] + portal_room[3] // 2
-            if self.tiles[py][px] == TileType.FLOOR:
-                self.tiles[py][px] = TileType.ST_PORTAL
-                self.st_portal_pos = (px, py)
+        if len(self.rooms) > 2:
+            should_spawn = (self.floor_num == 6) or (self.floor_num >= 3 and random.random() < 0.30)
+            if should_spawn:
+                portal_room = random.choice(self.rooms[1:-1])
+                px = portal_room[0] + portal_room[2] // 2
+                py = portal_room[1] + portal_room[3] // 2
+                if self.tiles[py][px] == TileType.FLOOR:
+                    self.tiles[py][px] = TileType.ST_PORTAL
+                    self.st_portal_pos = (px, py)
 
         return self
 
