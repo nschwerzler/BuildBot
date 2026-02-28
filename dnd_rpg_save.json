@@ -3,14 +3,14 @@
   "player": {
     "name": "Hero",
     "char_class": "rogue",
-    "level": 13,
-    "xp": 936,
-    "xp_to_level": 12942,
-    "hp": 69,
-    "max_hp": 69,
-    "mp": 27,
-    "max_mp": 70,
-    "ac": 38,
+    "level": 45,
+    "xp": 0,
+    "xp_to_level": 5583477979,
+    "hp": 261,
+    "max_hp": 261,
+    "mp": 230,
+    "max_mp": 230,
+    "ac": 42,
     "stats": {
       "STR": 23,
       "DEX": 30,
@@ -19,7 +19,7 @@
       "WIS": 19,
       "CHA": 17
     },
-    "skill_points": 10,
+    "skill_points": 74,
     "skill_tree": {
       "shadow_step": 3,
       "lethal_edge": 3,
@@ -30,590 +30,6 @@
     },
     "inventory": [
       {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
         "name": "Arcane Staff",
         "type": "weapon",
         "icon": "\ud83e\ude84",
@@ -622,40 +38,12 @@
         "desc": "+3 magic damage"
       },
       {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
       },
       {
         "name": "Iron Sword",
@@ -666,49 +54,116 @@
         "desc": "+1 attack damage"
       },
       {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
       },
       {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
       },
       {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
       },
       {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
       },
       {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Steel Sword",
+        "type": "weapon",
+        "icon": "\ud83d\udde1\ufe0f",
+        "attack": "1d10+2",
+        "price": 120,
+        "desc": "+2 attack damage"
+      },
+      {
+        "name": "Steel Sword",
+        "type": "weapon",
+        "icon": "\ud83d\udde1\ufe0f",
+        "attack": "1d10+2",
+        "price": 120,
+        "desc": "+2 attack damage"
+      },
+      {
+        "name": "Steel Sword",
+        "type": "weapon",
+        "icon": "\ud83d\udde1\ufe0f",
+        "attack": "1d10+2",
+        "price": 120,
+        "desc": "+2 attack damage"
+      },
+      {
+        "name": "Steel Sword",
+        "type": "weapon",
+        "icon": "\ud83d\udde1\ufe0f",
+        "attack": "1d10+2",
+        "price": 120,
+        "desc": "+2 attack damage"
       },
       {
         "name": "Chain Mail",
@@ -719,31 +174,84 @@
         "desc": "+4 AC"
       },
       {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
+        "name": "Chain Mail",
+        "type": "armor",
+        "icon": "\u26d3\ufe0f",
+        "ac_bonus": 4,
+        "price": 100,
+        "desc": "+4 AC"
       },
       {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
+        "name": "Chain Mail",
+        "type": "armor",
+        "icon": "\u26d3\ufe0f",
+        "ac_bonus": 4,
+        "price": 100,
+        "desc": "+4 AC"
       },
       {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
       },
       {
         "name": "Amulet of Life",
@@ -762,12 +270,12 @@
         "desc": "+20 Max HP"
       },
       {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
+        "name": "Amulet of Life",
+        "type": "accessory",
+        "icon": "\ud83d\udcff",
+        "hp_bonus": 20,
+        "price": 150,
+        "desc": "+20 Max HP"
       },
       {
         "name": "Demogorgon Fang",
@@ -781,6 +289,62 @@
         "desc": "+5 STR, +3 CON"
       },
       {
+        "name": "Eleven's Bracelet",
+        "type": "accessory",
+        "icon": "\ud83d\udd17",
+        "stat_bonus": {
+          "INT": 8,
+          "WIS": 6
+        },
+        "hp_bonus": 30,
+        "price": 1200,
+        "desc": "+8 INT, +6 WIS, +30 Max HP \u2014 The best drop"
+      },
+      {
+        "name": "Flayed Essence",
+        "type": "accessory",
+        "icon": "\ud83d\udc89",
+        "stat_bonus": {
+          "STR": 4,
+          "CON": 4
+        },
+        "price": 400,
+        "desc": "+4 STR, +4 CON"
+      },
+      {
+        "name": "Minotaur Horn",
+        "type": "accessory",
+        "icon": "\ud83d\udc02",
+        "stat_bonus": {
+          "STR": 3
+        },
+        "hp_bonus": 10,
+        "price": 150,
+        "desc": "+3 STR, +10 Max HP"
+      },
+      {
+        "name": "Ring of Power",
+        "type": "accessory",
+        "icon": "\ud83d\udc8d",
+        "stat_bonus": {
+          "STR": 2,
+          "INT": 2
+        },
+        "price": 200,
+        "desc": "+2 STR, +2 INT"
+      },
+      {
+        "name": "Ring of Power",
+        "type": "accessory",
+        "icon": "\ud83d\udc8d",
+        "stat_bonus": {
+          "STR": 2,
+          "INT": 2
+        },
+        "price": 200,
+        "desc": "+2 STR, +2 INT"
+      },
+      {
         "name": "Upside Down Vine",
         "type": "accessory",
         "icon": "\ud83c\udf3f",
@@ -791,6 +355,456 @@
         "hp_bonus": 15,
         "price": 350,
         "desc": "+4 CON, +3 DEX, +15 Max HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Potion of Revive",
+        "type": "consumable",
+        "icon": "\ud83d\udc96",
+        "effect": "revive",
+        "value": 0,
+        "price": 200,
+        "desc": "Revives a fallen party member with 50% HP"
+      },
+      {
+        "name": "Potion of Revive",
+        "type": "consumable",
+        "icon": "\ud83d\udc96",
+        "effect": "revive",
+        "value": 0,
+        "price": 200,
+        "desc": "Revives a fallen party member with 50% HP"
+      },
+      {
+        "name": "Potion of Revive",
+        "type": "consumable",
+        "icon": "\ud83d\udc96",
+        "effect": "revive",
+        "value": 0,
+        "price": 200,
+        "desc": "Revives a fallen party member with 50% HP"
+      },
+      {
+        "name": "Potion of Revive",
+        "type": "consumable",
+        "icon": "\ud83d\udc96",
+        "effect": "revive",
+        "value": 0,
+        "price": 200,
+        "desc": "Revives a fallen party member with 50% HP"
+      },
+      {
+        "name": "Scroll of Fireball",
+        "type": "consumable",
+        "icon": "\ud83d\udcdc",
+        "effect": "fireball",
+        "value": 30,
+        "price": 60,
+        "desc": "Deals 3d6 fire damage"
+      },
+      {
+        "name": "Scroll of Fireball",
+        "type": "consumable",
+        "icon": "\ud83d\udcdc",
+        "effect": "fireball",
+        "value": 30,
+        "price": 60,
+        "desc": "Deals 3d6 fire damage"
+      },
+      {
+        "name": "Scroll of Fireball",
+        "type": "consumable",
+        "icon": "\ud83d\udcdc",
+        "effect": "fireball",
+        "value": 30,
+        "price": 60,
+        "desc": "Deals 3d6 fire damage"
+      },
+      {
+        "name": "Scroll of Fireball",
+        "type": "consumable",
+        "icon": "\ud83d\udcdc",
+        "effect": "fireball",
+        "value": 30,
+        "price": 60,
+        "desc": "Deals 3d6 fire damage"
       }
     ],
     "equipment": {
@@ -836,13 +850,13 @@
     {
       "name": "Ironheart",
       "char_class": "warrior",
-      "level": 13,
-      "xp": 936,
-      "xp_to_level": 12942,
-      "hp": 109,
-      "max_hp": 109,
-      "mp": 40,
-      "max_mp": 63,
+      "level": 45,
+      "xp": 0,
+      "xp_to_level": 5583477979,
+      "hp": 429,
+      "max_hp": 429,
+      "mp": 191,
+      "max_mp": 191,
       "ac": 20,
       "stats": {
         "STR": 28,
@@ -852,7 +866,7 @@
         "WIS": 22,
         "CHA": 19
       },
-      "skill_points": 14,
+      "skill_points": 78,
       "skill_tree": {
         "fortitude": 1,
         "berserker": 1,
@@ -880,13 +894,13 @@
     {
       "name": "Lumina",
       "char_class": "cleric",
-      "level": 13,
-      "xp": 936,
-      "xp_to_level": 12942,
-      "hp": 100,
-      "max_hp": 100,
-      "mp": 56,
-      "max_mp": 90,
+      "level": 45,
+      "xp": 0,
+      "xp_to_level": 5583477979,
+      "hp": 356,
+      "max_hp": 356,
+      "mp": 314,
+      "max_mp": 314,
       "ac": 20,
       "stats": {
         "STR": 17,
@@ -896,7 +910,7 @@
         "WIS": 22,
         "CHA": 22
       },
-      "skill_points": 14,
+      "skill_points": 78,
       "skill_tree": {
         "divine_grace": 3,
         "blessed_hp": 2,
@@ -922,8 +936,7 @@
       "ai_personality": "fierce"
     }
   ],
-  "gold": 2563,
-  "floor_num": 6,
-  "in_upside_down": false,
-  "force_regen": true
+  "gold": 5287,
+  "floor_num": 7,
+  "in_upside_down": false
 }

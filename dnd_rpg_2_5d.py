@@ -2757,7 +2757,7 @@ class Game:
 
     def can_pickup(self):
         """Check if player has room in inventory."""
-        return len(self.player.inventory) < MAX_INVENTORY
+        return True  # No inventory cap
 
     def try_add_item(self, item):
         """Try to add an item to inventory. Returns True if successful."""
@@ -3773,23 +3773,12 @@ class Game:
         """Draw the inventory screen with sorting, scrolling, capacity."""
         screen.fill(C_DARK)
 
-        # Title with capacity
+        # Title with item count
         inv_count = len(self.player.inventory)
-        cap_col = C_RED if inv_count >= MAX_INVENTORY else C_GOLD if inv_count >= MAX_INVENTORY - 5 else C_WHITE
         t = self.font_lg.render("📦 Inventory", True, C_GOLD)
         screen.blit(t, (SCREEN_W // 2 - t.get_width() // 2 - 60, 20))
-        cap_t = self.font_md.render(f"[{inv_count}/{MAX_INVENTORY}]", True, cap_col)
+        cap_t = self.font_md.render(f"[{inv_count} items]", True, C_WHITE)
         screen.blit(cap_t, (SCREEN_W // 2 + t.get_width() // 2 - 40, 28))
-
-        # Capacity bar
-        bar_x = SCREEN_W // 2 - 100
-        bar_w = 200
-        bar_h = 6
-        bar_y = 55
-        fill_pct = min(1.0, inv_count / MAX_INVENTORY)
-        bar_col = C_RED if fill_pct >= 1.0 else C_GOLD if fill_pct >= 0.85 else C_GREEN
-        pygame.draw.rect(screen, C_DARK3, (bar_x, bar_y, bar_w, bar_h), border_radius=3)
-        pygame.draw.rect(screen, bar_col, (bar_x, bar_y, int(bar_w * fill_pct), bar_h), border_radius=3)
 
         # Stats panel
         stats_x = 50
