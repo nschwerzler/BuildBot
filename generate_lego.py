@@ -238,11 +238,7 @@ def build_lego_2x6():
     for col in range(COLS - 1):
         m.tube_y(PITCH + col*PITCH - TOL, 0, cz, tro, tri_, th)
 
-    # ── 4. RIBS ──
-    for col in range(COLS):
-        cx = PITCH/2 + col*PITCH - TOL
-        m.box(cx-RIB_W/2, 0, WALL, cx+RIB_W/2, th*0.3, cz - tro)
-        m.box(cx-RIB_W/2, 0, cz + tro, cx+RIB_W/2, th*0.3, BODY_Z - WALL)
+    # ── 4. RIBS (skip — tubes provide enough clutch for 2x6) ──
 
     # ==============================================================
     #  5. HINGE PEG — flush on RIGHT end wall
