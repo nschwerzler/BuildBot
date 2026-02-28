@@ -238,7 +238,15 @@ def build_lego_2x6():
     for col in range(COLS - 1):
         m.tube_y(PITCH + col*PITCH - TOL, 0, cz, tro, tri_, th)
 
-    # ── 4. RIBS (skip — tubes provide enough clutch for 2x6) ──
+    # ── 4. SIDE STUDS (front and back walls) ──
+    # Studs on the long side walls so bricks can attach sideways (SNOT building)
+    side_cy = BRICK_H / 2   # vertically centered on wall
+    for col in range(COLS):
+        sx = PITCH/2 + col*PITCH - TOL
+        # Front wall studs (pointing -Z)
+        m.cyl_z(sx, side_cy, -STUD_H, sr, STUD_H)
+        # Back wall studs (pointing +Z)
+        m.cyl_z(sx, side_cy, BODY_Z, sr, STUD_H)
 
     # ==============================================================
     #  5. HINGE PEG — flush on RIGHT end wall
