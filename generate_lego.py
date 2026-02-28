@@ -15,30 +15,34 @@ import math
 import os
 import zipfile
 
-# ── Brick dims (mm) ──
-PITCH     = 8.0
+# ── Real LEGO Dimensions (mm) ──
+# Tuned for 3D printing (FDM, 0.4mm nozzle) that snaps onto real LEGO bricks.
+# If too tight/loose, adjust PRINT_TOL (+ = looser, - = tighter).
+PRINT_TOL = 0.1      # Extra clearance for 3D printing (0.0 = exact spec, 0.1-0.2 = FDM)
+
+PITCH     = 8.0       # Stud center-to-center (LEGO standard)
 COLS      = 6
 ROWS      = 2
-BRICK_H   = 9.6
-STUD_D    = 4.8
-STUD_H    = 1.7
-SEGS      = 24
-WALL      = 1.5
-TOP_WALL  = 1.0
-TUBE_OD   = 6.51
-TUBE_ID   = 4.8
+BRICK_H   = 9.6       # Standard brick body height (= 3 plates × 3.2mm)
+STUD_D    = 4.8 - PRINT_TOL   # Real LEGO = 4.8mm; shrink slightly so studs fit INTO real bricks
+STUD_H    = 1.8       # Real LEGO stud height (was 1.7)
+SEGS      = 32        # More segments = smoother cylinders for better fit
+WALL      = 1.5       # Side wall thickness (LEGO standard)
+TOP_WALL  = 1.0       # Top plate thickness (LEGO standard)
+TUBE_OD   = 6.51      # Anti-stud tube outer diameter (LEGO standard, creates clutch)
+TUBE_ID   = 4.8 + PRINT_TOL   # Anti-stud tube inner, slightly larger so real studs fit IN
 RIB_W     = 0.8
-TOL       = 0.1
+TOL       = 0.1       # Body undersize per side (LEGO standard: brick is 0.2mm smaller than grid)
 
 # ── Hinge dims ──
 # Flush connectors on end walls:
 #   RIGHT end: peg sticking out
 #   LEFT end:  socket (hollow tube)
-PEG_R      = 1.5     # peg radius (3mm diam)
-PEG_L      = 5.0     # peg length sticking out
-SOCK_OR    = 2.8     # socket outer radius (5.6mm OD)
-SOCK_IR    = 1.65    # socket inner radius (3.3mm ID, peg + clearance)
-SOCK_DEPTH = 5.5     # socket depth (slightly longer than peg)
+PEG_R      = 1.5                    # peg radius (3mm diam)
+PEG_L      = 5.0                    # peg length sticking out
+SOCK_OR    = 2.8                    # socket outer radius (5.6mm OD)
+SOCK_IR    = 1.5 + PRINT_TOL + 0.1  # socket inner radius (peg + print clearance + play)
+SOCK_DEPTH = 5.5                    # socket depth (slightly longer than peg)
 
 # ── Derived ──
 BODY_X = COLS * PITCH - TOL * 2
