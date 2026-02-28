@@ -6,11 +6,11 @@
     "level": 249,
     "xp": 3815,
     "xp_to_level": 4672202473122562203999752427964215528366538752,
-    "hp": 153576,
-    "max_hp": 153576,
+    "hp": 307743,
+    "max_hp": 316061,
     "mp": 43422,
     "max_mp": 43422,
-    "ac": 197,
+    "ac": 199,
     "stats": {
       "STR": 359,
       "DEX": 360,
@@ -19,12 +19,12 @@
       "WIS": 343,
       "CHA": 341
     },
-    "skill_points": 282,
+    "skill_points": 278,
     "skill_tree": {
       "shadow_step": 6,
-      "lethal_edge": 3,
+      "lethal_edge": 4,
       "poison_tips": 15,
-      "evasion": 3,
+      "evasion": 4,
       "nimble": 5,
       "assassin": 107,
       "mystery_0": 10,
@@ -33,7 +33,7 @@
       "mystery_3": 3,
       "mystery_4": 3,
       "mystery_5": 13,
-      "mystery_6": 31
+      "mystery_6": 33
     },
     "mystery_nodes": [
       {

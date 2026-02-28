@@ -2280,8 +2280,8 @@ def get_or_generate_mystery_nodes(entity):
     # Count how many mystery nodes are maxed (rank >= 3)
     maxed_count = sum(1 for mn in entity.mystery_nodes if entity.skill_tree.get(mn['id'], 0) >= 3)
 
-    # Always have one more mystery node available than the number maxed
-    needed = maxed_count + 1
+    # Show 5 upcoming mystery nodes beyond what's maxed
+    needed = maxed_count + 5
     while len(entity.mystery_nodes) < needed:
         idx = len(entity.mystery_nodes)
         rng = random.Random(entity.mystery_seed + idx * 7919)
@@ -4689,10 +4689,18 @@ def main():
                         max_scroll = max(0, len(game.player.inventory) - 16)
                         game.inv_scroll = min(max_scroll, game.inv_scroll + 3)
                 elif game.state == GameState.SKILL_TREE:
+                    # Calculate max scroll based on content
+                    member = game.party[game.skill_tree_member_idx % len(game.party)]
+                    tree = SKILL_TREES.get(member.char_class, [])
+                    total_rows = max((n['row'] for n in tree), default=0) + 1
+                    if is_tree_completed(member):
+                        mystery = get_or_generate_mystery_nodes(member)
+                        total_rows = 4 + len(mystery) + 1
+                    max_scroll_val = max(0, total_rows * 120 - 500)
                     if event.button == 4:  # Scroll up
                         game.skill_tree_scroll = max(0, game.skill_tree_scroll - 40)
                     elif event.button == 5:  # Scroll down
-                        game.skill_tree_scroll = min(600, game.skill_tree_scroll + 40)
+                        game.skill_tree_scroll = min(max_scroll_val, game.skill_tree_scroll + 40)
 
             # ─── MOUSE CLICKS ───
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
