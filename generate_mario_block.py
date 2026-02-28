@@ -261,37 +261,40 @@ def build_mario_block():
             cz = PITCH + row * PITCH - TOL
             body.tube_y(cx, 0, cz, tro, tri_, tube_h)
 
-    # ── 4. SIDE STUDS with "?" pattern on all 4 faces (separate mesh = different color) ──
+    # ── 4. SIDE STUDS — full 8×8 grid on all 4 faces ──
+    # ? pattern studs → qmark mesh (brown), background studs → body mesh (yellow)
     for row in range(GRID):
         for col in range(GRID):
-            if QUESTION_MARK[row][col] != 1:
-                continue
+            is_qmark = QUESTION_MARK[row][col] == 1
+            target = qmark if is_qmark else body
 
             # Y center for this row (row 0 = top)
             cy = BODY - PITCH/2 - row * PITCH + TOL
 
             # Front face (Z = 0, studs point -Z)
             sx = PITCH/2 + col * PITCH - TOL
-            qmark.cyl_z(sx, cy, -STUD_H, SR, STUD_H)
+            target.cyl_z(sx, cy, -STUD_H, SR, STUD_H)
 
             # Back face (Z = BODY, studs point +Z) — mirrored
             sx_back = PITCH/2 + (GRID - 1 - col) * PITCH - TOL
-            qmark.cyl_z(sx_back, cy, BODY, SR, STUD_H)
+            target.cyl_z(sx_back, cy, BODY, SR, STUD_H)
 
             # Left face (X = 0, studs point -X)
             sz = PITCH/2 + col * PITCH - TOL
-            qmark.cyl_x(-STUD_H, cy, sz, SR, STUD_H)
+            target.cyl_x(-STUD_H, cy, sz, SR, STUD_H)
 
             # Right face (X = BODY, studs point +X) — mirrored
             sz_right = PITCH/2 + (GRID - 1 - col) * PITCH - TOL
-            qmark.cyl_x(BODY, cy, sz_right, SR, STUD_H)
+            target.cyl_x(BODY, cy, sz_right, SR, STUD_H)
 
     # ── Summary ──
-    side_studs = sum(sum(r) for r in QUESTION_MARK)
+    side_studs_q = sum(sum(r) for r in QUESTION_MARK)
+    side_studs_bg = GRID * GRID - side_studs_q
     print(f"Mario ? Block (8×8×8) — MULTI-COLOR:")
     print(f"  Body: {BODY:.1f} × {BODY:.1f} × {BODY:.1f} mm (open bottom)")
-    print(f"  Object 1 (YELLOW): shell + {GRID*GRID} top studs + {(GRID-1)**2} anti-stud tubes = {len(body.tris)} tris")
-    print(f"  Object 2 (BROWN):  ? pattern × 4 faces = {side_studs*4} studs = {len(qmark.tris)} tris")
+    print(f"  Object 1 (YELLOW): shell + {GRID*GRID} top studs + {(GRID-1)**2} anti-studs + {side_studs_bg*4} bg side studs = {len(body.tris)} tris")
+    print(f"  Object 2 (BROWN):  ? pattern × 4 faces = {side_studs_q*4} studs = {len(qmark.tris)} tris")
+    print(f"  Side studs per face: {GRID*GRID} (full 8×8 grid)")
     print(f"  Total triangles: {len(body.tris) + len(qmark.tris)}")
     return body, qmark
 
