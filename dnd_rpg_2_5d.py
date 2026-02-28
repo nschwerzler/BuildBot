@@ -2397,6 +2397,7 @@ class Game:
         self.move_cooldown = 0  # Frame counter for held-key movement
         self.skill_tree_member_idx = 0  # Which party member's tree to view
         self.skill_tree_selected = 0  # Currently highlighted node index
+        self.skill_tree_scroll = 0  # Vertical scroll offset for skill tree
         self._title_opts = []  # Title screen options
         self.in_upside_down = False  # Whether current floor is an Upside Down version
         self.st_portal_announced = False  # Whether AI has reacted to portal
@@ -4098,7 +4099,7 @@ class Game:
 
         # Draw skill tree nodes
         tree_area_x = 60
-        tree_area_y = 130
+        tree_area_y = 130 - self.skill_tree_scroll
         node_w = 280
         node_h = 85
         col_spacing = 320
@@ -4591,7 +4592,7 @@ def main():
                     elif event.key == pygame.K_ESCAPE:
                         game.state = GameState.TITLE
 
-            # ─── MOUSE WHEEL (Inventory scroll) ───
+            # ─── MOUSE WHEEL (Inventory/Skill Tree scroll) ───
             if event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
                 if game.state == GameState.INVENTORY:
                     if event.button == 4:  # Scroll up
@@ -4599,6 +4600,11 @@ def main():
                     elif event.button == 5:  # Scroll down
                         max_scroll = max(0, len(game.player.inventory) - 16)
                         game.inv_scroll = min(max_scroll, game.inv_scroll + 3)
+                elif game.state == GameState.SKILL_TREE:
+                    if event.button == 4:  # Scroll up
+                        game.skill_tree_scroll = max(0, game.skill_tree_scroll - 40)
+                    elif event.button == 5:  # Scroll down
+                        game.skill_tree_scroll = min(600, game.skill_tree_scroll + 40)
 
             # ─── MOUSE CLICKS ───
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -4673,7 +4679,7 @@ def main():
                         member = game.party[game.skill_tree_member_idx % len(game.party)]
                         tree = SKILL_TREES.get(member.char_class, [])
                         tree_area_x = 60
-                        tree_area_y = 130
+                        tree_area_y = 130 - game.skill_tree_scroll
                         node_w = 280
                         node_h = 85
                         col_spacing = 320

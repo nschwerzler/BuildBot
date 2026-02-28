@@ -6,28 +6,81 @@
     "level": 45,
     "xp": 0,
     "xp_to_level": 5583477979,
-    "hp": 229,
-    "max_hp": 229,
-    "mp": 230,
-    "max_mp": 240,
-    "ac": 32,
+    "hp": 3199,
+    "max_hp": 3199,
+    "mp": 3342,
+    "max_mp": 3342,
+    "ac": 101,
     "stats": {
-      "STR": 23,
-      "DEX": 30,
-      "CON": 13,
-      "INT": 16,
-      "WIS": 19,
-      "CHA": 17
+      "STR": 155,
+      "DEX": 168,
+      "CON": 145,
+      "INT": 148,
+      "WIS": 151,
+      "CHA": 149
     },
-    "skill_points": 71,
+    "skill_points": 0,
     "skill_tree": {
-      "shadow_step": 3,
+      "shadow_step": 6,
       "lethal_edge": 3,
       "poison_tips": 3,
       "evasion": 3,
-      "nimble": 3,
-      "assassin": 2
+      "nimble": 5,
+      "assassin": 46,
+      "mystery_0": 10,
+      "mystery_1": 12
     },
+    "mystery_nodes": [
+      {
+        "id": "mystery_0",
+        "name": "Executioner",
+        "real_name": "Executioner",
+        "icon": "\ud83e\ude93",
+        "real_icon": "\ud83e\ude93",
+        "desc": "+20% crit damage per rank",
+        "real_desc": "+20% crit damage per rank",
+        "max_rank": 3,
+        "row": 4,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "crit_damage_pct": 20
+        }
+      },
+      {
+        "id": "mystery_1",
+        "name": "Divine Favor",
+        "real_name": "Divine Favor",
+        "icon": "\ud83d\udcab",
+        "real_icon": "\ud83d\udcab",
+        "desc": "+30% heal power per rank",
+        "real_desc": "+30% heal power per rank",
+        "max_rank": 3,
+        "row": 5,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "heal_power_pct": 30
+        }
+      },
+      {
+        "id": "mystery_2",
+        "name": "??? Mystery ???",
+        "real_name": "Mind Fortress",
+        "icon": "\u2753",
+        "real_icon": "\ud83c\udff0",
+        "desc": "Unknown power... unlock to reveal!",
+        "real_desc": "+4 INT per rank",
+        "max_rank": 3,
+        "row": 6,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "int": 4
+        }
+      }
+    ],
+    "mystery_seed": 702934,
     "inventory": [
       {
         "name": "Arcane Staff",
@@ -875,6 +928,8 @@
         "cleave": 3,
         "warlord": 2
       },
+      "mystery_nodes": [],
+      "mystery_seed": 157589,
       "inventory": [],
       "equipment": {
         "weapon": null,
@@ -919,6 +974,8 @@
         "smite_power": 1,
         "high_priest": 2
       },
+      "mystery_nodes": [],
+      "mystery_seed": 894532,
       "inventory": [],
       "equipment": {
         "weapon": null,
@@ -938,5 +995,5 @@
   ],
   "gold": 5287,
   "floor_num": 7,
-  "in_upside_down": false
+  "in_upside_down": true
 }
