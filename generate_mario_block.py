@@ -189,86 +189,123 @@ class Mesh:
         print(f"  3MF: {len(self.tris)} tris, {os.path.getsize(path)//1024} KB -> {path}")
 
 
+def save_multicolor_3mf(meshes, path):
+    """Save multiple meshes as separate objects in one 3MF (for multi-color printing).
+    meshes = [(mesh, name), ...]  — each gets its own object ID for filament assignment."""
+    resources = []
+    build_items = []
+    for idx, (mesh, name) in enumerate(meshes):
+        obj_id = idx + 1
+        vl = [f'          <vertex x="{x}" y="{y}" z="{z}"/>' for x, y, z in mesh.verts]
+        tl = [f'          <triangle v1="{a}" v2="{b}" v3="{c}"/>' for a, b, c in mesh.tris]
+        resources.append(
+            f'    <object id="{obj_id}" type="model" name="{name}">\n      <mesh>\n'
+            f'        <vertices>\n' + '\n'.join(vl) + '\n        </vertices>\n'
+            f'        <triangles>\n' + '\n'.join(tl) + '\n        </triangles>\n'
+            f'      </mesh>\n    </object>')
+        build_items.append(f'    <item objectid="{obj_id}"/>')
+
+    model = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n'
+        '  <metadata name="Application">MarioBlockGen</metadata>\n'
+        '  <resources>\n' + '\n'.join(resources) + '\n  </resources>\n'
+        '  <build>\n' + '\n'.join(build_items) + '\n  </build>\n</model>')
+    ct = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+          '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n'
+          '  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\n'
+          '  <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>\n'
+          '</Types>')
+    rels = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\n'
+            '  <Relationship Target="/3D/3dmodel.model" Id="rel0" '
+            'Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>\n'
+            '</Relationships>')
+    with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('[Content_Types].xml', ct)
+        zf.writestr('_rels/.rels', rels)
+        zf.writestr('3D/3dmodel.model', model)
+    total_tris = sum(len(m.tris) for m, _ in meshes)
+    print(f"  3MF (multi-color): {total_tris} tris, {len(meshes)} objects, {os.path.getsize(path)//1024} KB -> {path}")
+
+
 def build_mario_block():
-    m = Mesh()
+    body = Mesh()   # Yellow body (shell + top studs + anti-studs)
+    qmark = Mesh()  # Brown/dark ? pattern studs (separate color)
 
-    # ── 1. SHELL — hollow box (6 slabs: top, bottom, 4 walls) ──
+    # ── 1. SHELL — hollow box, OPEN BOTTOM (no bottom plate) ──
     # Top plate
-    m.box(0, BODY - TOP_WALL, 0, BODY, BODY, BODY)
-    # Bottom plate
-    m.box(0, 0, 0, BODY, TOP_WALL, BODY)
-    # Front wall (Z=0 side)
-    m.box(0, TOP_WALL, 0, BODY, BODY - TOP_WALL, WALL)
-    # Back wall (Z=BODY side)
-    m.box(0, TOP_WALL, BODY - WALL, BODY, BODY - TOP_WALL, BODY)
-    # Left wall (X=0 side)
-    m.box(0, TOP_WALL, WALL, WALL, BODY - TOP_WALL, BODY - WALL)
-    # Right wall (X=BODY side)
-    m.box(BODY - WALL, TOP_WALL, WALL, BODY, BODY - TOP_WALL, BODY - WALL)
+    body.box(0, BODY - TOP_WALL, 0, BODY, BODY, BODY)
+    # Front wall (Z=0 side) — full height to floor
+    body.box(0, 0, 0, BODY, BODY - TOP_WALL, WALL)
+    # Back wall (Z=BODY side) — full height to floor
+    body.box(0, 0, BODY - WALL, BODY, BODY - TOP_WALL, BODY)
+    # Left wall (X=0 side) — full height to floor
+    body.box(0, 0, WALL, WALL, BODY - TOP_WALL, BODY - WALL)
+    # Right wall (X=BODY side) — full height to floor
+    body.box(BODY - WALL, 0, WALL, BODY, BODY - TOP_WALL, BODY - WALL)
 
-    # ── 2. TOP STUDS — 8×8 grid ──
+    # ── 2. TOP STUDS — 8×8 grid (yellow body) ──
     for col in range(GRID):
         for row in range(GRID):
             cx = PITCH/2 + col * PITCH - TOL
             cz = PITCH/2 + row * PITCH - TOL
-            m.cyl_y(cx, BODY, cz, SR, STUD_H)
+            body.cyl_y(cx, BODY, cz, SR, STUD_H)
 
-    # ── 3. BOTTOM ANTI-STUD TUBES — 7×7 grid ──
+    # ── 3. BOTTOM ANTI-STUD TUBES — 7×7 grid (hanging from top plate) ──
     tro, tri_ = TUBE_OD / 2, TUBE_ID / 2
+    tube_h = BODY - TOP_WALL  # Tubes hang from top plate all the way down
     for col in range(GRID - 1):
         for row in range(GRID - 1):
             cx = PITCH + col * PITCH - TOL
             cz = PITCH + row * PITCH - TOL
-            m.tube_y(cx, TOP_WALL, cz, tro, tri_, BODY - TOP_WALL * 2)
+            body.tube_y(cx, 0, cz, tro, tri_, tube_h)
 
-    # ── 4. SIDE STUDS with "?" pattern on all 4 faces ──
-    # Each side is 8 wide × 8 tall. Studs at grid positions.
-    # Row 0 in QUESTION_MARK = top of the face.
-    # Y coordinate: top of block is BODY, bottom is 0.
-    # Side stud Y centers go from near-top to near-bottom.
-
+    # ── 4. SIDE STUDS with "?" pattern on all 4 faces (separate mesh = different color) ──
     for row in range(GRID):
         for col in range(GRID):
-            has_stud = QUESTION_MARK[row][col] == 1
-            if not has_stud:
+            if QUESTION_MARK[row][col] != 1:
                 continue
 
             # Y center for this row (row 0 = top)
             cy = BODY - PITCH/2 - row * PITCH + TOL
-            
+
             # Front face (Z = 0, studs point -Z)
             sx = PITCH/2 + col * PITCH - TOL
-            m.cyl_z(sx, cy, -STUD_H, SR, STUD_H)
+            qmark.cyl_z(sx, cy, -STUD_H, SR, STUD_H)
 
-            # Back face (Z = BODY, studs point +Z)
-            # Mirror horizontally so ? reads correctly from outside
+            # Back face (Z = BODY, studs point +Z) — mirrored
             sx_back = PITCH/2 + (GRID - 1 - col) * PITCH - TOL
-            m.cyl_z(sx_back, cy, BODY, SR, STUD_H)
+            qmark.cyl_z(sx_back, cy, BODY, SR, STUD_H)
 
             # Left face (X = 0, studs point -X)
             sz = PITCH/2 + col * PITCH - TOL
-            m.cyl_x(-STUD_H, cy, sz, SR, STUD_H)
+            qmark.cyl_x(-STUD_H, cy, sz, SR, STUD_H)
 
-            # Right face (X = BODY, studs point +X)
-            # Mirror so ? reads correctly from outside
+            # Right face (X = BODY, studs point +X) — mirrored
             sz_right = PITCH/2 + (GRID - 1 - col) * PITCH - TOL
-            m.cyl_x(BODY, cy, sz_right, SR, STUD_H)
+            qmark.cyl_x(BODY, cy, sz_right, SR, STUD_H)
 
     # ── Summary ──
-    side_studs = sum(sum(row) for row in QUESTION_MARK)
-    print(f"Mario ? Block (8×8×8):")
-    print(f"  Body: {BODY:.1f} × {BODY:.1f} × {BODY:.1f} mm")
-    print(f"  Top studs: {GRID*GRID} (8×8)")
-    print(f"  Anti-stud tubes: {(GRID-1)**2} (7×7)")
-    print(f"  Side studs per face: {side_studs} (? pattern)")
-    print(f"  Total side studs: {side_studs * 4} (4 faces)")
-    print(f"  Triangles: {len(m.tris)}")
-    return m
+    side_studs = sum(sum(r) for r in QUESTION_MARK)
+    print(f"Mario ? Block (8×8×8) — MULTI-COLOR:")
+    print(f"  Body: {BODY:.1f} × {BODY:.1f} × {BODY:.1f} mm (open bottom)")
+    print(f"  Object 1 (YELLOW): shell + {GRID*GRID} top studs + {(GRID-1)**2} anti-stud tubes = {len(body.tris)} tris")
+    print(f"  Object 2 (BROWN):  ? pattern × 4 faces = {side_studs*4} studs = {len(qmark.tris)} tris")
+    print(f"  Total triangles: {len(body.tris) + len(qmark.tris)}")
+    return body, qmark
 
 
 if __name__ == "__main__":
-    m = build_mario_block()
-    m.save_stl("mario_question_block.stl")
-    m.save_3mf("mario_question_block.3mf")
+    body, qmark = build_mario_block()
+    # Single-color STL (everything combined)
+    combined = Mesh()
+    combined.verts = body.verts + qmark.verts
+    offset = len(body.verts)
+    combined.tris = body.tris + [(a+offset, b+offset, c+offset) for a, b, c in qmark.tris]
+    combined._vmap = {}  # not needed for save
+    combined.save_stl("mario_question_block.stl")
+    # Multi-color 3MF (2 objects = 2 filament colors)
+    save_multicolor_3mf([(body, "YellowBody"), (qmark, "QuestionMark")], "mario_question_block.3mf")
     print("\nDone! Mario ? Block ready to print.")
-    print("Paint yellow body + brown/dark ? studs for the classic look!")
+    print("In Bambu Studio: assign YELLOW filament to 'YellowBody', BROWN to 'QuestionMark'.")
