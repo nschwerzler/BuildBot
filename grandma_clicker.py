@@ -10,8 +10,11 @@ import random
 import json
 import os
 import time
+import struct
+import array as arr_mod
 
 pygame.init()
+pygame.mixer.init(frequency=44100, size=-16, channels=1, buffer=512)
 
 # ── Window ──────────────────────────────────────────────────────────────
 WIDTH, HEIGHT = 900, 650
@@ -50,6 +53,143 @@ font_md   = pygame.font.SysFont("Segoe UI", 22)
 font_sm   = pygame.font.SysFont("Segoe UI", 18)
 font_xs   = pygame.font.SysFont("Segoe UI", 14)
 font_emoji = pygame.font.SysFont("Segoe UI Emoji", 36)
+
+# ── Sound Effects (generated programmatically) ─────────────────────────
+def _make_sound(freq, duration=0.12, volume=0.35, wave="sine", freq_end=None):
+    """Generate a short sound effect from a waveform."""
+    sample_rate = 44100
+    n_samples = int(sample_rate * duration)
+    buf = arr_mod.array("h")  # signed 16-bit
+    for i in range(n_samples):
+        t = i / sample_rate
+        # Frequency sweep support
+        if freq_end is not None:
+            f = freq + (freq_end - freq) * (i / n_samples)
+        else:
+            f = freq
+        if wave == "sine":
+            val = math.sin(2 * math.pi * f * t)
+        elif wave == "square":
+            val = 1.0 if math.sin(2 * math.pi * f * t) >= 0 else -1.0
+        elif wave == "saw":
+            val = 2.0 * (f * t % 1.0) - 1.0
+        else:
+            val = math.sin(2 * math.pi * f * t)
+        # Envelope: quick attack, decay
+        env = max(0, 1.0 - (i / n_samples) * 0.8)
+        sample = int(val * volume * 32767 * env)
+        sample = max(-32767, min(32767, sample))
+        buf.append(sample)
+    snd = pygame.mixer.Sound(buffer=buf)
+    return snd
+
+def _make_pop():
+    """Funny cookie pop/boop."""
+    return _make_sound(600, 0.08, 0.3, "sine", freq_end=300)
+
+def _make_cha_ching():
+    """Ka-ching purchase sound."""
+    sample_rate = 44100
+    dur = 0.25
+    n = int(sample_rate * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sample_rate
+        # Two tones: ding-ding
+        f = 1200 if t < 0.12 else 1600
+        val = math.sin(2 * math.pi * f * t)
+        env = max(0, 1.0 - (t / dur))
+        buf.append(int(val * 0.3 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+def _make_fail():
+    """Sad trombone-ish buzz for can't afford."""
+    return _make_sound(200, 0.2, 0.25, "square", freq_end=100)
+
+def _make_golden():
+    """Magical sparkle for golden cookie."""
+    sample_rate = 44100
+    dur = 0.4
+    n = int(sample_rate * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sample_rate
+        f = 800 + 600 * math.sin(2 * math.pi * 5 * t)  # warble
+        val = math.sin(2 * math.pi * f * t)
+        env = max(0, 1.0 - (t / dur) * 0.7)
+        buf.append(int(val * 0.3 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+def _make_milestone():
+    """Triumphant fanfare."""
+    sample_rate = 44100
+    notes = [(523, 0.1), (659, 0.1), (784, 0.15), (1047, 0.25)]  # C-E-G-C
+    buf = arr_mod.array("h")
+    for freq, dur in notes:
+        n = int(sample_rate * dur)
+        for i in range(n):
+            t = i / sample_rate
+            val = math.sin(2 * math.pi * freq * t)
+            env = max(0, 1.0 - (i / n) * 0.5)
+            buf.append(int(val * 0.3 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+def _make_save():
+    """Cute bloop for saving."""
+    return _make_sound(440, 0.1, 0.2, "sine", freq_end=880)
+
+def _make_whoopee():
+    """Silly whoopee cushion / fart for random fun."""
+    sample_rate = 44100
+    dur = 0.3
+    n = int(sample_rate * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sample_rate
+        noise = random.uniform(-1, 1)
+        low = math.sin(2 * math.pi * 80 * t)
+        val = (noise * 0.3 + low * 0.7)
+        env = max(0, 1.0 - (t / dur))
+        buf.append(int(val * 0.25 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+def _make_bonk():
+    """Cartoon bonk sound."""
+    return _make_sound(150, 0.15, 0.35, "square", freq_end=60)
+
+# Build SFX dict
+SFX = {
+    "click": _make_pop(),
+    "buy": _make_cha_ching(),
+    "fail": _make_fail(),
+    "golden": _make_golden(),
+    "milestone": _make_milestone(),
+    "save": _make_save(),
+    "whoopee": _make_whoopee(),
+    "bonk": _make_bonk(),
+}
+
+# Funny random click sounds (rotated for variety)
+_extra_click_sounds = [
+    _make_sound(500, 0.06, 0.25, "sine", freq_end=250),   # boop
+    _make_sound(700, 0.07, 0.25, "sine", freq_end=400),   # blip
+    _make_sound(400, 0.09, 0.25, "saw", freq_end=200),    # zap
+    _make_sound(550, 0.05, 0.2, "sine", freq_end=800),    # pip up
+]
+
+def play_sfx(name):
+    """Play a named sound effect."""
+    if name in SFX:
+        SFX[name].play()
+
+def play_click_sfx():
+    """Play a random click pop with occasional silly sound."""
+    if random.random() < 0.08:  # 8% chance of funny sound
+        random.choice([SFX["whoopee"], SFX["bonk"]]).play()
+    elif random.random() < 0.3:
+        random.choice(_extra_click_sounds).play()
+    else:
+        SFX["click"].play()
 
 # ── Save file ───────────────────────────────────────────────────────────
 SAVE_FILE = "grandma_clicker_save.json"
@@ -148,6 +288,7 @@ UPGRADES = [
 
 # ── Random grandma quotes ──────────────────────────────────────────────
 GRANDMA_QUOTES = [
+    # Classic grandma
     "Have another cookie, dear!",
     "Back in my day, we baked uphill both ways!",
     "You look thin, eat more cookies!",
@@ -163,6 +304,47 @@ GRANDMA_QUOTES = [
     "Click faster, dear! Grandpa's hungry!",
     "That's the spirit, sweetheart!",
     "Oh my, look at all those cookies!",
+    # Funny / sassy grandma
+    "I put my back out baking. Worth it.",
+    "My WiFi password? It's COOKIES123, dear.",
+    "I didn't survive the Great Depression for weak clicks!",
+    "Grandpa says I bake too much. Grandpa is wrong.",
+    "I could out-click you with my eyes closed.",
+    "These cookies are bussin', as the kids say.",
+    "I asked Alexa to bake cookies. She's useless.",
+    "My doctor said less sugar. I said less doctor.",
+    "You call THAT a click? Put some elbow into it!",
+    "I've got more cookies than your GPA, sweetie.",
+    "One does not simply stop clicking.",
+    "I'm not old, I'm vintage. Like fine cookie dough.",
+    "I Googled 'how to bake faster'. It said buy upgrades!",
+    "Back in '62, cookies cost a nickel. Good times.",
+    "My cat walked on my keyboard and bought 50 ovens.",
+    "I showed this game to Ethel. She's already ahead.",
+    "You're clicking like grandpa eats — too slow!",
+    "Is this what they call 'gaming'? I love it.",
+    "My grandson taught me to say 'GG'. GG, dear!",
+    "If clicking burned calories, I'd be a supermodel.",
+    "Don't make me get the rolling pin.",
+    "I've seen things, dear... terrible cookie shortages.",
+    "This is more fun than my book club. Don't tell Marge.",
+    "I once baked 400 cookies in a day. Amateurs.",
+    "Arthritis? Never heard of her.",
+    "Cookies are just happiness in circle form.",
+    "My therapist says I click too much. I say not enough.",
+    "Why go outside? There are no cookies out there.",
+    "I'm on a seafood diet. I see food, I bake cookies.",
+    "Grandpa's asleep. Quick, click louder!",
+    "Plot twist: the cookies were inside us all along.",
+    "If you're reading this, you should be clicking.",
+    "I trained for this my whole life.",
+    "Error 404: Cookie not found. Just kidding, here!",
+    "My cookie recipe is classified. Top secret.",
+    "Hold my dentures, I'm going in!",
+    "I bake, therefore I am.",
+    "These cookies aren't gonna click themselves!",
+    "Just five more minutes... said grandma 3 hours ago.",
+    "Legend says if you click 1 million times, I smile.",
 ]
 
 # ── Milestones ──────────────────────────────────────────────────────────
@@ -270,6 +452,7 @@ class GameState:
             self.notification = f"🎉 Milestone: {format_number(MILESTONES[self.milestone_idx])} cookies baked!"
             self.notif_timer = 4.0
             self.milestone_idx += 1
+            play_sfx("milestone")
 
     def save(self):
         data = {
@@ -647,9 +830,13 @@ def main():
                         gs.cookie_scale = 0.85
                         gs.cookie_target_scale = 1.0
                         spawn_particles(gs, mx, my, amount)
+                        play_click_sfx()
 
                     # Check golden cookie
+                    had_golden = gs.golden_cookie is not None
                     handle_golden_click(gs, mx, my)
+                    if had_golden and gs.golden_cookie is None:
+                        play_sfx("golden")
 
                     # Check upgrade buttons
                     for btn_rect, idx in upgrade_rects:
@@ -657,6 +844,9 @@ def main():
                             if gs.buy(idx):
                                 gs.notification = f"Bought {UPGRADES[idx]['name']}!"
                                 gs.notif_timer = 2.0
+                                play_sfx("buy")
+                            else:
+                                play_sfx("fail")
 
                     # Save button
                     save_rect = pygame.Rect(30, 595, 120, 35)
@@ -664,6 +854,7 @@ def main():
                         gs.save()
                         gs.notification = "💾 Game saved!"
                         gs.notif_timer = 2.0
+                        play_sfx("save")
 
                 # Scroll in shop
                 elif event.button == 4:  # Scroll up
@@ -684,6 +875,7 @@ def main():
                     gs.save()
                     gs.notification = "💾 Game saved!"
                     gs.notif_timer = 2.0
+                    play_sfx("save")
 
 
 if __name__ == "__main__":
