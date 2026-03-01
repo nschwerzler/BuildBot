@@ -157,6 +157,58 @@ def _make_bonk():
     """Cartoon bonk sound."""
     return _make_sound(150, 0.15, 0.35, "square", freq_end=60)
 
+def _make_rebirth():
+    """Epic ascending rebirth fanfare."""
+    sample_rate = 44100
+    notes = [(440, 0.08), (554, 0.08), (659, 0.08), (880, 0.1),
+             (1047, 0.1), (1319, 0.15), (1760, 0.25)]
+    buf = arr_mod.array("h")
+    for freq, dur in notes:
+        n = int(sample_rate * dur)
+        for i in range(n):
+            t = i / sample_rate
+            val = math.sin(2 * math.pi * freq * t) + 0.3 * math.sin(2 * math.pi * freq * 2 * t)
+            env = max(0, 1.0 - (i / n) * 0.4)
+            buf.append(int(val * 0.25 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+def _make_spring():
+    """Boing spring sound."""
+    return _make_sound(300, 0.15, 0.3, "sine", freq_end=900)
+
+def _make_duck():
+    """Rubber duck quack."""
+    sample_rate = 44100
+    dur = 0.12
+    n = int(sample_rate * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sample_rate
+        f = 800 - 400 * (i / n)
+        val = 1.0 if math.sin(2 * math.pi * f * t) >= 0 else -1.0
+        env = max(0, 1.0 - (t / dur) * 0.6)
+        buf.append(int(val * 0.2 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+def _make_slide_whistle():
+    """Cartoon slide whistle."""
+    return _make_sound(200, 0.2, 0.25, "sine", freq_end=1200)
+
+def _make_splat():
+    """Wet splat sound."""
+    sample_rate = 44100
+    dur = 0.1
+    n = int(sample_rate * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sample_rate
+        noise = random.uniform(-1, 1)
+        tone = math.sin(2 * math.pi * 250 * t)
+        val = noise * 0.5 + tone * 0.5
+        env = max(0, 1.0 - (t / dur))
+        buf.append(int(val * 0.3 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
 # Build SFX dict
 SFX = {
     "click": _make_pop(),
@@ -167,6 +219,11 @@ SFX = {
     "save": _make_save(),
     "whoopee": _make_whoopee(),
     "bonk": _make_bonk(),
+    "rebirth": _make_rebirth(),
+    "spring": _make_spring(),
+    "duck": _make_duck(),
+    "slide": _make_slide_whistle(),
+    "splat": _make_splat(),
 }
 
 # Funny random click sounds (rotated for variety)
@@ -175,6 +232,10 @@ _extra_click_sounds = [
     _make_sound(700, 0.07, 0.25, "sine", freq_end=400),   # blip
     _make_sound(400, 0.09, 0.25, "saw", freq_end=200),    # zap
     _make_sound(550, 0.05, 0.2, "sine", freq_end=800),    # pip up
+    SFX["spring"],
+    SFX["duck"],
+    SFX["slide"],
+    SFX["splat"],
 ]
 
 def play_sfx(name):
@@ -183,13 +244,11 @@ def play_sfx(name):
         SFX[name].play()
 
 def play_click_sfx():
-    """Play a random click pop with occasional silly sound."""
-    if random.random() < 0.08:  # 8% chance of funny sound
-        random.choice([SFX["whoopee"], SFX["bonk"]]).play()
-    elif random.random() < 0.3:
-        random.choice(_extra_click_sounds).play()
-    else:
-        SFX["click"].play()
+    """Play a random funny sound on every click."""
+    all_click_sounds = [
+        SFX["click"], SFX["whoopee"], SFX["bonk"],
+    ] + _extra_click_sounds
+    random.choice(all_click_sounds).play()
 
 # ── Save file ───────────────────────────────────────────────────────────
 SAVE_FILE = "grandma_clicker_save.json"
@@ -374,6 +433,10 @@ class GameState:
         self.notification = None
         self.notif_timer = 0
         self.start_time = time.time()
+        # Rebirth system
+        self.rebirths = 0
+        self.rebirth_multiplier = 1.0  # permanent 2x per rebirth
+        self.lifetime_cookies = 0.0  # never resets
 
     def get_cost(self, idx):
         up = UPGRADES[idx]
@@ -391,17 +454,45 @@ class GameState:
         return False
 
     def click(self):
-        amount = self.click_power * self.multiplier
+        amount = self.click_power * self.multiplier * self.rebirth_multiplier
         self.cookies += amount
         self.total_cookies += amount
+        self.lifetime_cookies += amount
         self.total_clicks += 1
         return amount
 
+    def get_rebirth_cost(self):
+        return int(1_000_000 * (2 ** self.rebirths))
+
+    def can_rebirth(self):
+        return self.cookies >= self.get_rebirth_cost()
+
+    def rebirth(self):
+        cost = self.get_rebirth_cost()
+        if self.cookies < cost:
+            return False
+        self.rebirths += 1
+        self.rebirth_multiplier = 2.0 ** self.rebirths
+        # Reset progress but keep lifetime stats & rebirths
+        self.cookies = 0.0
+        self.total_cookies = 0.0
+        self.click_power = 1
+        self.cps = 0.0
+        self.owned = [0] * len(UPGRADES)
+        self.milestone_idx = 0
+        self.golden_cookie = None
+        self.golden_timer = 0
+        self.multiplier = 1.0
+        self.multiplier_timer = 0.0
+        self.scroll_offset = 0
+        return True
+
     def update(self, dt):
         # CPS
-        earned = self.cps * self.multiplier * dt
+        earned = self.cps * self.multiplier * self.rebirth_multiplier * dt
         self.cookies += earned
         self.total_cookies += earned
+        self.lifetime_cookies += earned
 
         # Cookie bounce animation
         if self.cookie_scale != self.cookie_target_scale:
@@ -465,6 +556,9 @@ class GameState:
             "milestone_idx": self.milestone_idx,
             "multiplier": self.multiplier,
             "multiplier_timer": self.multiplier_timer,
+            "rebirths": self.rebirths,
+            "rebirth_multiplier": self.rebirth_multiplier,
+            "lifetime_cookies": self.lifetime_cookies,
         }
         with open(SAVE_FILE, "w") as f:
             json.dump(data, f, indent=2)
@@ -482,6 +576,9 @@ class GameState:
             self.milestone_idx = data.get("milestone_idx", 0)
             self.multiplier = data.get("multiplier", 1.0)
             self.multiplier_timer = data.get("multiplier_timer", 0)
+            self.rebirths = data.get("rebirths", 0)
+            self.rebirth_multiplier = data.get("rebirth_multiplier", 1.0)
+            self.lifetime_cookies = data.get("lifetime_cookies", 0)
             # Pad owned if new upgrades were added
             while len(self.owned) < len(UPGRADES):
                 self.owned.append(0)
@@ -693,7 +790,7 @@ def draw_game(gs):
         screen.blit(qs, (90, y_off))
 
     # Stats bar at bottom-left
-    stats_rect = pygame.Rect(30, 525, 390, 55)
+    stats_rect = pygame.Rect(30, 520, 390, 70)
     draw_rounded_rect(screen, PANEL_BG, stats_rect, radius=10, border=1, border_color=PANEL_BORDER)
     stat1 = font_xs.render(f"Total baked: {format_number(gs.total_cookies)}", True, TEXT_DARK)
     stat2 = font_xs.render(f"Total clicks: {format_number(gs.total_clicks)}", True, TEXT_DARK)
@@ -702,13 +799,29 @@ def draw_game(gs):
     hrs, mins = divmod(mins, 60)
     time_str = f"{hrs}h {mins}m {secs}s" if hrs else f"{mins}m {secs}s"
     stat3 = font_xs.render(f"Session: {time_str}", True, TEXT_DARK)
-    screen.blit(stat1, (40, 530))
-    screen.blit(stat2, (40, 548))
-    screen.blit(stat3, (40, 566))
+    rebirth_info = f"Rebirths: {gs.rebirths}  (x{format_number(gs.rebirth_multiplier)} perm)"
+    stat4 = font_xs.render(rebirth_info, True, (180, 100, 200))
+    lifetime_txt = font_xs.render(f"Lifetime: {format_number(gs.lifetime_cookies)}", True, TEXT_LIGHT)
+    screen.blit(stat1, (40, 524))
+    screen.blit(stat2, (200, 524))
+    screen.blit(stat3, (40, 542))
+    screen.blit(stat4, (200, 542))
+    screen.blit(lifetime_txt, (40, 560))
+
+    # Rebirth button
+    mx, my = pygame.mouse.get_pos()
+    rebirth_cost = gs.get_rebirth_cost()
+    can_rebirth = gs.can_rebirth()
+    rebirth_rect = pygame.Rect(30, 598, 185, 38)
+    rebirth_hover = rebirth_rect.collidepoint(mx, my)
+    rb_col = BTN_PURPLE_H if (can_rebirth and rebirth_hover) else BTN_PURPLE if can_rebirth else (120, 120, 120)
+    draw_rounded_rect(screen, rb_col, rebirth_rect, radius=8)
+    rb_label = f"🔄 Rebirth ({format_number(rebirth_cost)})"
+    rb_txt = font_sm.render(rb_label, True, WHITE)
+    screen.blit(rb_txt, (rebirth_rect.centerx - rb_txt.get_width() // 2, rebirth_rect.centery - rb_txt.get_height() // 2))
 
     # Save button
-    save_rect = pygame.Rect(30, 595, 120, 35)
-    mx, my = pygame.mouse.get_pos()
+    save_rect = pygame.Rect(225, 598, 100, 38)
     save_hover = save_rect.collidepoint(mx, my)
     draw_rounded_rect(screen, BTN_GREEN_H if save_hover else BTN_GREEN, save_rect, radius=8)
     save_txt = font_sm.render("💾 Save", True, WHITE)
@@ -848,8 +961,31 @@ def main():
                             else:
                                 play_sfx("fail")
 
+                    # Rebirth button
+                    rebirth_rect = pygame.Rect(30, 598, 185, 38)
+                    if rebirth_rect.collidepoint(mx, my):
+                        if gs.rebirth():
+                            gs.notification = f"🔄 REBIRTH #{gs.rebirths}! Permanent {format_number(gs.rebirth_multiplier)}x multiplier!"
+                            gs.notif_timer = 5.0
+                            play_sfx("rebirth")
+                            # Epic particle burst
+                            for _ in range(20):
+                                gs.particles.append({
+                                    "x": 225 + random.randint(-100, 100),
+                                    "y": 310 + random.randint(-80, 40),
+                                    "speed": random.uniform(60, 150),
+                                    "alpha": 255,
+                                    "life": 2.0,
+                                    "text": random.choice(["🔄", "⭐", "✨", "🌟", "💎", "👵", "🍪"]),
+                                    "is_emoji": True,
+                                })
+                        else:
+                            gs.notification = f"Need {format_number(gs.get_rebirth_cost())} cookies to rebirth!"
+                            gs.notif_timer = 2.0
+                            play_sfx("fail")
+
                     # Save button
-                    save_rect = pygame.Rect(30, 595, 120, 35)
+                    save_rect = pygame.Rect(225, 598, 100, 38)
                     if save_rect.collidepoint(mx, my):
                         gs.save()
                         gs.notification = "💾 Game saved!"
