@@ -13,7 +13,10 @@ import time
 import struct
 import array as arr_mod
 
+# Pre-init mixer BEFORE pygame.init() so mono config is respected
+pygame.mixer.pre_init(frequency=44100, size=-16, channels=1, buffer=512)
 pygame.init()
+pygame.mixer.quit()
 pygame.mixer.init(frequency=44100, size=-16, channels=1, buffer=512)
 
 # ── Window ──────────────────────────────────────────────────────────────
@@ -85,7 +88,7 @@ def _make_sound(freq, duration=0.12, volume=0.35, wave="sine", freq_end=None):
 
 def _make_pop():
     """Funny cookie pop/boop."""
-    return _make_sound(600, 0.08, 0.3, "sine", freq_end=300)
+    return _make_sound(600, 0.12, 0.8, "sine", freq_end=300)
 
 def _make_cha_ching():
     """Ka-ching purchase sound."""
@@ -99,12 +102,12 @@ def _make_cha_ching():
         f = 1200 if t < 0.12 else 1600
         val = math.sin(2 * math.pi * f * t)
         env = max(0, 1.0 - (t / dur))
-        buf.append(int(val * 0.3 * 32767 * env))
+        buf.append(int(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 def _make_fail():
     """Sad trombone-ish buzz for can't afford."""
-    return _make_sound(200, 0.2, 0.25, "square", freq_end=100)
+    return _make_sound(200, 0.25, 0.7, "square", freq_end=100)
 
 def _make_golden():
     """Magical sparkle for golden cookie."""
@@ -117,7 +120,7 @@ def _make_golden():
         f = 800 + 600 * math.sin(2 * math.pi * 5 * t)  # warble
         val = math.sin(2 * math.pi * f * t)
         env = max(0, 1.0 - (t / dur) * 0.7)
-        buf.append(int(val * 0.3 * 32767 * env))
+        buf.append(int(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 def _make_milestone():
@@ -131,12 +134,12 @@ def _make_milestone():
             t = i / sample_rate
             val = math.sin(2 * math.pi * freq * t)
             env = max(0, 1.0 - (i / n) * 0.5)
-            buf.append(int(val * 0.3 * 32767 * env))
+            buf.append(int(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 def _make_save():
     """Cute bloop for saving."""
-    return _make_sound(440, 0.1, 0.2, "sine", freq_end=880)
+    return _make_sound(440, 0.15, 0.7, "sine", freq_end=880)
 
 def _make_whoopee():
     """Silly whoopee cushion / fart for random fun."""
@@ -150,12 +153,12 @@ def _make_whoopee():
         low = math.sin(2 * math.pi * 80 * t)
         val = (noise * 0.3 + low * 0.7)
         env = max(0, 1.0 - (t / dur))
-        buf.append(int(val * 0.25 * 32767 * env))
+        buf.append(int(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 def _make_bonk():
     """Cartoon bonk sound."""
-    return _make_sound(150, 0.15, 0.35, "square", freq_end=60)
+    return _make_sound(150, 0.2, 0.8, "square", freq_end=60)
 
 def _make_rebirth():
     """Epic ascending rebirth fanfare."""
@@ -169,12 +172,12 @@ def _make_rebirth():
             t = i / sample_rate
             val = math.sin(2 * math.pi * freq * t) + 0.3 * math.sin(2 * math.pi * freq * 2 * t)
             env = max(0, 1.0 - (i / n) * 0.4)
-            buf.append(int(val * 0.25 * 32767 * env))
+            buf.append(int(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 def _make_spring():
     """Boing spring sound."""
-    return _make_sound(300, 0.15, 0.3, "sine", freq_end=900)
+    return _make_sound(300, 0.2, 0.8, "sine", freq_end=900)
 
 def _make_duck():
     """Rubber duck quack."""
@@ -187,12 +190,12 @@ def _make_duck():
         f = 800 - 400 * (i / n)
         val = 1.0 if math.sin(2 * math.pi * f * t) >= 0 else -1.0
         env = max(0, 1.0 - (t / dur) * 0.6)
-        buf.append(int(val * 0.2 * 32767 * env))
+        buf.append(int(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 def _make_slide_whistle():
     """Cartoon slide whistle."""
-    return _make_sound(200, 0.2, 0.25, "sine", freq_end=1200)
+    return _make_sound(200, 0.25, 0.8, "sine", freq_end=1200)
 
 def _make_splat():
     """Wet splat sound."""
@@ -206,7 +209,7 @@ def _make_splat():
         tone = math.sin(2 * math.pi * 250 * t)
         val = noise * 0.5 + tone * 0.5
         env = max(0, 1.0 - (t / dur))
-        buf.append(int(val * 0.3 * 32767 * env))
+        buf.append(int(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 # Build SFX dict
@@ -228,10 +231,10 @@ SFX = {
 
 # Funny random click sounds (rotated for variety)
 _extra_click_sounds = [
-    _make_sound(500, 0.06, 0.25, "sine", freq_end=250),   # boop
-    _make_sound(700, 0.07, 0.25, "sine", freq_end=400),   # blip
-    _make_sound(400, 0.09, 0.25, "saw", freq_end=200),    # zap
-    _make_sound(550, 0.05, 0.2, "sine", freq_end=800),    # pip up
+    _make_sound(500, 0.1, 0.8, "sine", freq_end=250),   # boop
+    _make_sound(700, 0.1, 0.8, "sine", freq_end=400),   # blip
+    _make_sound(400, 0.12, 0.8, "saw", freq_end=200),    # zap
+    _make_sound(550, 0.1, 0.7, "sine", freq_end=800),    # pip up
     SFX["spring"],
     SFX["duck"],
     SFX["slide"],
