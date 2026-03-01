@@ -3,25 +3,25 @@
   "player": {
     "name": "Hero",
     "char_class": "rogue",
-    "level": 1572,
-    "xp": 138429214148448244199758414126334370907081884204713218251886912085438847611204530240953840736208314921415853176760737927523589670732186682334987577657933203744214225030482868797874234453184248394951432744248126863406533401387048221086775882055906806375578253147998499713634792451,
-    "xp_to_level": 434767813984684752625591298158178191524481970468414664500955997301701807797565585536745999839531584646747448006480068116266279097128107244066798871058500637153389290894273132508318167327687316770789979477346029009597742246050988352535203975896323381438434932258429846115202367488,
-    "hp": 170111370,
-    "max_hp": 170111370,
-    "mp": 38051913,
-    "max_mp": 38051913,
-    "ac": 11654,
+    "level": 1578,
+    "xp": 2033916898019670655613383635365479107983898832464292295012392039946192108588051993052666848512543608336497861112342910533919820816637422554791384803367479912598982442230082732118813300530202997499957747443960585794814034266403077881512205639905433118189312423803774310173526718817,
+    "xp_to_level": 4952277131169299534050069350012374697994248707735243262884562614248975815771650840165379244027738618827779253834937233253060932747850535400000245757530179194787737981918280598530331569214938340758972862350029090458440010448297945684007481957016567453759334471754412049727360073728,
+    "hp": 13554,
+    "max_hp": 13554,
+    "mp": 141558,
+    "max_mp": 141558,
+    "ac": 1729,
     "stats": {
-      "STR": 12467,
-      "DEX": 23184,
-      "CON": 12447,
-      "INT": 12435,
-      "WIS": 12441,
-      "CHA": 12472
+      "STR": 16,
+      "DEX": 3285,
+      "CON": 7,
+      "INT": 15,
+      "WIS": 7,
+      "CHA": 14
     },
-    "skill_points": 1634,
+    "skill_points": 12,
     "skill_tree": {
-      "shadow_step": 6,
+      "shadow_step": 1640,
       "lethal_edge": 4,
       "poison_tips": 15,
       "evasion": 4,
@@ -97,6 +97,54 @@
     "mystery_nodes": [
       {
         "id": "mystery_0",
+        "name": "Cat Reflexes",
+        "real_name": "Cat Reflexes",
+        "icon": "\ud83d\udc31",
+        "real_icon": "\ud83d\udc31",
+        "desc": "+4 DEX per rank",
+        "real_desc": "+4 DEX per rank",
+        "max_rank": 3,
+        "row": 4,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "dex": 4
+        }
+      },
+      {
+        "id": "mystery_1",
+        "name": "Holy Wrath",
+        "real_name": "Holy Wrath",
+        "icon": "\u26a1",
+        "real_icon": "\u26a1",
+        "desc": "+40% smite damage per rank",
+        "real_desc": "+40% smite damage per rank",
+        "max_rank": 3,
+        "row": 5,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "smite_damage_pct": 40
+        }
+      },
+      {
+        "id": "mystery_2",
+        "name": "Spell Storm",
+        "real_name": "Spell Storm",
+        "icon": "\u26c8\ufe0f",
+        "real_icon": "\u26c8\ufe0f",
+        "desc": "+40% skill power per rank",
+        "real_desc": "+40% skill power per rank",
+        "max_rank": 3,
+        "row": 6,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "skill_power_pct": 40
+        }
+      },
+      {
+        "id": "mystery_3",
         "name": "Executioner",
         "real_name": "Executioner",
         "icon": "\ud83e\ude93",
@@ -104,7 +152,7 @@
         "desc": "+20% crit damage per rank",
         "real_desc": "+20% crit damage per rank",
         "max_rank": 3,
-        "row": 4,
+        "row": 7,
         "col": 1,
         "requires": [],
         "bonus": {
@@ -112,7 +160,71 @@
         }
       },
       {
-        "id": "mystery_1",
+        "id": "mystery_4",
+        "name": "Iron Skin",
+        "real_name": "Iron Skin",
+        "icon": "\ud83d\udee1\ufe0f",
+        "real_icon": "\ud83d\udee1\ufe0f",
+        "desc": "+3 AC per rank",
+        "real_desc": "+3 AC per rank",
+        "max_rank": 3,
+        "row": 8,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "ac": 3
+        }
+      },
+      {
+        "id": "mystery_5",
+        "name": "Infinite Well",
+        "real_name": "Infinite Well",
+        "icon": "\ud83d\udd73\ufe0f",
+        "real_icon": "\ud83d\udd73\ufe0f",
+        "desc": "+40% Max MP per rank",
+        "real_desc": "+40% Max MP per rank",
+        "max_rank": 3,
+        "row": 9,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "max_mp_pct": 40
+        }
+      },
+      {
+        "id": "mystery_6",
+        "name": "Stone Body",
+        "real_name": "Stone Body",
+        "icon": "\ud83e\udea8",
+        "real_icon": "\ud83e\udea8",
+        "desc": "+6 CON per rank",
+        "real_desc": "+6 CON per rank",
+        "max_rank": 3,
+        "row": 10,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "con": 6
+        }
+      },
+      {
+        "id": "mystery_7",
+        "name": "Titan Strength",
+        "real_name": "Titan Strength",
+        "icon": "\ud83e\uddbe",
+        "real_icon": "\ud83e\uddbe",
+        "desc": "+6 STR per rank",
+        "real_desc": "+6 STR per rank",
+        "max_rank": 3,
+        "row": 11,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "str": 6
+        }
+      },
+      {
+        "id": "mystery_8",
         "name": "Divine Favor",
         "real_name": "Divine Favor",
         "icon": "\ud83d\udcab",
@@ -120,7 +232,7 @@
         "desc": "+30% heal power per rank",
         "real_desc": "+30% heal power per rank",
         "max_rank": 3,
-        "row": 5,
+        "row": 12,
         "col": 1,
         "requires": [],
         "bonus": {
@@ -128,7 +240,39 @@
         }
       },
       {
-        "id": "mystery_2",
+        "id": "mystery_9",
+        "name": "Scholar",
+        "real_name": "Scholar",
+        "icon": "\ud83c\udf93",
+        "real_icon": "\ud83c\udf93",
+        "desc": "+40% XP gained per rank",
+        "real_desc": "+40% XP gained per rank",
+        "max_rank": 3,
+        "row": 13,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "xp_pct": 40
+        }
+      },
+      {
+        "id": "mystery_10",
+        "name": "Death Strike",
+        "real_name": "Death Strike",
+        "icon": "\u2620\ufe0f",
+        "real_icon": "\u2620\ufe0f",
+        "desc": "+35% crit damage per rank",
+        "real_desc": "+35% crit damage per rank",
+        "max_rank": 3,
+        "row": 14,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "crit_damage_pct": 35
+        }
+      },
+      {
+        "id": "mystery_11",
         "name": "Mind Fortress",
         "real_name": "Mind Fortress",
         "icon": "\ud83c\udff0",
@@ -136,7 +280,7 @@
         "desc": "+4 INT per rank",
         "real_desc": "+4 INT per rank",
         "max_rank": 3,
-        "row": 6,
+        "row": 15,
         "col": 1,
         "requires": [],
         "bonus": {
@@ -144,119 +288,7 @@
         }
       },
       {
-        "id": "mystery_3",
-        "name": "War God",
-        "real_name": "War God",
-        "icon": "\u2694\ufe0f",
-        "real_icon": "\u2694\ufe0f",
-        "desc": "+4 STR per rank",
-        "real_desc": "+4 STR per rank",
-        "max_rank": 3,
-        "row": 7,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "str": 4
-        }
-      },
-      {
-        "id": "mystery_4",
-        "name": "Shadow Cloak",
-        "real_name": "Shadow Cloak",
-        "icon": "\ud83c\udf11",
-        "real_icon": "\ud83c\udf11",
-        "desc": "+3 all stats per rank",
-        "real_desc": "+3 all stats per rank",
-        "max_rank": 3,
-        "row": 8,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "all_stats": 3
-        }
-      },
-      {
-        "id": "mystery_5",
-        "name": "Soul Harvest",
-        "real_name": "Soul Harvest",
-        "icon": "\ud83d\udc7b",
-        "real_icon": "\ud83d\udc7b",
-        "desc": "+5% lifesteal per rank",
-        "real_desc": "+5% lifesteal per rank",
-        "max_rank": 3,
-        "row": 9,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "lifesteal_pct": 5
-        }
-      },
-      {
-        "id": "mystery_6",
-        "name": "Titan Blood",
-        "real_name": "Titan Blood",
-        "icon": "\ud83e\ude78",
-        "real_icon": "\ud83e\ude78",
-        "desc": "+20% Max HP per rank",
-        "real_desc": "+20% Max HP per rank",
-        "max_rank": 3,
-        "row": 10,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "max_hp_pct": 20
-        }
-      },
-      {
-        "id": "mystery_7",
-        "name": "Golden Aura",
-        "real_name": "Golden Aura",
-        "icon": "\u2728",
-        "real_icon": "\u2728",
-        "desc": "+30% gold found per rank",
-        "real_desc": "+30% gold found per rank",
-        "max_rank": 3,
-        "row": 11,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "gold_pct": 30
-        }
-      },
-      {
-        "id": "mystery_8",
-        "name": "XP Overflow",
-        "real_name": "XP Overflow",
-        "icon": "\ud83d\udcc8",
-        "real_icon": "\ud83d\udcc8",
-        "desc": "+25% XP gained per rank",
-        "real_desc": "+25% XP gained per rank",
-        "max_rank": 3,
-        "row": 12,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "xp_pct": 25
-        }
-      },
-      {
-        "id": "mystery_9",
-        "name": "Fortune",
-        "real_name": "Fortune",
-        "icon": "\ud83c\udf40",
-        "real_icon": "\ud83c\udf40",
-        "desc": "+50% gold found per rank",
-        "real_desc": "+50% gold found per rank",
-        "max_rank": 3,
-        "row": 13,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "gold_pct": 50
-        }
-      },
-      {
-        "id": "mystery_10",
+        "id": "mystery_12",
         "name": "Warden",
         "real_name": "Warden",
         "icon": "\ud83c\udf32",
@@ -264,7 +296,7 @@
         "desc": "+4 CON, +3 AC, +10% HP",
         "real_desc": "+4 CON, +3 AC, +10% HP",
         "max_rank": 3,
-        "row": 14,
+        "row": 16,
         "col": 1,
         "requires": [],
         "bonus": {
@@ -274,102 +306,67 @@
         }
       },
       {
-        "id": "mystery_11",
-        "name": "Ancient Wisdom",
-        "real_name": "Ancient Wisdom",
-        "icon": "\ud83d\udcd6",
-        "real_icon": "\ud83d\udcd6",
-        "desc": "+4 WIS per rank",
-        "real_desc": "+4 WIS per rank",
-        "max_rank": 3,
-        "row": 15,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "wis": 4
-        }
-      },
-      {
-        "id": "mystery_12",
-        "name": "Titan Strength",
-        "real_name": "Titan Strength",
-        "icon": "\ud83e\uddbe",
-        "real_icon": "\ud83e\uddbe",
-        "desc": "+6 STR per rank",
-        "real_desc": "+6 STR per rank",
-        "max_rank": 3,
-        "row": 16,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "str": 6
-        }
-      },
-      {
         "id": "mystery_13",
-        "name": "Storm Caller",
-        "real_name": "Storm Caller",
-        "icon": "\ud83c\udf29\ufe0f",
-        "real_icon": "\ud83c\udf29\ufe0f",
-        "desc": "+3 DEX, +3 WIS, +15% skill",
-        "real_desc": "+3 DEX, +3 WIS, +15% skill",
+        "name": "Blessed Strike",
+        "real_name": "Blessed Strike",
+        "icon": "\u2600\ufe0f",
+        "real_icon": "\u2600\ufe0f",
+        "desc": "+25% smite damage per rank",
+        "real_desc": "+25% smite damage per rank",
         "max_rank": 3,
         "row": 17,
         "col": 1,
         "requires": [],
         "bonus": {
-          "dex": 3,
-          "wis": 3,
-          "skill_power_pct": 15
+          "smite_damage_pct": 25
         }
       },
       {
         "id": "mystery_14",
-        "name": "Arcane Battery",
-        "real_name": "Arcane Battery",
-        "icon": "\ud83d\udd0b",
-        "real_icon": "\ud83d\udd0b",
-        "desc": "-2 MP cost per rank",
-        "real_desc": "-2 MP cost per rank",
+        "name": "Fury",
+        "real_name": "Fury",
+        "icon": "\ud83d\udca2",
+        "real_icon": "\ud83d\udca2",
+        "desc": "+20% weapon damage per rank",
+        "real_desc": "+20% weapon damage per rank",
         "max_rank": 3,
         "row": 18,
         "col": 1,
         "requires": [],
         "bonus": {
-          "mp_cost_reduction": 2
+          "damage_pct": 20
         }
       },
       {
         "id": "mystery_15",
-        "name": "Mirror Ward",
-        "real_name": "Mirror Ward",
-        "icon": "\ud83e\ude9e",
-        "real_icon": "\ud83e\ude9e",
-        "desc": "+2 AC, +2 CON per rank",
-        "real_desc": "+2 AC, +2 CON per rank",
+        "name": "Wind Walker",
+        "real_name": "Wind Walker",
+        "icon": "\ud83c\udf2c\ufe0f",
+        "real_icon": "\ud83c\udf2c\ufe0f",
+        "desc": "+6 DEX per rank",
+        "real_desc": "+6 DEX per rank",
         "max_rank": 3,
         "row": 19,
         "col": 1,
         "requires": [],
         "bonus": {
-          "ac": 2,
-          "con": 2
+          "dex": 6
         }
       },
       {
         "id": "mystery_16",
-        "name": "Dragon Heart",
-        "real_name": "Dragon Heart",
-        "icon": "\ud83d\udc32",
-        "real_icon": "\ud83d\udc32",
-        "desc": "+4 CON per rank",
-        "real_desc": "+4 CON per rank",
+        "name": "Spell Weaver",
+        "real_name": "Spell Weaver",
+        "icon": "\ud83d\udd78\ufe0f",
+        "real_icon": "\ud83d\udd78\ufe0f",
+        "desc": "+25% skill power per rank",
+        "real_desc": "+25% skill power per rank",
         "max_rank": 3,
         "row": 20,
         "col": 1,
         "requires": [],
         "bonus": {
-          "con": 4
+          "skill_power_pct": 25
         }
       },
       {
@@ -391,463 +388,22 @@
       },
       {
         "id": "mystery_18",
-        "name": "Dark Knight",
-        "real_name": "Dark Knight",
-        "icon": "\ud83d\udda4",
-        "real_icon": "\ud83d\udda4",
-        "desc": "+3 STR, +3 CON, +2 AC",
-        "real_desc": "+3 STR, +3 CON, +2 AC",
+        "name": "Arcane Battery",
+        "real_name": "Arcane Battery",
+        "icon": "\ud83d\udd0b",
+        "real_icon": "\ud83d\udd0b",
+        "desc": "-2 MP cost per rank",
+        "real_desc": "-2 MP cost per rank",
         "max_rank": 3,
         "row": 22,
         "col": 1,
         "requires": [],
         "bonus": {
-          "str": 3,
-          "con": 3,
-          "ac": 2
+          "mp_cost_reduction": 2
         }
       },
       {
         "id": "mystery_19",
-        "name": "Spell Weaver",
-        "real_name": "Spell Weaver",
-        "icon": "\ud83d\udd78\ufe0f",
-        "real_icon": "\ud83d\udd78\ufe0f",
-        "desc": "+25% skill power per rank",
-        "real_desc": "+25% skill power per rank",
-        "max_rank": 3,
-        "row": 23,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "skill_power_pct": 25
-        }
-      },
-      {
-        "id": "mystery_20",
-        "name": "Adamantine Shell",
-        "real_name": "Adamantine Shell",
-        "icon": "\ud83d\udc8e",
-        "real_icon": "\ud83d\udc8e",
-        "desc": "+5 AC per rank",
-        "real_desc": "+5 AC per rank",
-        "max_rank": 3,
-        "row": 24,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "ac": 5
-        }
-      },
-      {
-        "id": "mystery_21",
-        "name": "Treasure Hunter",
-        "real_name": "Treasure Hunter",
-        "icon": "\ud83d\uddfa\ufe0f",
-        "real_icon": "\ud83d\uddfa\ufe0f",
-        "desc": "+20% gold, +15% XP per rank",
-        "real_desc": "+20% gold, +15% XP per rank",
-        "max_rank": 3,
-        "row": 25,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "gold_pct": 20,
-          "xp_pct": 15
-        }
-      },
-      {
-        "id": "mystery_22",
-        "name": "Stone Body",
-        "real_name": "Stone Body",
-        "icon": "\ud83e\udea8",
-        "real_icon": "\ud83e\udea8",
-        "desc": "+6 CON per rank",
-        "real_desc": "+6 CON per rank",
-        "max_rank": 3,
-        "row": 26,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "con": 6
-        }
-      },
-      {
-        "id": "mystery_23",
-        "name": "Colossus",
-        "real_name": "Colossus",
-        "icon": "\ud83d\uddff",
-        "real_icon": "\ud83d\uddff",
-        "desc": "+5 all stats per rank",
-        "real_desc": "+5 all stats per rank",
-        "max_rank": 3,
-        "row": 27,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "all_stats": 5
-        }
-      },
-      {
-        "id": "mystery_24",
-        "name": "Death Strike",
-        "real_name": "Death Strike",
-        "icon": "\u2620\ufe0f",
-        "real_icon": "\u2620\ufe0f",
-        "desc": "+35% crit damage per rank",
-        "real_desc": "+35% crit damage per rank",
-        "max_rank": 3,
-        "row": 28,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "crit_damage_pct": 35
-        }
-      },
-      {
-        "id": "mystery_25",
-        "name": "Ascendant",
-        "real_name": "Ascendant",
-        "icon": "\ud83c\udf0c",
-        "real_icon": "\ud83c\udf0c",
-        "desc": "+10 all stats per rank",
-        "real_desc": "+10 all stats per rank",
-        "max_rank": 3,
-        "row": 29,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "all_stats": 10
-        }
-      },
-      {
-        "id": "mystery_26",
-        "name": "Oracle Eyes",
-        "real_name": "Oracle Eyes",
-        "icon": "\ud83d\udc41\ufe0f",
-        "real_icon": "\ud83d\udc41\ufe0f",
-        "desc": "+6 WIS per rank",
-        "real_desc": "+6 WIS per rank",
-        "max_rank": 3,
-        "row": 30,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "wis": 6
-        }
-      },
-      {
-        "id": "mystery_27",
-        "name": "Bloodlust",
-        "real_name": "Bloodlust",
-        "icon": "\ud83e\ude78",
-        "real_icon": "\ud83e\ude78",
-        "desc": "+15% damage, +10% lifesteal",
-        "real_desc": "+15% damage, +10% lifesteal",
-        "max_rank": 3,
-        "row": 31,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "damage_pct": 15,
-          "lifesteal_pct": 10
-        }
-      },
-      {
-        "id": "mystery_28",
-        "name": "Vitality Burst",
-        "real_name": "Vitality Burst",
-        "icon": "\ud83d\udc9a",
-        "real_icon": "\ud83d\udc9a",
-        "desc": "+15% HP, +15% MP per rank",
-        "real_desc": "+15% HP, +15% MP per rank",
-        "max_rank": 3,
-        "row": 32,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "max_hp_pct": 15,
-          "max_mp_pct": 15
-        }
-      },
-      {
-        "id": "mystery_29",
-        "name": "Blessed Strike",
-        "real_name": "Blessed Strike",
-        "icon": "\u2600\ufe0f",
-        "real_icon": "\u2600\ufe0f",
-        "desc": "+25% smite damage per rank",
-        "real_desc": "+25% smite damage per rank",
-        "max_rank": 3,
-        "row": 33,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "smite_damage_pct": 25
-        }
-      },
-      {
-        "id": "mystery_30",
-        "name": "Void Channel",
-        "real_name": "Void Channel",
-        "icon": "\ud83d\udd2e",
-        "real_icon": "\ud83d\udd2e",
-        "desc": "-3 MP cost, +10% magic dmg",
-        "real_desc": "-3 MP cost, +10% magic dmg",
-        "max_rank": 3,
-        "row": 34,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "mp_cost_reduction": 3,
-          "magic_damage_pct": 10
-        }
-      },
-      {
-        "id": "mystery_31",
-        "name": "Silver Tongue",
-        "real_name": "Silver Tongue",
-        "icon": "\ud83d\udde3\ufe0f",
-        "real_icon": "\ud83d\udde3\ufe0f",
-        "desc": "+4 CHA per rank",
-        "real_desc": "+4 CHA per rank",
-        "max_rank": 3,
-        "row": 35,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "cha": 4
-        }
-      },
-      {
-        "id": "mystery_32",
-        "name": "Cat Reflexes",
-        "real_name": "Cat Reflexes",
-        "icon": "\ud83d\udc31",
-        "real_icon": "\ud83d\udc31",
-        "desc": "+4 DEX per rank",
-        "real_desc": "+4 DEX per rank",
-        "max_rank": 3,
-        "row": 36,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "dex": 4
-        }
-      },
-      {
-        "id": "mystery_33",
-        "name": "Eldritch Surge",
-        "real_name": "Eldritch Surge",
-        "icon": "\ud83c\udf00",
-        "real_icon": "\ud83c\udf00",
-        "desc": "+30% magic damage per rank",
-        "real_desc": "+30% magic damage per rank",
-        "max_rank": 3,
-        "row": 37,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "magic_damage_pct": 30
-        }
-      },
-      {
-        "id": "mystery_34",
-        "name": "Wind Walker",
-        "real_name": "Wind Walker",
-        "icon": "\ud83c\udf2c\ufe0f",
-        "real_icon": "\ud83c\udf2c\ufe0f",
-        "desc": "+6 DEX per rank",
-        "real_desc": "+6 DEX per rank",
-        "max_rank": 3,
-        "row": 38,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "dex": 6
-        }
-      },
-      {
-        "id": "mystery_35",
-        "name": "Psion Mind",
-        "real_name": "Psion Mind",
-        "icon": "\ud83e\udde0",
-        "real_icon": "\ud83e\udde0",
-        "desc": "+6 INT per rank",
-        "real_desc": "+6 INT per rank",
-        "max_rank": 3,
-        "row": 39,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "int": 6
-        }
-      },
-      {
-        "id": "mystery_36",
-        "name": "Berserker Rage",
-        "real_name": "Berserker Rage",
-        "icon": "\ud83d\ude21",
-        "real_icon": "\ud83d\ude21",
-        "desc": "+30% weapon damage per rank",
-        "real_desc": "+30% weapon damage per rank",
-        "max_rank": 3,
-        "row": 40,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "damage_pct": 30
-        }
-      },
-      {
-        "id": "mystery_37",
-        "name": "Reaper",
-        "real_name": "Reaper",
-        "icon": "\ud83d\udc80",
-        "real_icon": "\ud83d\udc80",
-        "desc": "+25% crit, +15% lifesteal",
-        "real_desc": "+25% crit, +15% lifesteal",
-        "max_rank": 3,
-        "row": 41,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "crit_damage_pct": 25,
-          "lifesteal_pct": 15
-        }
-      },
-      {
-        "id": "mystery_38",
-        "name": "Mana Surge",
-        "real_name": "Mana Surge",
-        "icon": "\ud83c\udf0a",
-        "real_icon": "\ud83c\udf0a",
-        "desc": "+25% Max MP per rank",
-        "real_desc": "+25% Max MP per rank",
-        "max_rank": 3,
-        "row": 42,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "max_mp_pct": 25
-        }
-      },
-      {
-        "id": "mystery_39",
-        "name": "Phoenix Spirit",
-        "real_name": "Phoenix Spirit",
-        "icon": "\ud83d\udd25",
-        "real_icon": "\ud83d\udd25",
-        "desc": "+15% HP, +15% skill power",
-        "real_desc": "+15% HP, +15% skill power",
-        "max_rank": 3,
-        "row": 43,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "max_hp_pct": 15,
-          "skill_power_pct": 15
-        }
-      },
-      {
-        "id": "mystery_40",
-        "name": "Spell Storm",
-        "real_name": "Spell Storm",
-        "icon": "\u26c8\ufe0f",
-        "real_icon": "\u26c8\ufe0f",
-        "desc": "+40% skill power per rank",
-        "real_desc": "+40% skill power per rank",
-        "max_rank": 3,
-        "row": 44,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "skill_power_pct": 40
-        }
-      },
-      {
-        "id": "mystery_41",
-        "name": "Blood Mage",
-        "real_name": "Blood Mage",
-        "icon": "\ud83e\ude78",
-        "real_icon": "\ud83e\ude78",
-        "desc": "+20% magic dmg, +10% lifesteal",
-        "real_desc": "+20% magic dmg, +10% lifesteal",
-        "max_rank": 3,
-        "row": 45,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "magic_damage_pct": 20,
-          "lifesteal_pct": 10
-        }
-      },
-      {
-        "id": "mystery_42",
-        "name": "Infinite Well",
-        "real_name": "Infinite Well",
-        "icon": "\ud83d\udd73\ufe0f",
-        "real_icon": "\ud83d\udd73\ufe0f",
-        "desc": "+40% Max MP per rank",
-        "real_desc": "+40% Max MP per rank",
-        "max_rank": 3,
-        "row": 46,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "max_mp_pct": 40
-        }
-      },
-      {
-        "id": "mystery_43",
-        "name": "Angelic Touch",
-        "real_name": "Angelic Touch",
-        "icon": "\ud83d\ude07",
-        "real_icon": "\ud83d\ude07",
-        "desc": "+50% heal power per rank",
-        "real_desc": "+50% heal power per rank",
-        "max_rank": 3,
-        "row": 47,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "heal_power_pct": 50
-        }
-      },
-      {
-        "id": "mystery_44",
-        "name": "Holy Wrath",
-        "real_name": "Holy Wrath",
-        "icon": "\u26a1",
-        "real_icon": "\u26a1",
-        "desc": "+40% smite damage per rank",
-        "real_desc": "+40% smite damage per rank",
-        "max_rank": 3,
-        "row": 48,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "smite_damage_pct": 40
-        }
-      },
-      {
-        "id": "mystery_45",
-        "name": "Iron Skin",
-        "real_name": "Iron Skin",
-        "icon": "\ud83d\udee1\ufe0f",
-        "real_icon": "\ud83d\udee1\ufe0f",
-        "desc": "+3 AC per rank",
-        "real_desc": "+3 AC per rank",
-        "max_rank": 3,
-        "row": 49,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "ac": 3
-        }
-      },
-      {
-        "id": "mystery_46",
         "name": "Mystic",
         "real_name": "Mystic",
         "icon": "\ud83d\udd2f",
@@ -855,7 +411,7 @@
         "desc": "+4 INT, +4 WIS, +20% MP",
         "real_desc": "+4 INT, +4 WIS, +20% MP",
         "max_rank": 3,
-        "row": 50,
+        "row": 23,
         "col": 1,
         "requires": [],
         "bonus": {
@@ -865,7 +421,318 @@
         }
       },
       {
-        "id": "mystery_47",
+        "id": "mystery_20",
+        "name": "Blood Mage",
+        "real_name": "Blood Mage",
+        "icon": "\ud83e\ude78",
+        "real_icon": "\ud83e\ude78",
+        "desc": "+20% magic dmg, +10% lifesteal",
+        "real_desc": "+20% magic dmg, +10% lifesteal",
+        "max_rank": 3,
+        "row": 24,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "magic_damage_pct": 20,
+          "lifesteal_pct": 10
+        }
+      },
+      {
+        "id": "mystery_21",
+        "name": "Mana Surge",
+        "real_name": "Mana Surge",
+        "icon": "\ud83c\udf0a",
+        "real_icon": "\ud83c\udf0a",
+        "desc": "+25% Max MP per rank",
+        "real_desc": "+25% Max MP per rank",
+        "max_rank": 3,
+        "row": 25,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "max_mp_pct": 25
+        }
+      },
+      {
+        "id": "mystery_22",
+        "name": "War God",
+        "real_name": "War God",
+        "icon": "\u2694\ufe0f",
+        "real_icon": "\u2694\ufe0f",
+        "desc": "+4 STR per rank",
+        "real_desc": "+4 STR per rank",
+        "max_rank": 3,
+        "row": 26,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "str": 4
+        }
+      },
+      {
+        "id": "mystery_23",
+        "name": "Undying Will",
+        "real_name": "Undying Will",
+        "icon": "\ud83d\udc80",
+        "real_icon": "\ud83d\udc80",
+        "desc": "+35% Max HP per rank",
+        "real_desc": "+35% Max HP per rank",
+        "max_rank": 3,
+        "row": 27,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "max_hp_pct": 35
+        }
+      },
+      {
+        "id": "mystery_24",
+        "name": "Oracle Eyes",
+        "real_name": "Oracle Eyes",
+        "icon": "\ud83d\udc41\ufe0f",
+        "real_icon": "\ud83d\udc41\ufe0f",
+        "desc": "+6 WIS per rank",
+        "real_desc": "+6 WIS per rank",
+        "max_rank": 3,
+        "row": 28,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "wis": 6
+        }
+      },
+      {
+        "id": "mystery_25",
+        "name": "Storm Caller",
+        "real_name": "Storm Caller",
+        "icon": "\ud83c\udf29\ufe0f",
+        "real_icon": "\ud83c\udf29\ufe0f",
+        "desc": "+3 DEX, +3 WIS, +15% skill",
+        "real_desc": "+3 DEX, +3 WIS, +15% skill",
+        "max_rank": 3,
+        "row": 29,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "dex": 3,
+          "wis": 3,
+          "skill_power_pct": 15
+        }
+      },
+      {
+        "id": "mystery_26",
+        "name": "Vitality Burst",
+        "real_name": "Vitality Burst",
+        "icon": "\ud83d\udc9a",
+        "real_icon": "\ud83d\udc9a",
+        "desc": "+15% HP, +15% MP per rank",
+        "real_desc": "+15% HP, +15% MP per rank",
+        "max_rank": 3,
+        "row": 30,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "max_hp_pct": 15,
+          "max_mp_pct": 15
+        }
+      },
+      {
+        "id": "mystery_27",
+        "name": "Ascendant",
+        "real_name": "Ascendant",
+        "icon": "\ud83c\udf0c",
+        "real_icon": "\ud83c\udf0c",
+        "desc": "+10 all stats per rank",
+        "real_desc": "+10 all stats per rank",
+        "max_rank": 3,
+        "row": 31,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "all_stats": 10
+        }
+      },
+      {
+        "id": "mystery_28",
+        "name": "Ancient Wisdom",
+        "real_name": "Ancient Wisdom",
+        "icon": "\ud83d\udcd6",
+        "real_icon": "\ud83d\udcd6",
+        "desc": "+4 WIS per rank",
+        "real_desc": "+4 WIS per rank",
+        "max_rank": 3,
+        "row": 32,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "wis": 4
+        }
+      },
+      {
+        "id": "mystery_29",
+        "name": "Eldritch Surge",
+        "real_name": "Eldritch Surge",
+        "icon": "\ud83c\udf00",
+        "real_icon": "\ud83c\udf00",
+        "desc": "+30% magic damage per rank",
+        "real_desc": "+30% magic damage per rank",
+        "max_rank": 3,
+        "row": 33,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "magic_damage_pct": 30
+        }
+      },
+      {
+        "id": "mystery_30",
+        "name": "Phoenix Spirit",
+        "real_name": "Phoenix Spirit",
+        "icon": "\ud83d\udd25",
+        "real_icon": "\ud83d\udd25",
+        "desc": "+15% HP, +15% skill power",
+        "real_desc": "+15% HP, +15% skill power",
+        "max_rank": 3,
+        "row": 34,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "max_hp_pct": 15,
+          "skill_power_pct": 15
+        }
+      },
+      {
+        "id": "mystery_31",
+        "name": "Colossus",
+        "real_name": "Colossus",
+        "icon": "\ud83d\uddff",
+        "real_icon": "\ud83d\uddff",
+        "desc": "+5 all stats per rank",
+        "real_desc": "+5 all stats per rank",
+        "max_rank": 3,
+        "row": 35,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "all_stats": 5
+        }
+      },
+      {
+        "id": "mystery_32",
+        "name": "Adamantine Shell",
+        "real_name": "Adamantine Shell",
+        "icon": "\ud83d\udc8e",
+        "real_icon": "\ud83d\udc8e",
+        "desc": "+5 AC per rank",
+        "real_desc": "+5 AC per rank",
+        "max_rank": 3,
+        "row": 36,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "ac": 5
+        }
+      },
+      {
+        "id": "mystery_33",
+        "name": "Angelic Touch",
+        "real_name": "Angelic Touch",
+        "icon": "\ud83d\ude07",
+        "real_icon": "\ud83d\ude07",
+        "desc": "+50% heal power per rank",
+        "real_desc": "+50% heal power per rank",
+        "max_rank": 3,
+        "row": 37,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "heal_power_pct": 50
+        }
+      },
+      {
+        "id": "mystery_34",
+        "name": "XP Overflow",
+        "real_name": "XP Overflow",
+        "icon": "\ud83d\udcc8",
+        "real_icon": "\ud83d\udcc8",
+        "desc": "+25% XP gained per rank",
+        "real_desc": "+25% XP gained per rank",
+        "max_rank": 3,
+        "row": 38,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "xp_pct": 25
+        }
+      },
+      {
+        "id": "mystery_35",
+        "name": "Reaper",
+        "real_name": "Reaper",
+        "icon": "\ud83d\udc80",
+        "real_icon": "\ud83d\udc80",
+        "desc": "+25% crit, +15% lifesteal",
+        "real_desc": "+25% crit, +15% lifesteal",
+        "max_rank": 3,
+        "row": 39,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "crit_damage_pct": 25,
+          "lifesteal_pct": 15
+        }
+      },
+      {
+        "id": "mystery_36",
+        "name": "Life Weaver",
+        "real_name": "Life Weaver",
+        "icon": "\ud83c\udf38",
+        "real_icon": "\ud83c\udf38",
+        "desc": "+20% heal, +15% HP per rank",
+        "real_desc": "+20% heal, +15% HP per rank",
+        "max_rank": 3,
+        "row": 40,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "heal_power_pct": 20,
+          "max_hp_pct": 15
+        }
+      },
+      {
+        "id": "mystery_37",
+        "name": "Golden Aura",
+        "real_name": "Golden Aura",
+        "icon": "\u2728",
+        "real_icon": "\u2728",
+        "desc": "+30% gold found per rank",
+        "real_desc": "+30% gold found per rank",
+        "max_rank": 3,
+        "row": 41,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "gold_pct": 30
+        }
+      },
+      {
+        "id": "mystery_38",
+        "name": "Titan Blood",
+        "real_name": "Titan Blood",
+        "icon": "\ud83e\ude78",
+        "real_icon": "\ud83e\ude78",
+        "desc": "+20% Max HP per rank",
+        "real_desc": "+20% Max HP per rank",
+        "max_rank": 3,
+        "row": 42,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "max_hp_pct": 20
+        }
+      },
+      {
+        "id": "mystery_39",
         "name": "Battle Mage",
         "real_name": "Battle Mage",
         "icon": "\ud83e\uddd9",
@@ -873,7 +740,7 @@
         "desc": "+3 STR, +3 INT, +10% dmg",
         "real_desc": "+3 STR, +3 INT, +10% dmg",
         "max_rank": 3,
-        "row": 51,
+        "row": 43,
         "col": 1,
         "requires": [],
         "bonus": {
@@ -883,72 +750,188 @@
         }
       },
       {
+        "id": "mystery_40",
+        "name": "Psion Mind",
+        "real_name": "Psion Mind",
+        "icon": "\ud83e\udde0",
+        "real_icon": "\ud83e\udde0",
+        "desc": "+6 INT per rank",
+        "real_desc": "+6 INT per rank",
+        "max_rank": 3,
+        "row": 44,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "int": 6
+        }
+      },
+      {
+        "id": "mystery_41",
+        "name": "Berserker Rage",
+        "real_name": "Berserker Rage",
+        "icon": "\ud83d\ude21",
+        "real_icon": "\ud83d\ude21",
+        "desc": "+30% weapon damage per rank",
+        "real_desc": "+30% weapon damage per rank",
+        "max_rank": 3,
+        "row": 45,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "damage_pct": 30
+        }
+      },
+      {
+        "id": "mystery_42",
+        "name": "Void Channel",
+        "real_name": "Void Channel",
+        "icon": "\ud83d\udd2e",
+        "real_icon": "\ud83d\udd2e",
+        "desc": "-3 MP cost, +10% magic dmg",
+        "real_desc": "-3 MP cost, +10% magic dmg",
+        "max_rank": 3,
+        "row": 46,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "mp_cost_reduction": 3,
+          "magic_damage_pct": 10
+        }
+      },
+      {
+        "id": "mystery_43",
+        "name": "Mirror Ward",
+        "real_name": "Mirror Ward",
+        "icon": "\ud83e\ude9e",
+        "real_icon": "\ud83e\ude9e",
+        "desc": "+2 AC, +2 CON per rank",
+        "real_desc": "+2 AC, +2 CON per rank",
+        "max_rank": 3,
+        "row": 47,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "ac": 2,
+          "con": 2
+        }
+      },
+      {
+        "id": "mystery_44",
+        "name": "Silver Tongue",
+        "real_name": "Silver Tongue",
+        "icon": "\ud83d\udde3\ufe0f",
+        "real_icon": "\ud83d\udde3\ufe0f",
+        "desc": "+4 CHA per rank",
+        "real_desc": "+4 CHA per rank",
+        "max_rank": 3,
+        "row": 48,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "cha": 4
+        }
+      },
+      {
+        "id": "mystery_45",
+        "name": "Treasure Hunter",
+        "real_name": "Treasure Hunter",
+        "icon": "\ud83d\uddfa\ufe0f",
+        "real_icon": "\ud83d\uddfa\ufe0f",
+        "desc": "+20% gold, +15% XP per rank",
+        "real_desc": "+20% gold, +15% XP per rank",
+        "max_rank": 3,
+        "row": 49,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "gold_pct": 20,
+          "xp_pct": 15
+        }
+      },
+      {
+        "id": "mystery_46",
+        "name": "Soul Harvest",
+        "real_name": "Soul Harvest",
+        "icon": "\ud83d\udc7b",
+        "real_icon": "\ud83d\udc7b",
+        "desc": "+5% lifesteal per rank",
+        "real_desc": "+5% lifesteal per rank",
+        "max_rank": 3,
+        "row": 50,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "lifesteal_pct": 5
+        }
+      },
+      {
+        "id": "mystery_47",
+        "name": "Shadow Cloak",
+        "real_name": "Shadow Cloak",
+        "icon": "\ud83c\udf11",
+        "real_icon": "\ud83c\udf11",
+        "desc": "+3 all stats per rank",
+        "real_desc": "+3 all stats per rank",
+        "max_rank": 3,
+        "row": 51,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "all_stats": 3
+        }
+      },
+      {
         "id": "mystery_48",
-        "name": "Scholar",
-        "real_name": "Scholar",
-        "icon": "\ud83c\udf93",
-        "real_icon": "\ud83c\udf93",
-        "desc": "+40% XP gained per rank",
-        "real_desc": "+40% XP gained per rank",
+        "name": "Dark Knight",
+        "real_name": "Dark Knight",
+        "icon": "\ud83d\udda4",
+        "real_icon": "\ud83d\udda4",
+        "desc": "+3 STR, +3 CON, +2 AC",
+        "real_desc": "+3 STR, +3 CON, +2 AC",
         "max_rank": 3,
         "row": 52,
         "col": 1,
         "requires": [],
         "bonus": {
-          "xp_pct": 40
+          "str": 3,
+          "con": 3,
+          "ac": 2
         }
       },
       {
         "id": "mystery_49",
-        "name": "Fury",
-        "real_name": "Fury",
-        "icon": "\ud83d\udca2",
-        "real_icon": "\ud83d\udca2",
-        "desc": "+20% weapon damage per rank",
-        "real_desc": "+20% weapon damage per rank",
+        "name": "Fortune",
+        "real_name": "Fortune",
+        "icon": "\ud83c\udf40",
+        "real_icon": "\ud83c\udf40",
+        "desc": "+50% gold found per rank",
+        "real_desc": "+50% gold found per rank",
         "max_rank": 3,
         "row": 53,
         "col": 1,
         "requires": [],
         "bonus": {
-          "damage_pct": 20
+          "gold_pct": 50
         }
       },
       {
         "id": "mystery_50",
-        "name": "Undying Will",
-        "real_name": "Undying Will",
-        "icon": "\ud83d\udc80",
-        "real_icon": "\ud83d\udc80",
-        "desc": "+35% Max HP per rank",
-        "real_desc": "+35% Max HP per rank",
+        "name": "Dragon Heart",
+        "real_name": "Dragon Heart",
+        "icon": "\ud83d\udc32",
+        "real_icon": "\ud83d\udc32",
+        "desc": "+4 CON per rank",
+        "real_desc": "+4 CON per rank",
         "max_rank": 3,
         "row": 54,
         "col": 1,
         "requires": [],
         "bonus": {
-          "max_hp_pct": 35
+          "con": 4
         }
       },
       {
         "id": "mystery_51",
-        "name": "Life Weaver",
-        "real_name": "Life Weaver",
-        "icon": "\ud83c\udf38",
-        "real_icon": "\ud83c\udf38",
-        "desc": "+20% heal, +15% HP per rank",
-        "real_desc": "+20% heal, +15% HP per rank",
-        "max_rank": 3,
-        "row": 55,
-        "col": 1,
-        "requires": [],
-        "bonus": {
-          "heal_power_pct": 20,
-          "max_hp_pct": 15
-        }
-      },
-      {
-        "id": "mystery_52",
         "name": "Demigod",
         "real_name": "Demigod",
         "icon": "\u2b50",
@@ -956,7 +939,7 @@
         "desc": "+7 all stats per rank",
         "real_desc": "+7 all stats per rank",
         "max_rank": 3,
-        "row": 56,
+        "row": 55,
         "col": 1,
         "requires": [],
         "bonus": {
@@ -964,243 +947,303 @@
         }
       },
       {
+        "id": "mystery_52",
+        "name": "Bloodlust",
+        "real_name": "Bloodlust",
+        "icon": "\ud83e\ude78",
+        "real_icon": "\ud83e\ude78",
+        "desc": "+15% damage, +10% lifesteal",
+        "real_desc": "+15% damage, +10% lifesteal",
+        "max_rank": 3,
+        "row": 56,
+        "col": 1,
+        "requires": [],
+        "bonus": {
+          "damage_pct": 15,
+          "lifesteal_pct": 10
+        }
+      },
+      {
         "id": "mystery_53",
-        "name": "Shadow Veil",
-        "real_name": "Shadow Veil",
-        "icon": "\ud83e\uddff",
-        "real_icon": "\ud83e\uddff",
-        "desc": "+56% crit dmg, +43% skill power per rank",
-        "real_desc": "+56% crit dmg, +43% skill power per rank",
+        "name": "Storm Storm",
+        "real_name": "Storm Storm",
+        "icon": "\ud83d\udde1\ufe0f",
+        "real_icon": "\ud83d\udde1\ufe0f",
+        "desc": "+45% skill power, +49% damage, +11 DEX per rank",
+        "real_desc": "+45% skill power, +49% damage, +11 DEX per rank",
         "max_rank": 3,
         "row": 57,
         "col": 1,
         "requires": [],
         "bonus": {
-          "crit_damage_pct": 56,
-          "skill_power_pct": 43
+          "skill_power_pct": 45,
+          "damage_pct": 49,
+          "dex": 11
         }
       },
       {
         "id": "mystery_54",
-        "name": "Astral Bloom",
-        "real_name": "Astral Bloom",
-        "icon": "\ud83c\udff9",
-        "real_icon": "\ud83c\udff9",
-        "desc": "+47% Max MP per rank",
-        "real_desc": "+47% Max MP per rank",
+        "name": "Apex Grace",
+        "real_name": "Apex Grace",
+        "icon": "\ud83c\udf86",
+        "real_icon": "\ud83c\udf86",
+        "desc": "+40% XP, +46% gold, +40% lifesteal per rank",
+        "real_desc": "+40% XP, +46% gold, +40% lifesteal per rank",
         "max_rank": 3,
         "row": 58,
         "col": 1,
         "requires": [],
         "bonus": {
-          "max_mp_pct": 47
+          "xp_pct": 40,
+          "gold_pct": 46,
+          "lifesteal_pct": 40
         }
       },
       {
         "id": "mystery_55",
-        "name": "Eldritch Pulse",
-        "real_name": "Eldritch Pulse",
-        "icon": "\ud83c\udf86",
-        "real_icon": "\ud83c\udf86",
-        "desc": "+40% Max MP, +12 STR, +12 DEX per rank",
-        "real_desc": "+40% Max MP, +12 STR, +12 DEX per rank",
+        "name": "Temporal Wrath",
+        "real_name": "Temporal Wrath",
+        "icon": "\ud83e\ude90",
+        "real_icon": "\ud83e\ude90",
+        "desc": "+9 AC, +46% XP per rank",
+        "real_desc": "+9 AC, +46% XP per rank",
         "max_rank": 3,
         "row": 59,
         "col": 1,
         "requires": [],
         "bonus": {
-          "max_mp_pct": 40,
-          "str": 12,
-          "dex": 12
+          "ac": 9,
+          "xp_pct": 46
         }
       },
       {
         "id": "mystery_56",
-        "name": "Spectral Aura",
-        "real_name": "Spectral Aura",
+        "name": "Genesis Flame",
+        "real_name": "Genesis Flame",
         "icon": "\ud83e\uddb7",
         "real_icon": "\ud83e\uddb7",
-        "desc": "+44% skill power, +12 CHA per rank",
-        "real_desc": "+44% skill power, +12 CHA per rank",
+        "desc": "+58% magic dmg, +9 DEX per rank",
+        "real_desc": "+58% magic dmg, +9 DEX per rank",
         "max_rank": 3,
         "row": 60,
         "col": 1,
         "requires": [],
         "bonus": {
-          "skill_power_pct": 44,
-          "cha": 12
+          "magic_damage_pct": 58,
+          "dex": 9
         }
       },
       {
         "id": "mystery_57",
-        "name": "Astral Chain",
-        "real_name": "Astral Chain",
-        "icon": "\ud83d\udee1\ufe0f",
-        "real_icon": "\ud83d\udee1\ufe0f",
-        "desc": "+58% magic dmg per rank",
-        "real_desc": "+58% magic dmg per rank",
+        "name": "Spectral Core",
+        "real_name": "Spectral Core",
+        "icon": "\ud83c\udfaf",
+        "real_icon": "\ud83c\udfaf",
+        "desc": "+40% heal power, +9  attack bonus per rank",
+        "real_desc": "+40% heal power, +9  attack bonus per rank",
         "max_rank": 3,
         "row": 61,
         "col": 1,
         "requires": [],
         "bonus": {
-          "magic_damage_pct": 58
+          "heal_power_pct": 40,
+          "attack_bonus": 9
         }
       },
       {
         "id": "mystery_58",
-        "name": "Hyper Flow",
-        "real_name": "Hyper Flow",
-        "icon": "\ud83d\udc51",
-        "real_icon": "\ud83d\udc51",
-        "desc": "+7  attack bonus per rank",
-        "real_desc": "+7  attack bonus per rank",
+        "name": "Infernal Burst",
+        "real_name": "Infernal Burst",
+        "icon": "\ud83e\uddf2",
+        "real_icon": "\ud83e\uddf2",
+        "desc": "+9 CHA, +44% Max MP per rank",
+        "real_desc": "+9 CHA, +44% Max MP per rank",
         "max_rank": 3,
         "row": 62,
         "col": 1,
         "requires": [],
         "bonus": {
-          "attack_bonus": 7
+          "cha": 9,
+          "max_mp_pct": 44
         }
       },
       {
         "id": "mystery_59",
-        "name": "Void Storm",
-        "real_name": "Void Storm",
-        "icon": "\u2694\ufe0f",
-        "real_icon": "\u2694\ufe0f",
-        "desc": "+47% Max HP, +12 CHA per rank",
-        "real_desc": "+47% Max HP, +12 CHA per rank",
+        "name": "Eldritch Might",
+        "real_name": "Eldritch Might",
+        "icon": "\ud83e\udd81",
+        "real_icon": "\ud83e\udd81",
+        "desc": "+54% XP per rank",
+        "real_desc": "+54% XP per rank",
         "max_rank": 3,
         "row": 63,
         "col": 1,
         "requires": [],
         "bonus": {
-          "max_hp_pct": 47,
-          "cha": 12
+          "xp_pct": 54
         }
       },
       {
         "id": "mystery_60",
-        "name": "Arcane Aura",
-        "real_name": "Arcane Aura",
-        "icon": "\u2b50",
-        "real_icon": "\u2b50",
-        "desc": "+60% Max HP per rank",
-        "real_desc": "+60% Max HP per rank",
+        "name": "Quantum Pulse",
+        "real_name": "Quantum Pulse",
+        "icon": "\ud83e\uddf2",
+        "real_icon": "\ud83e\uddf2",
+        "desc": "+10 INT, +64% skill power per rank",
+        "real_desc": "+10 INT, +64% skill power per rank",
         "max_rank": 3,
         "row": 64,
         "col": 1,
         "requires": [],
         "bonus": {
-          "max_hp_pct": 60
+          "int": 10,
+          "skill_power_pct": 64
         }
       },
       {
         "id": "mystery_61",
-        "name": "Nexus Might",
-        "real_name": "Nexus Might",
-        "icon": "\ud83c\udf86",
-        "real_icon": "\ud83c\udf86",
-        "desc": "+11 CHA per rank",
-        "real_desc": "+11 CHA per rank",
+        "name": "Void Chain",
+        "real_name": "Void Chain",
+        "icon": "\ud83c\udf19",
+        "real_icon": "\ud83c\udf19",
+        "desc": "+54% gold per rank",
+        "real_desc": "+54% gold per rank",
         "max_rank": 3,
         "row": 65,
         "col": 1,
         "requires": [],
         "bonus": {
-          "cha": 11
+          "gold_pct": 54
         }
       },
       {
         "id": "mystery_62",
-        "name": "Void Core",
-        "real_name": "Void Core",
-        "icon": "\ud83d\udd25",
-        "real_icon": "\ud83d\udd25",
-        "desc": "+13 CON per rank",
-        "real_desc": "+13 CON per rank",
+        "name": "Forbidden Might",
+        "real_name": "Forbidden Might",
+        "icon": "\u267e\ufe0f",
+        "real_icon": "\u267e\ufe0f",
+        "desc": "+49% heal power per rank",
+        "real_desc": "+49% heal power per rank",
         "max_rank": 3,
         "row": 66,
         "col": 1,
         "requires": [],
         "bonus": {
-          "con": 13
+          "heal_power_pct": 49
         }
       },
       {
         "id": "mystery_63",
-        "name": "Divine Chain",
-        "real_name": "Divine Chain",
-        "icon": "\ud83c\udf87",
-        "real_icon": "\ud83c\udf87",
-        "desc": "+52% XP, +10 DEX, +11 all stats per rank",
-        "real_desc": "+52% XP, +10 DEX, +11 all stats per rank",
+        "name": "Draconic Power",
+        "real_name": "Draconic Power",
+        "icon": "\u2604\ufe0f",
+        "real_icon": "\u2604\ufe0f",
+        "desc": "+64% damage per rank",
+        "real_desc": "+64% damage per rank",
         "max_rank": 3,
         "row": 67,
         "col": 1,
         "requires": [],
         "bonus": {
-          "xp_pct": 52,
-          "dex": 10,
-          "all_stats": 11
+          "damage_pct": 64
         }
       },
       {
         "id": "mystery_64",
-        "name": "Omega Power",
-        "real_name": "Omega Power",
-        "icon": "\ud83d\udd25",
-        "real_icon": "\ud83d\udd25",
-        "desc": "+47% Max HP, +51% heal power per rank",
-        "real_desc": "+47% Max HP, +51% heal power per rank",
+        "name": "Temporal Spark",
+        "real_name": "Temporal Spark",
+        "icon": "\ud83d\udd2e",
+        "real_icon": "\ud83d\udd2e",
+        "desc": "+13 CHA, +11 DEX per rank",
+        "real_desc": "+13 CHA, +11 DEX per rank",
         "max_rank": 3,
         "row": 68,
         "col": 1,
         "requires": [],
         "bonus": {
-          "max_hp_pct": 47,
-          "heal_power_pct": 51
+          "cha": 13,
+          "dex": 11
         }
       },
       {
         "id": "mystery_65",
-        "name": "Runic Flow",
-        "real_name": "Runic Flow",
-        "icon": "\ud83d\udde1\ufe0f",
-        "real_icon": "\ud83d\udde1\ufe0f",
-        "desc": "+9 all stats, +50% Max HP per rank",
-        "real_desc": "+9 all stats, +50% Max HP per rank",
+        "name": "Cosmic Surge",
+        "real_name": "Cosmic Surge",
+        "icon": "\ud83d\udd25",
+        "real_icon": "\ud83d\udd25",
+        "desc": "+56% Max MP per rank",
+        "real_desc": "+56% Max MP per rank",
         "max_rank": 3,
         "row": 69,
         "col": 1,
         "requires": [],
         "bonus": {
-          "all_stats": 9,
-          "max_hp_pct": 50
+          "max_mp_pct": 56
         }
       },
       {
         "id": "mystery_66",
         "name": "??? Mystery ???",
-        "real_name": "Runic Nova",
+        "real_name": "Divine Bloom",
         "icon": "\u2753",
-        "real_icon": "\u267e\ufe0f",
+        "real_icon": "\u2694\ufe0f",
         "desc": "Unknown power... unlock to reveal!",
-        "real_desc": "+51% lifesteal, +48% magic dmg per rank",
+        "real_desc": "-9 MP cost reduction per rank",
         "max_rank": 3,
         "row": 70,
         "col": 1,
         "requires": [],
         "bonus": {
-          "lifesteal_pct": 51,
-          "magic_damage_pct": 48
+          "mp_cost_reduction": 9
         }
       }
     ],
-    "mystery_seed": 702934,
+    "mystery_seed": 554935,
     "inventory": [
       {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
         "name": "Arcane Staff",
         "type": "weapon",
         "icon": "\ud83e\ude84",
@@ -1209,92 +1252,30 @@
         "desc": "+3 magic damage"
       },
       {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
+        "name": "Potion of Revive",
+        "type": "consumable",
+        "icon": "\ud83d\udc96",
+        "effect": "revive",
+        "value": 0,
+        "price": 200,
+        "desc": "Revives a fallen party member with 50% HP"
       },
       {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
+        "name": "Amulet of Life",
+        "type": "accessory",
+        "icon": "\ud83d\udcff",
+        "hp_bonus": 20,
+        "price": 150,
+        "desc": "+20 Max HP"
       },
       {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
+        "name": "Scroll of Fireball",
+        "type": "consumable",
+        "icon": "\ud83d\udcdc",
+        "effect": "fireball",
+        "value": 30,
+        "price": 60,
+        "desc": "Deals 3d6 fire damage"
       },
       {
         "name": "Iron Sword",
@@ -1321,12 +1302,162 @@
         "desc": "+2 attack damage"
       },
       {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Ring of Power",
+        "type": "accessory",
+        "icon": "\ud83d\udc8d",
+        "stat_bonus": {
+          "STR": 2,
+          "INT": 2
+        },
+        "price": 200,
+        "desc": "+2 STR, +2 INT"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "icon": "\u2694\ufe0f",
+        "attack": "1d8+1",
+        "price": 50,
+        "desc": "+1 attack damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
         "name": "Steel Sword",
         "type": "weapon",
         "icon": "\ud83d\udde1\ufe0f",
         "attack": "1d10+2",
         "price": 120,
         "desc": "+2 attack damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Steel Sword",
+        "type": "weapon",
+        "icon": "\ud83d\udde1\ufe0f",
+        "attack": "1d10+2",
+        "price": 120,
+        "desc": "+2 attack damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Chain Mail",
+        "type": "armor",
+        "icon": "\u26d3\ufe0f",
+        "ac_bonus": 4,
+        "price": 100,
+        "desc": "+4 AC"
+      },
+      {
+        "name": "Potion of Revive",
+        "type": "consumable",
+        "icon": "\ud83d\udc96",
+        "effect": "revive",
+        "value": 0,
+        "price": 200,
+        "desc": "Revives a fallen party member with 50% HP"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Chain Mail",
+        "type": "armor",
+        "icon": "\u26d3\ufe0f",
+        "ac_bonus": 4,
+        "price": 100,
+        "desc": "+4 AC"
       },
       {
         "name": "Steel Sword",
@@ -1343,2599 +1474,6 @@
         "ac_bonus": 4,
         "price": 100,
         "desc": "+4 AC"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 300,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Eleven's Bracelet",
-        "type": "accessory",
-        "icon": "\ud83d\udd17",
-        "stat_bonus": {
-          "INT": 8,
-          "WIS": 6
-        },
-        "hp_bonus": 30,
-        "price": 1200,
-        "desc": "+8 INT, +6 WIS, +30 Max HP \u2014 The best drop"
-      },
-      {
-        "name": "Flayed Essence",
-        "type": "accessory",
-        "icon": "\ud83d\udc89",
-        "stat_bonus": {
-          "STR": 4,
-          "CON": 4
-        },
-        "price": 400,
-        "desc": "+4 STR, +4 CON"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Upside Down Vine",
-        "type": "accessory",
-        "icon": "\ud83c\udf3f",
-        "stat_bonus": {
-          "CON": 4,
-          "DEX": 3
-        },
-        "hp_bonus": 15,
-        "price": 350,
-        "desc": "+4 CON, +3 DEX, +15 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Upside Down Vine",
-        "type": "accessory",
-        "icon": "\ud83c\udf3f",
-        "stat_bonus": {
-          "CON": 4,
-          "DEX": 3
-        },
-        "hp_bonus": 15,
-        "price": 350,
-        "desc": "+4 CON, +3 DEX, +15 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Upside Down Vine",
-        "type": "accessory",
-        "icon": "\ud83c\udf3f",
-        "stat_bonus": {
-          "CON": 4,
-          "DEX": 3
-        },
-        "hp_bonus": 15,
-        "price": 350,
-        "desc": "+4 CON, +3 DEX, +15 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Flayed Essence",
-        "type": "accessory",
-        "icon": "\ud83d\udc89",
-        "stat_bonus": {
-          "STR": 4,
-          "CON": 4
-        },
-        "price": 400,
-        "desc": "+4 STR, +4 CON"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Demobat Wing",
-        "type": "accessory",
-        "icon": "\ud83e\udd87",
-        "stat_bonus": {
-          "DEX": 5
-        },
-        "ac_bonus": 2,
-        "price": 300,
-        "desc": "+5 DEX, +2 AC"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Demobat Wing",
-        "type": "accessory",
-        "icon": "\ud83e\udd87",
-        "stat_bonus": {
-          "DEX": 5
-        },
-        "ac_bonus": 2,
-        "price": 300,
-        "desc": "+5 DEX, +2 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Sword of Kas",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "3d8+6",
-        "stat_bonus": {
-          "STR": 6
-        },
-        "price": 1500,
-        "desc": "The legendary blade that can slay Vecna"
-      },
-      {
-        "name": "Demobat Wing",
-        "type": "accessory",
-        "icon": "\ud83e\udd87",
-        "stat_bonus": {
-          "DEX": 5
-        },
-        "ac_bonus": 2,
-        "price": 300,
-        "desc": "+5 DEX, +2 AC"
-      },
-      {
-        "name": "Flayed Essence",
-        "type": "accessory",
-        "icon": "\ud83d\udc89",
-        "stat_bonus": {
-          "STR": 4,
-          "CON": 4
-        },
-        "price": 400,
-        "desc": "+4 STR, +4 CON"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Demobat Wing",
-        "type": "accessory",
-        "icon": "\ud83e\udd87",
-        "stat_bonus": {
-          "DEX": 5
-        },
-        "ac_bonus": 2,
-        "price": 300,
-        "desc": "+5 DEX, +2 AC"
-      },
-      {
-        "name": "Flayed Essence",
-        "type": "accessory",
-        "icon": "\ud83d\udc89",
-        "stat_bonus": {
-          "STR": 4,
-          "CON": 4
-        },
-        "price": 400,
-        "desc": "+4 STR, +4 CON"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Upside Down Vine",
-        "type": "accessory",
-        "icon": "\ud83c\udf3f",
-        "stat_bonus": {
-          "CON": 4,
-          "DEX": 3
-        },
-        "hp_bonus": 15,
-        "price": 350,
-        "desc": "+4 CON, +3 DEX, +15 Max HP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Flayed Essence",
-        "type": "accessory",
-        "icon": "\ud83d\udc89",
-        "stat_bonus": {
-          "STR": 4,
-          "CON": 4
-        },
-        "price": 400,
-        "desc": "+4 STR, +4 CON"
-      },
-      {
-        "name": "Demobat Wing",
-        "type": "accessory",
-        "icon": "\ud83e\udd87",
-        "stat_bonus": {
-          "DEX": 5
-        },
-        "ac_bonus": 2,
-        "price": 300,
-        "desc": "+5 DEX, +2 AC"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Flayed Essence",
-        "type": "accessory",
-        "icon": "\ud83d\udc89",
-        "stat_bonus": {
-          "STR": 4,
-          "CON": 4
-        },
-        "price": 400,
-        "desc": "+4 STR, +4 CON"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Flayed Essence",
-        "type": "accessory",
-        "icon": "\ud83d\udc89",
-        "stat_bonus": {
-          "STR": 4,
-          "CON": 4
-        },
-        "price": 400,
-        "desc": "+4 STR, +4 CON"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Eye of Vecna",
-        "type": "accessory",
-        "icon": "\ud83d\udc41\ufe0f",
-        "stat_bonus": {
-          "INT": 6,
-          "WIS": 4
-        },
-        "price": 600,
-        "desc": "+6 INT, +4 WIS"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
       },
       {
         "name": "Potion of Revive",
@@ -3965,23 +1503,21 @@
         "desc": "Restores 2d6+3 MP"
       },
       {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
+        "name": "Leather Armor",
+        "type": "armor",
+        "icon": "\ud83d\udee1\ufe0f",
+        "ac_bonus": 2,
+        "price": 40,
+        "desc": "+2 AC"
       },
       {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
       },
       {
         "name": "Iron Sword",
@@ -3992,75 +1528,6 @@
         "desc": "+1 attack damage"
       },
       {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
         "name": "Health Potion",
         "type": "consumable",
         "icon": "\ud83e\uddea",
@@ -4077,113 +1544,6 @@
         "value": 15,
         "price": 20,
         "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
       },
       {
         "name": "Steel Sword",
@@ -4194,104 +1554,6 @@
         "desc": "+2 attack damage"
       },
       {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
         "name": "Health Potion",
         "type": "consumable",
         "icon": "\ud83e\uddea",
@@ -4299,247 +1561,6 @@
         "value": 20,
         "price": 15,
         "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Ring of Power",
-        "type": "accessory",
-        "icon": "\ud83d\udc8d",
-        "stat_bonus": {
-          "STR": 2,
-          "INT": 2
-        },
-        "price": 200,
-        "desc": "+2 STR, +2 INT"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
       },
       {
         "name": "Amulet of Life",
@@ -4548,286 +1569,6 @@
         "hp_bonus": 20,
         "price": 150,
         "desc": "+20 Max HP"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
-      },
-      {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Leather Armor",
-        "type": "armor",
-        "icon": "\ud83d\udee1\ufe0f",
-        "ac_bonus": 2,
-        "price": 40,
-        "desc": "+2 AC"
       },
       {
         "name": "Potion of Revive",
@@ -4839,30 +1580,12 @@
         "desc": "Revives a fallen party member with 50% HP"
       },
       {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
+        "name": "Amulet of Life",
+        "type": "accessory",
+        "icon": "\ud83d\udcff",
+        "hp_bonus": 20,
+        "price": 150,
+        "desc": "+20 Max HP"
       },
       {
         "name": "Health Potion",
@@ -4881,31 +1604,6 @@
         "value": 15,
         "price": 20,
         "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Arcane Staff",
-        "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
       },
       {
         "name": "Iron Sword",
@@ -4916,15 +1614,21 @@
         "desc": "+1 attack damage"
       },
       {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
+        "name": "Scroll of Fireball",
+        "type": "consumable",
+        "icon": "\ud83d\udcdc",
+        "effect": "fireball",
+        "value": 30,
+        "price": 60,
+        "desc": "Deals 3d6 fire damage"
+      },
+      {
+        "name": "Arcane Staff",
+        "type": "weapon",
+        "icon": "\ud83e\ude84",
+        "attack": "1d6+3",
+        "price": 100,
+        "desc": "+3 magic damage"
       },
       {
         "name": "Health Potion",
@@ -4934,6 +1638,41 @@
         "value": 20,
         "price": 15,
         "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
+      },
+      {
+        "name": "Arcane Staff",
+        "type": "weapon",
+        "icon": "\ud83e\ude84",
+        "attack": "1d6+3",
+        "price": 100,
+        "desc": "+3 magic damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
+      },
+      {
+        "name": "Mana Potion",
+        "type": "consumable",
+        "icon": "\ud83d\udca7",
+        "effect": "mana",
+        "value": 15,
+        "price": 20,
+        "desc": "Restores 2d6+3 MP"
       },
       {
         "name": "Leather Armor",
@@ -4944,135 +1683,15 @@
         "desc": "+2 AC"
       },
       {
-        "name": "Mind Crystal",
+        "name": "Minotaur Horn",
         "type": "accessory",
-        "icon": "\ud83d\udd2e",
+        "icon": "\ud83d\udc02",
         "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
+          "STR": 3
         },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Mind Crystal",
-        "type": "accessory",
-        "icon": "\ud83d\udd2e",
-        "stat_bonus": {
-          "INT": 4,
-          "WIS": 2
-        },
-        "price": 250,
-        "desc": "+4 INT, +2 WIS"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Iron Sword",
-        "type": "weapon",
-        "icon": "\u2694\ufe0f",
-        "attack": "1d8+1",
-        "price": 50,
-        "desc": "+1 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Scroll of Fireball",
-        "type": "consumable",
-        "icon": "\ud83d\udcdc",
-        "effect": "fireball",
-        "value": 30,
-        "price": 60,
-        "desc": "Deals 3d6 fire damage"
+        "hp_bonus": 10,
+        "price": 150,
+        "desc": "+3 STR, +10 Max HP"
       },
       {
         "name": "Ring of Power",
@@ -5086,71 +1705,6 @@
         "desc": "+2 STR, +2 INT"
       },
       {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
-        "name": "Dragon Scale",
-        "type": "accessory",
-        "icon": "\ud83d\udc09",
-        "stat_bonus": {
-          "CON": 4
-        },
-        "hp_bonus": 25,
-        "price": 350,
-        "desc": "+4 CON, +25 Max HP"
-      },
-      {
-        "name": "Dark Sigil",
-        "type": "accessory",
-        "icon": "\u269c\ufe0f",
-        "stat_bonus": {
-          "STR": 2,
-          "DEX": 2
-        },
-        "ac_bonus": 1,
-        "price": 200,
-        "desc": "+2 STR, +2 DEX, +1 AC"
-      },
-      {
-        "name": "Demogorgon Fang",
-        "type": "accessory",
-        "icon": "\ud83e\uddb7",
-        "stat_bonus": {
-          "STR": 5,
-          "CON": 3
-        },
-        "price": 650,
-        "desc": "+5 STR, +3 CON"
-      },
-      {
         "name": "Health Potion",
         "type": "consumable",
         "icon": "\ud83e\uddea",
@@ -5160,29 +1714,21 @@
         "desc": "Restores 2d8+4 HP"
       },
       {
-        "name": "Amulet of Life",
-        "type": "accessory",
-        "icon": "\ud83d\udcff",
-        "hp_bonus": 20,
-        "price": 150,
-        "desc": "+20 Max HP"
-      },
-      {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Arcane Staff",
+        "name": "Steel Sword",
         "type": "weapon",
-        "icon": "\ud83e\ude84",
-        "attack": "1d6+3",
-        "price": 100,
-        "desc": "+3 magic damage"
+        "icon": "\ud83d\udde1\ufe0f",
+        "attack": "1d10+2",
+        "price": 120,
+        "desc": "+2 attack damage"
+      },
+      {
+        "name": "Health Potion",
+        "type": "consumable",
+        "icon": "\ud83e\uddea",
+        "effect": "heal",
+        "value": 20,
+        "price": 15,
+        "desc": "Restores 2d8+4 HP"
       },
       {
         "name": "Chain Mail",
@@ -5193,47 +1739,12 @@
         "desc": "+4 AC"
       },
       {
-        "name": "Health Potion",
-        "type": "consumable",
-        "icon": "\ud83e\uddea",
-        "effect": "heal",
-        "value": 20,
-        "price": 15,
-        "desc": "Restores 2d8+4 HP"
-      },
-      {
-        "name": "Mana Potion",
-        "type": "consumable",
-        "icon": "\ud83d\udca7",
-        "effect": "mana",
-        "value": 15,
-        "price": 20,
-        "desc": "Restores 2d6+3 MP"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Steel Sword",
-        "type": "weapon",
-        "icon": "\ud83d\udde1\ufe0f",
-        "attack": "1d10+2",
-        "price": 120,
-        "desc": "+2 attack damage"
-      },
-      {
-        "name": "Potion of Revive",
-        "type": "consumable",
-        "icon": "\ud83d\udc96",
-        "effect": "revive",
-        "value": 0,
-        "price": 200,
-        "desc": "Revives a fallen party member with 50% HP"
+        "name": "Chain Mail",
+        "type": "armor",
+        "icon": "\u26d3\ufe0f",
+        "ac_bonus": 4,
+        "price": 100,
+        "desc": "+4 AC"
       }
     ],
     "equipment": {
@@ -5245,25 +1756,8 @@
         "price": 50,
         "desc": "+1 attack damage"
       },
-      "armor": {
-        "name": "Chain Mail",
-        "type": "armor",
-        "icon": "\u26d3\ufe0f",
-        "ac_bonus": 4,
-        "price": 100,
-        "desc": "+4 AC"
-      },
-      "accessory": {
-        "name": "Minotaur Horn",
-        "type": "accessory",
-        "icon": "\ud83d\udc02",
-        "stat_bonus": {
-          "STR": 3
-        },
-        "hp_bonus": 10,
-        "price": 150,
-        "desc": "+3 STR, +10 Max HP"
-      }
+      "armor": null,
+      "accessory": null
     },
     "skills": [
       "Backstab",
@@ -5273,1322 +1767,32 @@
     "attack_dice": "1d6",
     "is_ai": false,
     "alive": true,
-    "ai_personality": "cautious"
+    "ai_personality": "brave"
   },
   "companions": [
     {
-      "name": "Ironheart",
-      "char_class": "warrior",
-      "level": 1344,
-      "xp": 26873651882692335256168635172284109372891806035086194336898741179734926474315081266105824180144838601459869335197398370648472936119203311179300742583828719261051733349931682358596609343308651867427890266506012488817240452671254544595725648,
-      "xp_to_level": 30863865728798881203575403967180941699577794897750926397347869980251466122064520924506767563129899157012228045891122290299666019712843951831217543445266116540006663953010421735699326768757792926790020172981254027244247366691130836294565888,
-      "hp": 3440346,
-      "max_hp": 3440346,
-      "mp": 897453,
-      "max_mp": 897453,
-      "ac": 253,
-      "stats": {
-        "STR": 367,
-        "DEX": 396,
-        "CON": 366,
-        "INT": 425,
-        "WIS": 394,
-        "CHA": 326
-      },
-      "skill_points": 1298,
-      "skill_tree": {
-        "fortitude": 7,
-        "berserker": 1,
-        "titans_grip": 2,
-        "iron_will": 1,
-        "cleave": 3,
-        "warlord": 74,
-        "mystery_0": 3,
-        "mystery_1": 3,
-        "mystery_2": 3,
-        "mystery_3": 3,
-        "mystery_4": 3,
-        "mystery_5": 9,
-        "mystery_6": 102,
-        "mystery_7": 3,
-        "mystery_8": 3,
-        "mystery_9": 3,
-        "mystery_10": 3,
-        "mystery_11": 3,
-        "mystery_12": 3,
-        "mystery_13": 3,
-        "mystery_14": 3,
-        "mystery_15": 3,
-        "mystery_16": 3,
-        "mystery_17": 3,
-        "mystery_18": 3,
-        "mystery_19": 3,
-        "mystery_20": 3,
-        "mystery_21": 3,
-        "mystery_22": 4,
-        "mystery_23": 4,
-        "mystery_24": 3,
-        "mystery_25": 3,
-        "mystery_26": 3,
-        "mystery_27": 3,
-        "mystery_28": 3,
-        "mystery_29": 3,
-        "mystery_30": 3,
-        "mystery_31": 3,
-        "mystery_32": 3,
-        "mystery_33": 3,
-        "mystery_35": 4,
-        "mystery_34": 3,
-        "mystery_36": 3,
-        "mystery_37": 3,
-        "mystery_38": 3,
-        "mystery_39": 3,
-        "mystery_40": 3,
-        "mystery_41": 3,
-        "mystery_42": 1007,
-        "mystery_43": 3,
-        "mystery_44": 3,
-        "mystery_45": 3,
-        "mystery_46": 3,
-        "mystery_47": 3,
-        "mystery_48": 3,
-        "mystery_49": 3,
-        "mystery_50": 3,
-        "mystery_51": 3,
-        "mystery_52": 3,
-        "mystery_53": 3,
-        "mystery_54": 3,
-        "mystery_55": 11,
-        "mystery_56": 3,
-        "mystery_57": 3,
-        "mystery_58": 3,
-        "mystery_59": 1,
-        "mystery_60": 1,
-        "mystery_61": 1
-      },
-      "mystery_nodes": [
-        {
-          "id": "mystery_0",
-          "name": "Mind Fortress",
-          "real_name": "Mind Fortress",
-          "icon": "\ud83c\udff0",
-          "real_icon": "\ud83c\udff0",
-          "desc": "+4 INT per rank",
-          "real_desc": "+4 INT per rank",
-          "max_rank": 3,
-          "row": 4,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "int": 4
-          }
-        },
-        {
-          "id": "mystery_1",
-          "name": "Soul Harvest",
-          "real_name": "Soul Harvest",
-          "icon": "\ud83d\udc7b",
-          "real_icon": "\ud83d\udc7b",
-          "desc": "+5% lifesteal per rank",
-          "real_desc": "+5% lifesteal per rank",
-          "max_rank": 3,
-          "row": 5,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "lifesteal_pct": 5
-          }
-        },
-        {
-          "id": "mystery_2",
-          "name": "Golden Aura",
-          "real_name": "Golden Aura",
-          "icon": "\u2728",
-          "real_icon": "\u2728",
-          "desc": "+30% gold found per rank",
-          "real_desc": "+30% gold found per rank",
-          "max_rank": 3,
-          "row": 6,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "gold_pct": 30
-          }
-        },
-        {
-          "id": "mystery_3",
-          "name": "Iron Skin",
-          "real_name": "Iron Skin",
-          "icon": "\ud83e\udea8",
-          "real_icon": "\ud83e\udea8",
-          "desc": "+3 AC per rank",
-          "real_desc": "+3 AC per rank",
-          "max_rank": 3,
-          "row": 7,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "ac": 3
-          }
-        },
-        {
-          "id": "mystery_4",
-          "name": "Executioner",
-          "real_name": "Executioner",
-          "icon": "\ud83e\ude93",
-          "real_icon": "\ud83e\ude93",
-          "desc": "+20% crit damage per rank",
-          "real_desc": "+20% crit damage per rank",
-          "max_rank": 3,
-          "row": 8,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "crit_damage_pct": 20
-          }
-        },
-        {
-          "id": "mystery_5",
-          "name": "Phoenix Spirit",
-          "real_name": "Phoenix Spirit",
-          "icon": "\ud83d\udd25",
-          "real_icon": "\ud83d\udd25",
-          "desc": "+15% Max HP, +15% skill power",
-          "real_desc": "+15% Max HP, +15% skill power",
-          "max_rank": 3,
-          "row": 9,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "max_hp_pct": 15,
-            "skill_power_pct": 15
-          }
-        },
-        {
-          "id": "mystery_6",
-          "name": "Titan Blood",
-          "real_name": "Titan Blood",
-          "icon": "\ud83e\ude78",
-          "real_icon": "\ud83e\ude78",
-          "desc": "+20% Max HP per rank",
-          "real_desc": "+20% Max HP per rank",
-          "max_rank": 3,
-          "row": 10,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "max_hp_pct": 20
-          }
-        },
-        {
-          "id": "mystery_7",
-          "name": "Blessed Strike",
-          "real_name": "Blessed Strike",
-          "icon": "\u2600\ufe0f",
-          "real_icon": "\u2600\ufe0f",
-          "desc": "+25% smite damage per rank",
-          "real_desc": "+25% smite damage per rank",
-          "max_rank": 3,
-          "row": 11,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "smite_damage_pct": 25
-          }
-        },
-        {
-          "id": "mystery_8",
-          "name": "Bloodlust",
-          "real_name": "Bloodlust",
-          "icon": "\ud83e\ude78",
-          "real_icon": "\ud83e\ude78",
-          "desc": "+15% damage, +10% lifesteal",
-          "real_desc": "+15% damage, +10% lifesteal",
-          "max_rank": 3,
-          "row": 12,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "damage_pct": 15,
-            "lifesteal_pct": 10
-          }
-        },
-        {
-          "id": "mystery_9",
-          "name": "Psion Mind",
-          "real_name": "Psion Mind",
-          "icon": "\ud83e\udde0",
-          "real_icon": "\ud83e\udde0",
-          "desc": "+6 INT per rank",
-          "real_desc": "+6 INT per rank",
-          "max_rank": 3,
-          "row": 13,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "int": 6
-          }
-        },
-        {
-          "id": "mystery_10",
-          "name": "Dragon Heart",
-          "real_name": "Dragon Heart",
-          "icon": "\ud83d\udc32",
-          "real_icon": "\ud83d\udc32",
-          "desc": "+4 CON per rank",
-          "real_desc": "+4 CON per rank",
-          "max_rank": 3,
-          "row": 14,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "con": 4
-          }
-        },
-        {
-          "id": "mystery_11",
-          "name": "Storm Caller",
-          "real_name": "Storm Caller",
-          "icon": "\ud83c\udf29\ufe0f",
-          "real_icon": "\ud83c\udf29\ufe0f",
-          "desc": "+3 DEX, +3 WIS, +15% skill",
-          "real_desc": "+3 DEX, +3 WIS, +15% skill",
-          "max_rank": 3,
-          "row": 15,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "dex": 3,
-            "wis": 3,
-            "skill_power_pct": 15
-          }
-        },
-        {
-          "id": "mystery_12",
-          "name": "Infinite Well",
-          "real_name": "Infinite Well",
-          "icon": "\ud83d\udd73\ufe0f",
-          "real_icon": "\ud83d\udd73\ufe0f",
-          "desc": "+40% Max MP per rank",
-          "real_desc": "+40% Max MP per rank",
-          "max_rank": 3,
-          "row": 16,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "max_mp_pct": 40
-          }
-        },
-        {
-          "id": "mystery_13",
-          "name": "Death Strike",
-          "real_name": "Death Strike",
-          "icon": "\u2620\ufe0f",
-          "real_icon": "\u2620\ufe0f",
-          "desc": "+35% crit damage per rank",
-          "real_desc": "+35% crit damage per rank",
-          "max_rank": 3,
-          "row": 17,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "crit_damage_pct": 35
-          }
-        },
-        {
-          "id": "mystery_14",
-          "name": "Ancient Wisdom",
-          "real_name": "Ancient Wisdom",
-          "icon": "\ud83d\udcd6",
-          "real_icon": "\ud83d\udcd6",
-          "desc": "+4 WIS per rank",
-          "real_desc": "+4 WIS per rank",
-          "max_rank": 3,
-          "row": 18,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "wis": 4
-          }
-        },
-        {
-          "id": "mystery_15",
-          "name": "Divine Favor",
-          "real_name": "Divine Favor",
-          "icon": "\ud83d\udcab",
-          "real_icon": "\ud83d\udcab",
-          "desc": "+30% heal power per rank",
-          "real_desc": "+30% heal power per rank",
-          "max_rank": 3,
-          "row": 19,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "heal_power_pct": 30
-          }
-        },
-        {
-          "id": "mystery_16",
-          "name": "Spell Storm",
-          "real_name": "Spell Storm",
-          "icon": "\u26c8\ufe0f",
-          "real_icon": "\u26c8\ufe0f",
-          "desc": "+40% skill power per rank",
-          "real_desc": "+40% skill power per rank",
-          "max_rank": 3,
-          "row": 20,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "skill_power_pct": 40
-          }
-        },
-        {
-          "id": "mystery_17",
-          "name": "Blood Mage",
-          "real_name": "Blood Mage",
-          "icon": "\ud83e\ude78",
-          "real_icon": "\ud83e\ude78",
-          "desc": "+20% magic dmg, +10% lifesteal",
-          "real_desc": "+20% magic dmg, +10% lifesteal",
-          "max_rank": 3,
-          "row": 21,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "magic_damage_pct": 20,
-            "lifesteal_pct": 10
-          }
-        },
-        {
-          "id": "mystery_18",
-          "name": "Holy Wrath",
-          "real_name": "Holy Wrath",
-          "icon": "\u26a1",
-          "real_icon": "\u26a1",
-          "desc": "+40% smite damage per rank",
-          "real_desc": "+40% smite damage per rank",
-          "max_rank": 3,
-          "row": 22,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "smite_damage_pct": 40
-          }
-        },
-        {
-          "id": "mystery_19",
-          "name": "Fortune",
-          "real_name": "Fortune",
-          "icon": "\ud83c\udf40",
-          "real_icon": "\ud83c\udf40",
-          "desc": "+50% gold found per rank",
-          "real_desc": "+50% gold found per rank",
-          "max_rank": 3,
-          "row": 23,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "gold_pct": 50
-          }
-        },
-        {
-          "id": "mystery_20",
-          "name": "Reaper",
-          "real_name": "Reaper",
-          "icon": "\ud83d\udc80",
-          "real_icon": "\ud83d\udc80",
-          "desc": "+25% crit, +15% lifesteal",
-          "real_desc": "+25% crit, +15% lifesteal",
-          "max_rank": 3,
-          "row": 24,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "crit_damage_pct": 25,
-            "lifesteal_pct": 15
-          }
-        },
-        {
-          "id": "mystery_21",
-          "name": "Colossus",
-          "real_name": "Colossus",
-          "icon": "\ud83d\uddff",
-          "real_icon": "\ud83d\uddff",
-          "desc": "+5 all stats per rank",
-          "real_desc": "+5 all stats per rank",
-          "max_rank": 3,
-          "row": 25,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "all_stats": 5
-          }
-        },
-        {
-          "id": "mystery_22",
-          "name": "Void Channel",
-          "real_name": "Void Channel",
-          "icon": "\ud83d\udd2e",
-          "real_icon": "\ud83d\udd2e",
-          "desc": "-3 MP cost, +10% magic dmg",
-          "real_desc": "-3 MP cost, +10% magic dmg",
-          "max_rank": 3,
-          "row": 26,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "mp_cost_reduction": 3,
-            "magic_damage_pct": 10
-          }
-        },
-        {
-          "id": "mystery_23",
-          "name": "Berserker Rage",
-          "real_name": "Berserker Rage",
-          "icon": "\ud83d\ude21",
-          "real_icon": "\ud83d\ude21",
-          "desc": "+30% weapon damage per rank",
-          "real_desc": "+30% weapon damage per rank",
-          "max_rank": 3,
-          "row": 27,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "damage_pct": 30
-          }
-        },
-        {
-          "id": "mystery_24",
-          "name": "Eldritch Surge",
-          "real_name": "Eldritch Surge",
-          "icon": "\ud83c\udf00",
-          "real_icon": "\ud83c\udf00",
-          "desc": "+30% magic damage per rank",
-          "real_desc": "+30% magic damage per rank",
-          "max_rank": 3,
-          "row": 28,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "magic_damage_pct": 30
-          }
-        },
-        {
-          "id": "mystery_25",
-          "name": "Titan Strength",
-          "real_name": "Titan Strength",
-          "icon": "\ud83e\uddbe",
-          "real_icon": "\ud83e\uddbe",
-          "desc": "+6 STR per rank",
-          "real_desc": "+6 STR per rank",
-          "max_rank": 3,
-          "row": 29,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "str": 6
-          }
-        },
-        {
-          "id": "mystery_26",
-          "name": "Angelic Touch",
-          "real_name": "Angelic Touch",
-          "icon": "\ud83d\ude07",
-          "real_icon": "\ud83d\ude07",
-          "desc": "+50% heal power per rank",
-          "real_desc": "+50% heal power per rank",
-          "max_rank": 3,
-          "row": 30,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "heal_power_pct": 50
-          }
-        },
-        {
-          "id": "mystery_27",
-          "name": "Wind Walker",
-          "real_name": "Wind Walker",
-          "icon": "\ud83c\udf2c\ufe0f",
-          "real_icon": "\ud83c\udf2c\ufe0f",
-          "desc": "+6 DEX per rank",
-          "real_desc": "+6 DEX per rank",
-          "max_rank": 3,
-          "row": 31,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "dex": 6
-          }
-        },
-        {
-          "id": "mystery_28",
-          "name": "Demigod",
-          "real_name": "Demigod",
-          "icon": "\u2b50",
-          "real_icon": "\u2b50",
-          "desc": "+7 all stats per rank",
-          "real_desc": "+7 all stats per rank",
-          "max_rank": 3,
-          "row": 32,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "all_stats": 7
-          }
-        },
-        {
-          "id": "mystery_29",
-          "name": "War God",
-          "real_name": "War God",
-          "icon": "\u2694\ufe0f",
-          "real_icon": "\u2694\ufe0f",
-          "desc": "+4 STR per rank",
-          "real_desc": "+4 STR per rank",
-          "max_rank": 3,
-          "row": 33,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "str": 4
-          }
-        },
-        {
-          "id": "mystery_30",
-          "name": "Treasure Hunter",
-          "real_name": "Treasure Hunter",
-          "icon": "\ud83d\uddfa\ufe0f",
-          "real_icon": "\ud83d\uddfa\ufe0f",
-          "desc": "+20% gold, +15% XP per rank",
-          "real_desc": "+20% gold, +15% XP per rank",
-          "max_rank": 3,
-          "row": 34,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "gold_pct": 20,
-            "xp_pct": 15
-          }
-        },
-        {
-          "id": "mystery_31",
-          "name": "Arcane Battery",
-          "real_name": "Arcane Battery",
-          "icon": "\ud83d\udd0b",
-          "real_icon": "\ud83d\udd0b",
-          "desc": "-2 MP cost per rank",
-          "real_desc": "-2 MP cost per rank",
-          "max_rank": 3,
-          "row": 35,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "mp_cost_reduction": 2
-          }
-        },
-        {
-          "id": "mystery_32",
-          "name": "Ascendant",
-          "real_name": "Ascendant",
-          "icon": "\ud83c\udf0c",
-          "real_icon": "\ud83c\udf0c",
-          "desc": "+10 all stats per rank",
-          "real_desc": "+10 all stats per rank",
-          "max_rank": 3,
-          "row": 36,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "all_stats": 10
-          }
-        },
-        {
-          "id": "mystery_33",
-          "name": "Mystic",
-          "real_name": "Mystic",
-          "icon": "\ud83d\udd2f",
-          "real_icon": "\ud83d\udd2f",
-          "desc": "+4 INT, +4 WIS, +20% MP",
-          "real_desc": "+4 INT, +4 WIS, +20% MP",
-          "max_rank": 3,
-          "row": 37,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "int": 4,
-            "wis": 4,
-            "max_mp_pct": 20
-          }
-        },
-        {
-          "id": "mystery_34",
-          "name": "Spell Weaver",
-          "real_name": "Spell Weaver",
-          "icon": "\ud83d\udd78\ufe0f",
-          "real_icon": "\ud83d\udd78\ufe0f",
-          "desc": "+25% skill power per rank",
-          "real_desc": "+25% skill power per rank",
-          "max_rank": 3,
-          "row": 38,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "skill_power_pct": 25
-          }
-        },
-        {
-          "id": "mystery_35",
-          "name": "Silver Tongue",
-          "real_name": "Silver Tongue",
-          "icon": "\ud83d\udde3\ufe0f",
-          "real_icon": "\ud83d\udde3\ufe0f",
-          "desc": "+4 CHA per rank",
-          "real_desc": "+4 CHA per rank",
-          "max_rank": 3,
-          "row": 39,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "cha": 4
-          }
-        },
-        {
-          "id": "mystery_36",
-          "name": "Mana Surge",
-          "real_name": "Mana Surge",
-          "icon": "\ud83c\udf0a",
-          "real_icon": "\ud83c\udf0a",
-          "desc": "+25% Max MP per rank",
-          "real_desc": "+25% Max MP per rank",
-          "max_rank": 3,
-          "row": 40,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "max_mp_pct": 25
-          }
-        },
-        {
-          "id": "mystery_37",
-          "name": "XP Overflow",
-          "real_name": "XP Overflow",
-          "icon": "\ud83d\udcc8",
-          "real_icon": "\ud83d\udcc8",
-          "desc": "+25% XP gained per rank",
-          "real_desc": "+25% XP gained per rank",
-          "max_rank": 3,
-          "row": 41,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "xp_pct": 25
-          }
-        },
-        {
-          "id": "mystery_38",
-          "name": "Cat Reflexes",
-          "real_name": "Cat Reflexes",
-          "icon": "\ud83d\udc31",
-          "real_icon": "\ud83d\udc31",
-          "desc": "+4 DEX per rank",
-          "real_desc": "+4 DEX per rank",
-          "max_rank": 3,
-          "row": 42,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "dex": 4
-          }
-        },
-        {
-          "id": "mystery_39",
-          "name": "Fury",
-          "real_name": "Fury",
-          "icon": "\ud83d\udca2",
-          "real_icon": "\ud83d\udca2",
-          "desc": "+20% weapon damage per rank",
-          "real_desc": "+20% weapon damage per rank",
-          "max_rank": 3,
-          "row": 43,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "damage_pct": 20
-          }
-        },
-        {
-          "id": "mystery_40",
-          "name": "Warden",
-          "real_name": "Warden",
-          "icon": "\ud83c\udf32",
-          "real_icon": "\ud83c\udf32",
-          "desc": "+4 CON, +3 AC, +10% HP",
-          "real_desc": "+4 CON, +3 AC, +10% HP",
-          "max_rank": 3,
-          "row": 44,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "con": 4,
-            "ac": 3,
-            "max_hp_pct": 10
-          }
-        },
-        {
-          "id": "mystery_41",
-          "name": "Oracle Eyes",
-          "real_name": "Oracle Eyes",
-          "icon": "\ud83d\udc41\ufe0f",
-          "real_icon": "\ud83d\udc41\ufe0f",
-          "desc": "+6 WIS per rank",
-          "real_desc": "+6 WIS per rank",
-          "max_rank": 3,
-          "row": 45,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "wis": 6
-          }
-        },
-        {
-          "id": "mystery_42",
-          "name": "Scholar",
-          "real_name": "Scholar",
-          "icon": "\ud83c\udf93",
-          "real_icon": "\ud83c\udf93",
-          "desc": "+40% XP gained per rank",
-          "real_desc": "+40% XP gained per rank",
-          "max_rank": 3,
-          "row": 46,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "xp_pct": 40
-          }
-        },
-        {
-          "id": "mystery_43",
-          "name": "Shadow Cloak",
-          "real_name": "Shadow Cloak",
-          "icon": "\ud83c\udf11",
-          "real_icon": "\ud83c\udf11",
-          "desc": "+3 all stats per rank",
-          "real_desc": "+3 all stats per rank",
-          "max_rank": 3,
-          "row": 47,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "all_stats": 3
-          }
-        },
-        {
-          "id": "mystery_44",
-          "name": "Stone Body",
-          "real_name": "Stone Body",
-          "icon": "\ud83e\udea8",
-          "real_icon": "\ud83e\udea8",
-          "desc": "+6 CON per rank",
-          "real_desc": "+6 CON per rank",
-          "max_rank": 3,
-          "row": 48,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "con": 6
-          }
-        },
-        {
-          "id": "mystery_45",
-          "name": "Arcane Warrior",
-          "real_name": "Arcane Warrior",
-          "icon": "\u2694\ufe0f",
-          "real_icon": "\u2694\ufe0f",
-          "desc": "+15% dmg, +15% magic dmg",
-          "real_desc": "+15% dmg, +15% magic dmg",
-          "max_rank": 3,
-          "row": 49,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "damage_pct": 15,
-            "magic_damage_pct": 15
-          }
-        },
-        {
-          "id": "mystery_46",
-          "name": "Battle Mage",
-          "real_name": "Battle Mage",
-          "icon": "\ud83e\uddd9",
-          "real_icon": "\ud83e\uddd9",
-          "desc": "+3 STR, +3 INT, +10% dmg",
-          "real_desc": "+3 STR, +3 INT, +10% dmg",
-          "max_rank": 3,
-          "row": 50,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "str": 3,
-            "int": 3,
-            "damage_pct": 10
-          }
-        },
-        {
-          "id": "mystery_47",
-          "name": "Life Weaver",
-          "real_name": "Life Weaver",
-          "icon": "\ud83c\udf38",
-          "real_icon": "\ud83c\udf38",
-          "desc": "+20% heal, +15% HP per rank",
-          "real_desc": "+20% heal, +15% HP per rank",
-          "max_rank": 3,
-          "row": 51,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "heal_power_pct": 20,
-            "max_hp_pct": 15
-          }
-        },
-        {
-          "id": "mystery_48",
-          "name": "Dark Knight",
-          "real_name": "Dark Knight",
-          "icon": "\ud83d\udda4",
-          "real_icon": "\ud83d\udda4",
-          "desc": "+3 STR, +3 CON, +2 AC",
-          "real_desc": "+3 STR, +3 CON, +2 AC",
-          "max_rank": 3,
-          "row": 52,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "str": 3,
-            "con": 3,
-            "ac": 2
-          }
-        },
-        {
-          "id": "mystery_49",
-          "name": "Undying Will",
-          "real_name": "Undying Will",
-          "icon": "\ud83d\udc80",
-          "real_icon": "\ud83d\udc80",
-          "desc": "+35% Max HP per rank",
-          "real_desc": "+35% Max HP per rank",
-          "max_rank": 3,
-          "row": 53,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "max_hp_pct": 35
-          }
-        },
-        {
-          "id": "mystery_50",
-          "name": "Vitality Burst",
-          "real_name": "Vitality Burst",
-          "icon": "\ud83d\udc9a",
-          "real_icon": "\ud83d\udc9a",
-          "desc": "+15% HP, +15% MP per rank",
-          "real_desc": "+15% HP, +15% MP per rank",
-          "max_rank": 3,
-          "row": 54,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "max_hp_pct": 15,
-            "max_mp_pct": 15
-          }
-        },
-        {
-          "id": "mystery_51",
-          "name": "Adamantine Shell",
-          "real_name": "Adamantine Shell",
-          "icon": "\ud83d\udc8e",
-          "real_icon": "\ud83d\udc8e",
-          "desc": "+5 AC per rank",
-          "real_desc": "+5 AC per rank",
-          "max_rank": 3,
-          "row": 55,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "ac": 5
-          }
-        },
-        {
-          "id": "mystery_52",
-          "name": "Mirror Ward",
-          "real_name": "Mirror Ward",
-          "icon": "\ud83e\ude9e",
-          "real_icon": "\ud83e\ude9e",
-          "desc": "+2 AC, +2 CON per rank",
-          "real_desc": "+2 AC, +2 CON per rank",
-          "max_rank": 3,
-          "row": 56,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "ac": 2,
-            "con": 2
-          }
-        },
-        {
-          "id": "mystery_53",
-          "name": "Arcane Shield",
-          "real_name": "Arcane Shield",
-          "icon": "\ud83e\udec0",
-          "real_icon": "\ud83e\udec0",
-          "desc": "+11 INT per rank",
-          "real_desc": "+11 INT per rank",
-          "max_rank": 3,
-          "row": 57,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "int": 11
-          }
-        },
-        {
-          "id": "mystery_54",
-          "name": "Ancient Grace",
-          "real_name": "Ancient Grace",
-          "icon": "\u26a1",
-          "real_icon": "\u26a1",
-          "desc": "-8 MP cost reduction, +10 WIS per rank",
-          "real_desc": "-8 MP cost reduction, +10 WIS per rank",
-          "max_rank": 3,
-          "row": 58,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "mp_cost_reduction": 8,
-            "wis": 10
-          }
-        },
-        {
-          "id": "mystery_55",
-          "name": "Astral Fury",
-          "real_name": "Astral Fury",
-          "icon": "\u2694\ufe0f",
-          "real_icon": "\u2694\ufe0f",
-          "desc": "+45% crit dmg, +56% gold, +59% magic dmg per rank",
-          "real_desc": "+45% crit dmg, +56% gold, +59% magic dmg per rank",
-          "max_rank": 3,
-          "row": 59,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "crit_damage_pct": 45,
-            "gold_pct": 56,
-            "magic_damage_pct": 59
-          }
-        },
-        {
-          "id": "mystery_56",
-          "name": "Shadow Pulse",
-          "real_name": "Shadow Pulse",
-          "icon": "\ud83d\udc51",
-          "real_icon": "\ud83d\udc51",
-          "desc": "+59% gold per rank",
-          "real_desc": "+59% gold per rank",
-          "max_rank": 3,
-          "row": 60,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "gold_pct": 59
-          }
-        },
-        {
-          "id": "mystery_57",
-          "name": "Cosmic Grace",
-          "real_name": "Cosmic Grace",
-          "icon": "\ud83e\ude90",
-          "real_icon": "\ud83e\ude90",
-          "desc": "+41% Max MP, +12 INT per rank",
-          "real_desc": "+41% Max MP, +12 INT per rank",
-          "max_rank": 3,
-          "row": 61,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "max_mp_pct": 41,
-            "int": 12
-          }
-        },
-        {
-          "id": "mystery_58",
-          "name": "Spectral Seal",
-          "real_name": "Spectral Seal",
-          "icon": "\ud83c\udf0a",
-          "real_icon": "\ud83c\udf0a",
-          "desc": "+57% heal power, +12 DEX, +51% gold per rank",
-          "real_desc": "+57% heal power, +12 DEX, +51% gold per rank",
-          "max_rank": 3,
-          "row": 62,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "heal_power_pct": 57,
-            "dex": 12,
-            "gold_pct": 51
-          }
-        },
-        {
-          "id": "mystery_59",
-          "name": "Nexus Chain",
-          "real_name": "Nexus Chain",
-          "icon": "\ud83d\udc09",
-          "real_icon": "\ud83d\udc09",
-          "desc": "+41% Max HP, +9 DEX, +40% lifesteal per rank",
-          "real_desc": "+41% Max HP, +9 DEX, +40% lifesteal per rank",
-          "max_rank": 3,
-          "row": 63,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "max_hp_pct": 41,
-            "dex": 9,
-            "lifesteal_pct": 40
-          }
-        },
-        {
-          "id": "mystery_60",
-          "name": "Quantum Seal",
-          "real_name": "Quantum Seal",
-          "icon": "\ud83c\udf86",
-          "real_icon": "\ud83c\udf86",
-          "desc": "+58% smite dmg per rank",
-          "real_desc": "+58% smite dmg per rank",
-          "max_rank": 3,
-          "row": 64,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "smite_damage_pct": 58
-          }
-        },
-        {
-          "id": "mystery_61",
-          "name": "Storm Nova",
-          "real_name": "Storm Nova",
-          "icon": "\ud83d\udc09",
-          "real_icon": "\ud83d\udc09",
-          "desc": "+47% heal power, +54% smite dmg per rank",
-          "real_desc": "+47% heal power, +54% smite dmg per rank",
-          "max_rank": 3,
-          "row": 65,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "heal_power_pct": 47,
-            "smite_damage_pct": 54
-          }
-        },
-        {
-          "id": "mystery_62",
-          "name": "??? Mystery ???",
-          "real_name": "Arcane Flow",
-          "icon": "\u2753",
-          "real_icon": "\ud83e\uddff",
-          "desc": "Unknown power... unlock to reveal!",
-          "real_desc": "+47% smite dmg per rank",
-          "max_rank": 3,
-          "row": 66,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "smite_damage_pct": 47
-          }
-        },
-        {
-          "id": "mystery_63",
-          "name": "??? Mystery ???",
-          "real_name": "Quantum Chain",
-          "icon": "\u2753",
-          "real_icon": "\ud83c\udff9",
-          "desc": "Unknown power... unlock to reveal!",
-          "real_desc": "-10 MP cost reduction per rank",
-          "max_rank": 3,
-          "row": 67,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "mp_cost_reduction": 10
-          }
-        }
-      ],
-      "mystery_seed": 157589,
-      "inventory": [],
-      "equipment": {
-        "weapon": null,
-        "armor": null,
-        "accessory": null
-      },
-      "skills": [
-        "Power Strike",
-        "Shield Bash",
-        "Rally"
-      ],
-      "attack_dice": "1d8",
-      "is_ai": true,
-      "alive": true,
-      "ai_personality": "fierce"
-    },
-    {
-      "name": "Lumina",
+      "name": "Theron",
       "char_class": "cleric",
-      "level": 1672,
-      "xp": 115981830673720248655110039971968463496437099130667124395418652580998963339210590049499534824002104465511434060841284119516949386005131350452893514005720890739013573644860465187447469742295536495465867016838515649339588592178433851395952567358604725817166986196781650485287004962852531053717329748,
-      "xp_to_level": 176759714408024924426425806873725300804176897881259417489438378118859619707322656976766626615390193359289984809668208375341814253564567180905410227999827811837089932792731650491068320687108777558531436838735413053453700552741598316955616558555855251626027266107472717124423040579121045677363167232,
-      "hp": 1286062,
-      "max_hp": 1286062,
-      "mp": 115510,
-      "max_mp": 115510,
-      "ac": 84,
+      "level": 1674,
+      "xp": 280,
+      "xp_to_level": 398727693192663716117060159921984864378046502227910123911624803810249964497258535197620785935756356575126840104091957957569191694025841759281539674514453994421322558539423061233856082076613069083714867328527013294581685650662913131127750308631019519472433642769339907726578341324071797630007508992,
+      "hp": 5025,
+      "max_hp": 5025,
+      "mp": 5034,
+      "max_mp": 5034,
+      "ac": 14,
       "stats": {
-        "STR": 140,
-        "DEX": 149,
-        "CON": 143,
-        "INT": 144,
-        "WIS": 145,
-        "CHA": 145
+        "STR": 14,
+        "DEX": 12,
+        "CON": 6,
+        "INT": 13,
+        "WIS": 16,
+        "CHA": 13
       },
-      "skill_points": 1592,
-      "skill_tree": {
-        "divine_grace": 45,
-        "blessed_hp": 2,
-        "wis_mastery": 1,
-        "holy_shield": 1,
-        "smite_power": 1,
-        "high_priest": 43,
-        "mystery_0": 125,
-        "mystery_1": 1,
-        "mystery_2": 1528,
-        "mystery_3": 1,
-        "mystery_4": 1,
-        "mystery_5": 1
-      },
-      "mystery_nodes": [
-        {
-          "id": "mystery_0",
-          "name": "Phoenix Spirit",
-          "real_name": "Phoenix Spirit",
-          "icon": "\ud83d\udd25",
-          "real_icon": "\ud83d\udd25",
-          "desc": "+15% Max HP, +15% skill power",
-          "real_desc": "+15% Max HP, +15% skill power",
-          "max_rank": 3,
-          "row": 4,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "max_hp_pct": 15,
-            "skill_power_pct": 15
-          }
-        },
-        {
-          "id": "mystery_1",
-          "name": "Dragon Heart",
-          "real_name": "Dragon Heart",
-          "icon": "\ud83d\udc32",
-          "real_icon": "\ud83d\udc32",
-          "desc": "+4 CON per rank",
-          "real_desc": "+4 CON per rank",
-          "max_rank": 3,
-          "row": 5,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "con": 4
-          }
-        },
-        {
-          "id": "mystery_2",
-          "name": "Scholar",
-          "real_name": "Scholar",
-          "icon": "\ud83c\udf93",
-          "real_icon": "\ud83c\udf93",
-          "desc": "+40% XP gained per rank",
-          "real_desc": "+40% XP gained per rank",
-          "max_rank": 3,
-          "row": 6,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "xp_pct": 40
-          }
-        },
-        {
-          "id": "mystery_3",
-          "name": "Wind Walker",
-          "real_name": "Wind Walker",
-          "icon": "\ud83c\udf2c\ufe0f",
-          "real_icon": "\ud83c\udf2c\ufe0f",
-          "desc": "+6 DEX per rank",
-          "real_desc": "+6 DEX per rank",
-          "max_rank": 3,
-          "row": 7,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "dex": 6
-          }
-        },
-        {
-          "id": "mystery_4",
-          "name": "Spell Weaver",
-          "real_name": "Spell Weaver",
-          "icon": "\ud83d\udd78\ufe0f",
-          "real_icon": "\ud83d\udd78\ufe0f",
-          "desc": "+25% skill power per rank",
-          "real_desc": "+25% skill power per rank",
-          "max_rank": 3,
-          "row": 8,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "skill_power_pct": 25
-          }
-        },
-        {
-          "id": "mystery_5",
-          "name": "Angelic Touch",
-          "real_name": "Angelic Touch",
-          "icon": "\ud83d\ude07",
-          "real_icon": "\ud83d\ude07",
-          "desc": "+50% heal power per rank",
-          "real_desc": "+50% heal power per rank",
-          "max_rank": 3,
-          "row": 9,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "heal_power_pct": 50
-          }
-        },
-        {
-          "id": "mystery_6",
-          "name": "??? Mystery ???",
-          "real_name": "Arcane Warrior",
-          "icon": "\u2753",
-          "real_icon": "\u2694\ufe0f",
-          "desc": "Unknown power... unlock to reveal!",
-          "real_desc": "+15% dmg, +15% magic dmg",
-          "max_rank": 3,
-          "row": 10,
-          "col": 1,
-          "requires": [],
-          "bonus": {
-            "damage_pct": 15,
-            "magic_damage_pct": 15
-          }
-        }
-      ],
-      "mystery_seed": 894532,
+      "skill_points": 3346,
+      "skill_tree": {},
+      "mystery_nodes": [],
+      "mystery_seed": 0,
       "inventory": [],
       "equipment": {
         "weapon": null,
@@ -6603,10 +1807,49 @@
       "attack_dice": "1d6",
       "is_ai": true,
       "alive": true,
-      "ai_personality": "fierce"
+      "ai_personality": "brave"
+    },
+    {
+      "name": "Gretchen",
+      "char_class": "warrior",
+      "level": 1674,
+      "xp": 280,
+      "xp_to_level": 398727693192663716117060159921984864378046502227910123911624803810249964497258535197620785935756356575126840104091957957569191694025841759281539674514453994421322558539423061233856082076613069083714867328527013294581685650662913131127750308631019519472433642769339907726578341324071797630007508992,
+      "hp": 10048,
+      "max_hp": 10048,
+      "mp": 8381,
+      "max_mp": 8381,
+      "ac": 12,
+      "stats": {
+        "STR": 18,
+        "DEX": 7,
+        "CON": 10,
+        "INT": 17,
+        "WIS": 10,
+        "CHA": 13
+      },
+      "skill_points": 3346,
+      "skill_tree": {},
+      "mystery_nodes": [],
+      "mystery_seed": 0,
+      "inventory": [],
+      "equipment": {
+        "weapon": null,
+        "armor": null,
+        "accessory": null
+      },
+      "skills": [
+        "Power Strike",
+        "Shield Bash",
+        "Rally"
+      ],
+      "attack_dice": "1d8",
+      "is_ai": true,
+      "alive": true,
+      "ai_personality": "brave"
     }
   ],
-  "gold": 58996,
-  "floor_num": 9,
+  "gold": 68470,
+  "floor_num": 3,
   "in_upside_down": false
 }

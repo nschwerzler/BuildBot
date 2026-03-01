@@ -1,0 +1,690 @@
+"""
+Grandma's Random Clicker - A cozy clicker game for grandmas!
+Click cookies, buy upgrades, and become the ultimate grandma baker!
+"""
+
+import pygame
+import sys
+import math
+import random
+import json
+import os
+import time
+
+pygame.init()
+
+# ── Window ──────────────────────────────────────────────────────────────
+WIDTH, HEIGHT = 900, 650
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("🍪 Grandma's Random Clicker 🍪")
+clock = pygame.time.Clock()
+
+# ── Colours ─────────────────────────────────────────────────────────────
+BG           = (255, 243, 224)
+PANEL_BG     = (255, 235, 205)
+PANEL_BORDER = (205, 170, 125)
+COOKIE_BROWN = (180, 110, 50)
+COOKIE_DARK  = (140, 80, 30)
+COOKIE_CHIP  = (90, 55, 20)
+TEXT_DARK     = (80, 50, 20)
+TEXT_LIGHT    = (140, 100, 60)
+GOLD         = (255, 200, 50)
+BTN_GREEN    = (100, 180, 80)
+BTN_GREEN_H  = (120, 200, 100)
+BTN_RED      = (200, 80, 80)
+BTN_RED_H    = (220, 100, 100)
+BTN_BLUE     = (80, 140, 200)
+BTN_BLUE_H   = (100, 160, 220)
+BTN_PURPLE   = (150, 90, 180)
+BTN_PURPLE_H = (170, 110, 200)
+BTN_ORANGE   = (220, 150, 50)
+BTN_ORANGE_H = (240, 170, 70)
+WHITE        = (255, 255, 255)
+BLACK        = (0, 0, 0)
+SHADOW       = (0, 0, 0, 60)
+
+# ── Fonts ───────────────────────────────────────────────────────────────
+font_xl   = pygame.font.SysFont("Segoe UI", 48, bold=True)
+font_lg   = pygame.font.SysFont("Segoe UI", 32, bold=True)
+font_md   = pygame.font.SysFont("Segoe UI", 22)
+font_sm   = pygame.font.SysFont("Segoe UI", 18)
+font_xs   = pygame.font.SysFont("Segoe UI", 14)
+font_emoji = pygame.font.SysFont("Segoe UI Emoji", 36)
+
+# ── Save file ───────────────────────────────────────────────────────────
+SAVE_FILE = "grandma_clicker_save.json"
+
+# ── Upgrades definition ────────────────────────────────────────────────
+UPGRADES = [
+    {
+        "name": "Wooden Spoon",
+        "emoji": "🥄",
+        "desc": "+1 per click",
+        "base_cost": 15,
+        "cost_mult": 1.15,
+        "click_bonus": 1,
+        "cps_bonus": 0,
+        "color": BTN_GREEN,
+        "color_h": BTN_GREEN_H,
+    },
+    {
+        "name": "Grandma Helper",
+        "emoji": "👵",
+        "desc": "+0.5 cookies/sec",
+        "base_cost": 50,
+        "cost_mult": 1.18,
+        "click_bonus": 0,
+        "cps_bonus": 0.5,
+        "color": BTN_BLUE,
+        "color_h": BTN_BLUE_H,
+    },
+    {
+        "name": "Oven",
+        "emoji": "🔥",
+        "desc": "+2 cookies/sec",
+        "base_cost": 200,
+        "cost_mult": 1.20,
+        "click_bonus": 0,
+        "cps_bonus": 2,
+        "color": BTN_RED,
+        "color_h": BTN_RED_H,
+    },
+    {
+        "name": "Recipe Book",
+        "emoji": "📖",
+        "desc": "+5 per click",
+        "base_cost": 500,
+        "cost_mult": 1.22,
+        "click_bonus": 5,
+        "cps_bonus": 0,
+        "color": BTN_PURPLE,
+        "color_h": BTN_PURPLE_H,
+    },
+    {
+        "name": "Cookie Factory",
+        "emoji": "🏭",
+        "desc": "+10 cookies/sec",
+        "base_cost": 2000,
+        "cost_mult": 1.25,
+        "click_bonus": 0,
+        "cps_bonus": 10,
+        "color": BTN_ORANGE,
+        "color_h": BTN_ORANGE_H,
+    },
+    {
+        "name": "Magic Rolling Pin",
+        "emoji": "✨",
+        "desc": "+25 per click",
+        "base_cost": 8000,
+        "cost_mult": 1.28,
+        "click_bonus": 25,
+        "cps_bonus": 0,
+        "color": BTN_GREEN,
+        "color_h": BTN_GREEN_H,
+    },
+    {
+        "name": "Cookie Portal",
+        "emoji": "🌀",
+        "desc": "+50 cookies/sec",
+        "base_cost": 25000,
+        "cost_mult": 1.30,
+        "click_bonus": 0,
+        "cps_bonus": 50,
+        "color": BTN_BLUE,
+        "color_h": BTN_BLUE_H,
+    },
+    {
+        "name": "Time Machine",
+        "emoji": "⏰",
+        "desc": "+200 cookies/sec",
+        "base_cost": 100000,
+        "cost_mult": 1.35,
+        "click_bonus": 0,
+        "cps_bonus": 200,
+        "color": BTN_PURPLE,
+        "color_h": BTN_PURPLE_H,
+    },
+]
+
+# ── Random grandma quotes ──────────────────────────────────────────────
+GRANDMA_QUOTES = [
+    "Have another cookie, dear!",
+    "Back in my day, we baked uphill both ways!",
+    "You look thin, eat more cookies!",
+    "My secret ingredient? Love! ...and butter.",
+    "These cookies won't bake themselves!",
+    "Oh, you remind me of your grandfather.",
+    "More cookies? Of course, sweetie!",
+    "Don't tell your mother about these cookies.",
+    "I've been baking since before you were born!",
+    "A cookie a day keeps the doctor away!",
+    "Want some milk with that, dear?",
+    "Grandma knows best!",
+    "Click faster, dear! Grandpa's hungry!",
+    "That's the spirit, sweetheart!",
+    "Oh my, look at all those cookies!",
+]
+
+# ── Milestones ──────────────────────────────────────────────────────────
+MILESTONES = [100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 10000000]
+
+# ── Game State ──────────────────────────────────────────────────────────
+class GameState:
+    def __init__(self):
+        self.cookies = 0.0
+        self.total_cookies = 0.0
+        self.total_clicks = 0
+        self.click_power = 1
+        self.cps = 0.0  # cookies per second
+        self.owned = [0] * len(UPGRADES)
+        self.milestone_idx = 0
+        self.quote = random.choice(GRANDMA_QUOTES)
+        self.quote_timer = 0
+        self.particles = []
+        self.cookie_scale = 1.0
+        self.cookie_target_scale = 1.0
+        self.golden_cookie = None  # (x, y, timer, type)
+        self.golden_timer = 0
+        self.multiplier = 1.0
+        self.multiplier_timer = 0.0
+        self.frenzy_timer = 0.0
+        self.scroll_offset = 0
+        self.notification = None
+        self.notif_timer = 0
+        self.start_time = time.time()
+
+    def get_cost(self, idx):
+        up = UPGRADES[idx]
+        return int(up["base_cost"] * (up["cost_mult"] ** self.owned[idx]))
+
+    def buy(self, idx):
+        cost = self.get_cost(idx)
+        if self.cookies >= cost:
+            self.cookies -= cost
+            self.owned[idx] += 1
+            up = UPGRADES[idx]
+            self.click_power += up["click_bonus"]
+            self.cps += up["cps_bonus"]
+            return True
+        return False
+
+    def click(self):
+        amount = self.click_power * self.multiplier
+        self.cookies += amount
+        self.total_cookies += amount
+        self.total_clicks += 1
+        return amount
+
+    def update(self, dt):
+        # CPS
+        earned = self.cps * self.multiplier * dt
+        self.cookies += earned
+        self.total_cookies += earned
+
+        # Cookie bounce animation
+        if self.cookie_scale != self.cookie_target_scale:
+            self.cookie_scale += (self.cookie_target_scale - self.cookie_scale) * 0.2
+            if abs(self.cookie_scale - self.cookie_target_scale) < 0.005:
+                self.cookie_scale = self.cookie_target_scale
+
+        # Particles
+        for p in self.particles[:]:
+            p["y"] -= p["speed"] * dt
+            p["alpha"] -= 120 * dt
+            p["life"] -= dt
+            if p["life"] <= 0:
+                self.particles.remove(p)
+
+        # Quote timer
+        self.quote_timer += dt
+        if self.quote_timer > 8:
+            self.quote = random.choice(GRANDMA_QUOTES)
+            self.quote_timer = 0
+
+        # Golden cookie spawning
+        self.golden_timer += dt
+        if self.golden_cookie is None and self.golden_timer > random.uniform(30, 60):
+            self.golden_timer = 0
+            gx = random.randint(50, 400)
+            gy = random.randint(100, 500)
+            self.golden_cookie = {"x": gx, "y": gy, "timer": 10.0, "type": random.choice(["x2", "x5", "frenzy", "bonus"])}
+
+        if self.golden_cookie:
+            self.golden_cookie["timer"] -= dt
+            if self.golden_cookie["timer"] <= 0:
+                self.golden_cookie = None
+
+        # Multiplier timer
+        if self.multiplier_timer > 0:
+            self.multiplier_timer -= dt
+            if self.multiplier_timer <= 0:
+                self.multiplier = 1.0
+                self.multiplier_timer = 0
+
+        # Notification timer
+        if self.notif_timer > 0:
+            self.notif_timer -= dt
+
+        # Milestones
+        if self.milestone_idx < len(MILESTONES) and self.total_cookies >= MILESTONES[self.milestone_idx]:
+            self.notification = f"🎉 Milestone: {format_number(MILESTONES[self.milestone_idx])} cookies baked!"
+            self.notif_timer = 4.0
+            self.milestone_idx += 1
+
+    def save(self):
+        data = {
+            "cookies": self.cookies,
+            "total_cookies": self.total_cookies,
+            "total_clicks": self.total_clicks,
+            "click_power": self.click_power,
+            "cps": self.cps,
+            "owned": self.owned,
+            "milestone_idx": self.milestone_idx,
+            "multiplier": self.multiplier,
+            "multiplier_timer": self.multiplier_timer,
+        }
+        with open(SAVE_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+
+    def load(self):
+        if os.path.exists(SAVE_FILE):
+            with open(SAVE_FILE, "r") as f:
+                data = json.load(f)
+            self.cookies = data.get("cookies", 0)
+            self.total_cookies = data.get("total_cookies", 0)
+            self.total_clicks = data.get("total_clicks", 0)
+            self.click_power = data.get("click_power", 1)
+            self.cps = data.get("cps", 0)
+            self.owned = data.get("owned", [0] * len(UPGRADES))
+            self.milestone_idx = data.get("milestone_idx", 0)
+            self.multiplier = data.get("multiplier", 1.0)
+            self.multiplier_timer = data.get("multiplier_timer", 0)
+            # Pad owned if new upgrades were added
+            while len(self.owned) < len(UPGRADES):
+                self.owned.append(0)
+
+
+# ── Helpers ─────────────────────────────────────────────────────────────
+def format_number(n):
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}B"
+    elif n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    elif n >= 1_000:
+        return f"{n / 1_000:.1f}K"
+    else:
+        return f"{int(n)}"
+
+
+def draw_rounded_rect(surface, color, rect, radius=12, border=0, border_color=None):
+    r = pygame.Rect(rect)
+    pygame.draw.rect(surface, color, r, border_radius=radius)
+    if border > 0 and border_color:
+        pygame.draw.rect(surface, border_color, r, width=border, border_radius=radius)
+
+
+def draw_cookie(surface, cx, cy, radius, scale=1.0):
+    """Draw a cute pixel-art style cookie."""
+    r = int(radius * scale)
+    # Shadow
+    pygame.draw.circle(surface, (0, 0, 0, 40), (cx + 3, cy + 3), r)
+    # Main cookie body
+    pygame.draw.circle(surface, COOKIE_BROWN, (cx, cy), r)
+    # Darker edge ring
+    pygame.draw.circle(surface, COOKIE_DARK, (cx, cy), r, 4)
+    # Chocolate chips
+    chip_positions = [
+        (0.3, -0.3), (-0.25, 0.35), (0.0, -0.05),
+        (-0.35, -0.2), (0.25, 0.3), (0.0, 0.4),
+        (-0.1, -0.4), (0.35, 0.0),
+    ]
+    for fx, fy in chip_positions:
+        cx2 = cx + int(fx * r)
+        cy2 = cy + int(fy * r)
+        chip_r = max(3, int(r * 0.08))
+        pygame.draw.circle(surface, COOKIE_CHIP, (cx2, cy2), chip_r)
+        # Tiny highlight
+        pygame.draw.circle(surface, (120, 80, 40), (cx2 - 1, cy2 - 1), max(1, chip_r - 2))
+    # Shine highlight
+    highlight_r = max(4, int(r * 0.18))
+    pygame.draw.circle(surface, (220, 170, 100), (cx - int(r * 0.25), cy - int(r * 0.25)), highlight_r)
+
+
+def spawn_particles(gs, x, y, amount):
+    texts = ["+"+format_number(amount)]
+    emojis = ["🍪", "⭐", "💛", "✨"]
+    for t in texts:
+        gs.particles.append({
+            "x": x + random.randint(-30, 30),
+            "y": y + random.randint(-20, 0),
+            "speed": random.uniform(60, 120),
+            "alpha": 255,
+            "life": 1.2,
+            "text": t,
+            "is_emoji": False,
+        })
+    # Scatter a couple emoji particles
+    for _ in range(random.randint(1, 3)):
+        gs.particles.append({
+            "x": x + random.randint(-50, 50),
+            "y": y + random.randint(-30, 10),
+            "speed": random.uniform(40, 100),
+            "alpha": 255,
+            "life": 1.0,
+            "text": random.choice(emojis),
+            "is_emoji": True,
+        })
+
+
+def handle_golden_click(gs, mx, my):
+    if gs.golden_cookie is None:
+        return
+    gc = gs.golden_cookie
+    dx = mx - gc["x"]
+    dy = my - gc["y"]
+    if dx * dx + dy * dy < 30 * 30:
+        t = gc["type"]
+        if t == "x2":
+            gs.multiplier = 2.0
+            gs.multiplier_timer = 15.0
+            gs.notification = "🌟 Golden Cookie: 2x everything for 15s!"
+        elif t == "x5":
+            gs.multiplier = 5.0
+            gs.multiplier_timer = 10.0
+            gs.notification = "🌟 Golden Cookie: 5x everything for 10s!"
+        elif t == "frenzy":
+            gs.multiplier = 7.0
+            gs.multiplier_timer = 7.0
+            gs.notification = "🌟 FRENZY! 7x everything for 7s!"
+        elif t == "bonus":
+            bonus = max(100, gs.cps * 60)
+            gs.cookies += bonus
+            gs.total_cookies += bonus
+            gs.notification = f"🌟 Golden Cookie: +{format_number(bonus)} cookies!"
+        gs.notif_timer = 4.0
+        gs.golden_cookie = None
+        # Big particle burst
+        for _ in range(8):
+            gs.particles.append({
+                "x": gc["x"] + random.randint(-40, 40),
+                "y": gc["y"] + random.randint(-30, 10),
+                "speed": random.uniform(50, 130),
+                "alpha": 255,
+                "life": 1.5,
+                "text": random.choice(["🌟", "⭐", "💰", "🍪"]),
+                "is_emoji": True,
+            })
+
+
+# ── Drawing ─────────────────────────────────────────────────────────────
+def draw_game(gs):
+    screen.fill(BG)
+
+    # ── Left panel: Cookie area ─────────────────────────────────────
+    # Title
+    title_surf = font_lg.render("Grandma's Clicker", True, TEXT_DARK)
+    screen.blit(title_surf, (225 - title_surf.get_width() // 2, 15))
+
+    # Cookie count
+    cookie_text = format_number(gs.cookies)
+    count_surf = font_xl.render(f"{cookie_text}", True, COOKIE_DARK)
+    screen.blit(count_surf, (225 - count_surf.get_width() // 2, 60))
+    label_surf = font_sm.render("cookies", True, TEXT_LIGHT)
+    screen.blit(label_surf, (225 - label_surf.get_width() // 2, 110))
+
+    # CPS display
+    cps_val = gs.cps * gs.multiplier
+    cps_text = f"per second: {format_number(cps_val)}"
+    cps_surf = font_sm.render(cps_text, True, TEXT_LIGHT)
+    screen.blit(cps_surf, (225 - cps_surf.get_width() // 2, 132))
+
+    # Click power
+    cp_text = f"per click: {format_number(gs.click_power * gs.multiplier)}"
+    cp_surf = font_xs.render(cp_text, True, TEXT_LIGHT)
+    screen.blit(cp_surf, (225 - cp_surf.get_width() // 2, 155))
+
+    # Multiplier indicator
+    if gs.multiplier_timer > 0:
+        mult_text = f"✨ {gs.multiplier:.0f}x MULTIPLIER ({gs.multiplier_timer:.1f}s) ✨"
+        mult_surf = font_md.render(mult_text, True, GOLD)
+        screen.blit(mult_surf, (225 - mult_surf.get_width() // 2, 175))
+
+    # Main cookie button
+    cookie_cx, cookie_cy = 225, 310
+    cookie_radius = 90
+    draw_cookie(screen, cookie_cx, cookie_cy, cookie_radius, gs.cookie_scale)
+
+    # "Click me!" label under cookie
+    click_label = font_xs.render("Click me!", True, TEXT_LIGHT)
+    screen.blit(click_label, (225 - click_label.get_width() // 2, 415))
+
+    # Particles
+    for p in gs.particles:
+        alpha = max(0, min(255, int(p["alpha"])))
+        if alpha <= 0:
+            continue
+        if p["is_emoji"]:
+            surf = font_emoji.render(p["text"], True, GOLD)
+        else:
+            surf = font_md.render(p["text"], True, GOLD)
+        surf.set_alpha(alpha)
+        screen.blit(surf, (int(p["x"]) - surf.get_width() // 2, int(p["y"]) - surf.get_height() // 2))
+
+    # Golden cookie
+    if gs.golden_cookie:
+        gc = gs.golden_cookie
+        pulse = 1.0 + 0.15 * math.sin(time.time() * 5)
+        gr = int(25 * pulse)
+        # Glow
+        glow_surf = pygame.Surface((gr * 4, gr * 4), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surf, (255, 215, 0, 80), (gr * 2, gr * 2), gr * 2)
+        screen.blit(glow_surf, (gc["x"] - gr * 2, gc["y"] - gr * 2))
+        # Golden cookie body
+        pygame.draw.circle(screen, (255, 215, 0), (gc["x"], gc["y"]), gr)
+        pygame.draw.circle(screen, (200, 170, 0), (gc["x"], gc["y"]), gr, 3)
+        # Sparkle
+        star = font_md.render("★", True, WHITE)
+        screen.blit(star, (gc["x"] - star.get_width() // 2, gc["y"] - star.get_height() // 2))
+
+    # Grandma quote bubble
+    quote_rect = pygame.Rect(30, 450, 390, 60)
+    draw_rounded_rect(screen, WHITE, quote_rect, radius=15, border=2, border_color=PANEL_BORDER)
+    # Grandma emoji
+    g_emoji = font_emoji.render("👵", True, BLACK)
+    screen.blit(g_emoji, (40, 455))
+    # Quote text (wrap if needed)
+    quote_words = gs.quote.split()
+    line = ""
+    y_off = 458
+    for w in quote_words:
+        test = line + w + " "
+        if font_xs.size(test)[0] > 300:
+            qs = font_xs.render(line, True, TEXT_DARK)
+            screen.blit(qs, (90, y_off))
+            y_off += 18
+            line = w + " "
+        else:
+            line = test
+    if line:
+        qs = font_xs.render(line.strip(), True, TEXT_DARK)
+        screen.blit(qs, (90, y_off))
+
+    # Stats bar at bottom-left
+    stats_rect = pygame.Rect(30, 525, 390, 55)
+    draw_rounded_rect(screen, PANEL_BG, stats_rect, radius=10, border=1, border_color=PANEL_BORDER)
+    stat1 = font_xs.render(f"Total baked: {format_number(gs.total_cookies)}", True, TEXT_DARK)
+    stat2 = font_xs.render(f"Total clicks: {format_number(gs.total_clicks)}", True, TEXT_DARK)
+    elapsed = int(time.time() - gs.start_time)
+    mins, secs = divmod(elapsed, 60)
+    hrs, mins = divmod(mins, 60)
+    time_str = f"{hrs}h {mins}m {secs}s" if hrs else f"{mins}m {secs}s"
+    stat3 = font_xs.render(f"Session: {time_str}", True, TEXT_DARK)
+    screen.blit(stat1, (40, 530))
+    screen.blit(stat2, (40, 548))
+    screen.blit(stat3, (40, 566))
+
+    # Save button
+    save_rect = pygame.Rect(30, 595, 120, 35)
+    mx, my = pygame.mouse.get_pos()
+    save_hover = save_rect.collidepoint(mx, my)
+    draw_rounded_rect(screen, BTN_GREEN_H if save_hover else BTN_GREEN, save_rect, radius=8)
+    save_txt = font_sm.render("💾 Save", True, WHITE)
+    screen.blit(save_txt, (save_rect.centerx - save_txt.get_width() // 2, save_rect.centery - save_txt.get_height() // 2))
+
+    # ── Right panel: Shop ───────────────────────────────────────────
+    panel_rect = pygame.Rect(460, 0, 440, HEIGHT)
+    draw_rounded_rect(screen, PANEL_BG, panel_rect, radius=0, border=2, border_color=PANEL_BORDER)
+
+    shop_title = font_lg.render("🛒 Shop", True, TEXT_DARK)
+    screen.blit(shop_title, (480, 12))
+
+    # Upgrade buttons (scrollable area)
+    clip_rect = pygame.Rect(465, 55, 425, HEIGHT - 65)
+    # We don't actually clip for simplicity; just offset drawing
+    y = 60 + gs.scroll_offset
+    upgrade_rects = []
+    for i, up in enumerate(UPGRADES):
+        btn_h = 65
+        btn_rect = pygame.Rect(470, y, 415, btn_h)
+        cost = gs.get_cost(i)
+        can_afford = gs.cookies >= cost
+        hover = btn_rect.collidepoint(mx, my) and clip_rect.collidepoint(mx, my)
+
+        if y + btn_h > 45 and y < HEIGHT:  # visible check
+            # Background
+            if can_afford:
+                col = up["color_h"] if hover else up["color"]
+            else:
+                col = (160, 160, 160)
+            draw_rounded_rect(screen, col, btn_rect, radius=10)
+
+            # Owned count badge
+            if gs.owned[i] > 0:
+                badge_text = str(gs.owned[i])
+                badge_surf = font_md.render(badge_text, True, WHITE)
+                badge_w = max(28, badge_surf.get_width() + 12)
+                badge_rect = pygame.Rect(btn_rect.right - badge_w - 8, btn_rect.y + 5, badge_w, 26)
+                draw_rounded_rect(screen, (0, 0, 0, 100), badge_rect, radius=13)
+                pygame.draw.rect(screen, (255, 255, 255, 60), badge_rect, width=1, border_radius=13)
+                screen.blit(badge_surf, (badge_rect.centerx - badge_surf.get_width() // 2, badge_rect.centery - badge_surf.get_height() // 2))
+
+            # Emoji
+            emoji_surf = font_emoji.render(up["emoji"], True, WHITE)
+            screen.blit(emoji_surf, (480, y + 10))
+
+            # Name
+            name_surf = font_md.render(up["name"], True, WHITE)
+            screen.blit(name_surf, (525, y + 6))
+
+            # Description
+            desc_surf = font_xs.render(up["desc"], True, (240, 240, 240))
+            screen.blit(desc_surf, (525, y + 30))
+
+            # Cost
+            cost_str = f"Cost: {format_number(cost)}"
+            cost_col = (255, 255, 200) if can_afford else (255, 180, 180)
+            cost_surf = font_sm.render(cost_str, True, cost_col)
+            screen.blit(cost_surf, (525, y + 46))
+
+        upgrade_rects.append((btn_rect, i))
+        y += btn_h + 6
+
+    # Notification popup
+    if gs.notif_timer > 0 and gs.notification:
+        alpha = min(255, int(gs.notif_timer * 200))
+        notif_surf = font_md.render(gs.notification, True, WHITE)
+        nw = notif_surf.get_width() + 30
+        nh = 40
+        notif_bg = pygame.Surface((nw, nh), pygame.SRCALPHA)
+        pygame.draw.rect(notif_bg, (60, 40, 20, min(220, alpha)), (0, 0, nw, nh), border_radius=12)
+        notif_surf.set_alpha(alpha)
+        nx = WIDTH // 2 - nw // 2
+        ny = 10
+        screen.blit(notif_bg, (nx, ny))
+        screen.blit(notif_surf, (nx + 15, ny + 8))
+
+    pygame.display.flip()
+    return upgrade_rects
+
+
+# ── Main Loop ───────────────────────────────────────────────────────────
+def main():
+    gs = GameState()
+    gs.load()
+    gs.start_time = time.time()
+
+    auto_save_timer = 0
+    running = True
+    cookie_cx, cookie_cy, cookie_radius = 225, 310, 90
+
+    while running:
+        dt = clock.tick(60) / 1000.0
+        auto_save_timer += dt
+
+        # Auto-save every 30 seconds
+        if auto_save_timer >= 30:
+            gs.save()
+            auto_save_timer = 0
+
+        upgrade_rects = draw_game(gs)
+        gs.update(dt)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                gs.save()
+                pygame.quit()
+                sys.exit()
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = event.pos
+
+                if event.button == 1:  # Left click
+                    # Check cookie click
+                    dx = mx - cookie_cx
+                    dy = my - cookie_cy
+                    if dx * dx + dy * dy < cookie_radius * cookie_radius:
+                        amount = gs.click()
+                        gs.cookie_scale = 0.85
+                        gs.cookie_target_scale = 1.0
+                        spawn_particles(gs, mx, my, amount)
+
+                    # Check golden cookie
+                    handle_golden_click(gs, mx, my)
+
+                    # Check upgrade buttons
+                    for btn_rect, idx in upgrade_rects:
+                        if btn_rect.collidepoint(mx, my):
+                            if gs.buy(idx):
+                                gs.notification = f"Bought {UPGRADES[idx]['name']}!"
+                                gs.notif_timer = 2.0
+
+                    # Save button
+                    save_rect = pygame.Rect(30, 595, 120, 35)
+                    if save_rect.collidepoint(mx, my):
+                        gs.save()
+                        gs.notification = "💾 Game saved!"
+                        gs.notif_timer = 2.0
+
+                # Scroll in shop
+                elif event.button == 4:  # Scroll up
+                    gs.scroll_offset = min(0, gs.scroll_offset + 30)
+                elif event.button == 5:  # Scroll down
+                    max_scroll = -(len(UPGRADES) * 71 - (HEIGHT - 70))
+                    gs.scroll_offset = max(max_scroll, gs.scroll_offset - 30)
+
+            elif event.type == pygame.MOUSEWHEEL:
+                if event.y > 0:
+                    gs.scroll_offset = min(0, gs.scroll_offset + 30)
+                elif event.y < 0:
+                    max_scroll = -(len(UPGRADES) * 71 - (HEIGHT - 70))
+                    gs.scroll_offset = max(max_scroll, gs.scroll_offset - 30)
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_s:
+                    gs.save()
+                    gs.notification = "💾 Game saved!"
+                    gs.notif_timer = 2.0
+
+
+if __name__ == "__main__":
+    main()
