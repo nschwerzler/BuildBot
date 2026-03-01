@@ -938,6 +938,44 @@ class GameState:
         self.dev_panel_open = False
         self.dev_code_buffer = ""  # tracks typed keys
         self.dev_code = "cookies12346"
+        self.dev_undo_stack = []  # list of snapshots for undo
+
+    def _snapshot(self):
+        """Capture current state for undo."""
+        import copy
+        return {
+            "cookies": self.cookies,
+            "total_cookies": self.total_cookies,
+            "total_clicks": self.total_clicks,
+            "click_power": self.click_power,
+            "cps": self.cps,
+            "owned": list(self.owned),
+            "milestone_idx": self.milestone_idx,
+            "rebirths": self.rebirths,
+            "rebirth_multiplier": self.rebirth_multiplier,
+            "lifetime_cookies": self.lifetime_cookies,
+            "multiplier": self.multiplier,
+            "multiplier_timer": self.multiplier_timer,
+            "golden_cookie": copy.deepcopy(self.golden_cookie),
+            "rainbow_cookie": copy.deepcopy(self.rainbow_cookie),
+        }
+
+    def _restore(self, snap):
+        """Restore state from snapshot."""
+        self.cookies = snap["cookies"]
+        self.total_cookies = snap["total_cookies"]
+        self.total_clicks = snap["total_clicks"]
+        self.click_power = snap["click_power"]
+        self.cps = snap["cps"]
+        self.owned = list(snap["owned"])
+        self.milestone_idx = snap["milestone_idx"]
+        self.rebirths = snap["rebirths"]
+        self.rebirth_multiplier = snap["rebirth_multiplier"]
+        self.lifetime_cookies = snap["lifetime_cookies"]
+        self.multiplier = snap["multiplier"]
+        self.multiplier_timer = snap["multiplier_timer"]
+        self.golden_cookie = snap["golden_cookie"]
+        self.rainbow_cookie = snap["rainbow_cookie"]
 
     def get_cost(self, idx):
         up = UPGRADES[idx]
@@ -1514,6 +1552,7 @@ DEV_BUTTONS = [
     ("+10 Rebirths",      "add_rebirths"),
     ("100x Multiplier 60s", "big_mult"),
     ("Reset Progress",    "reset"),
+    ("↩ Undo Last Action",  "undo"),
 ]
 
 def draw_dev_panel(gs):
@@ -1526,7 +1565,7 @@ def draw_dev_panel(gs):
     screen.blit(overlay, (0, 0))
 
     # Panel
-    pw, ph = 360, 460
+    pw, ph = 360, 500
     px = WIDTH // 2 - pw // 2
     py = HEIGHT // 2 - ph // 2
     panel_rect = pygame.Rect(px, py, pw, ph)
@@ -1551,10 +1590,20 @@ def draw_dev_panel(gs):
         hover = btn_rect.collidepoint(mx, my)
         if action == "reset":
             col = (180, 40, 40) if not hover else (220, 60, 60)
+        elif action == "undo":
+            has_undo = len(gs.dev_undo_stack) > 0
+            if has_undo:
+                col = (180, 160, 40) if not hover else (210, 190, 60)
+            else:
+                col = (80, 80, 80)  # greyed out
         else:
             col = (70, 70, 90) if not hover else (100, 100, 130)
         draw_rounded_rect(screen, col, btn_rect, radius=8)
-        lbl = font_sm.render(label, True, WHITE)
+        # Add undo count to label
+        display_label = label
+        if action == "undo" and len(gs.dev_undo_stack) > 0:
+            display_label = f"{label} ({len(gs.dev_undo_stack)})"
+        lbl = font_sm.render(display_label, True, WHITE)
         screen.blit(lbl, (btn_rect.centerx - lbl.get_width() // 2, btn_rect.centery - lbl.get_height() // 2))
         btn_rects.append((btn_rect, action))
         by += 38
@@ -1571,7 +1620,23 @@ def handle_dev_action(gs, action):
     """Execute a dev panel action."""
     if action == "close":
         gs.dev_panel_open = False
-    elif action == "give_1k":
+        return
+    if action == "undo":
+        if gs.dev_undo_stack:
+            snap = gs.dev_undo_stack.pop()
+            gs._restore(snap)
+            gs.notification = f"↩ DEV: Undone! ({len(gs.dev_undo_stack)} left)"
+            gs.notif_timer = 2.0
+        else:
+            gs.notification = "↩ DEV: Nothing to undo!"
+            gs.notif_timer = 2.0
+        return
+    # Save snapshot before any action (for undo)
+    gs.dev_undo_stack.append(gs._snapshot())
+    # Cap undo history at 20
+    if len(gs.dev_undo_stack) > 20:
+        gs.dev_undo_stack.pop(0)
+    if action == "give_1k":
         gs.cookies += 1_000
         gs.total_cookies += 1_000
         gs.lifetime_cookies += 1_000
@@ -1636,11 +1701,13 @@ def handle_dev_action(gs, action):
         gs.notification = "🔧 DEV: 100x multiplier for 60s!"
         gs.notif_timer = 2.0
     elif action == "reset":
+        undo_stack = gs.dev_undo_stack  # preserve undo stack
         gs.__init__()
         gs.notification = "🔧 DEV: Progress reset!"
         gs.notif_timer = 2.0
         gs.dev_mode = True
         gs.dev_panel_open = True
+        gs.dev_undo_stack = undo_stack
 
 
 # ── Main Loop ───────────────────────────────────────────────────────────
@@ -1689,7 +1756,7 @@ def main():
                 if clicked_dev:
                     continue
                 # Click outside panel closes it
-                pw, ph = 360, 460
+                pw, ph = 360, 500
                 px = WIDTH // 2 - pw // 2
                 py = HEIGHT // 2 - ph // 2
                 panel_rect = pygame.Rect(px, py, pw, ph)
