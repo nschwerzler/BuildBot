@@ -415,6 +415,26 @@ def _make_rebirth():
     return pygame.mixer.Sound(buffer=buf)
 
 
+def _make_rainbow():
+    """Epic ascending sparkle sound for rainbow cookie."""
+    sr = 44100
+    buf = arr_mod.array("h")
+    total = int(sr * 1.2)
+    for i in range(total):
+        t = i / sr
+        progress = i / total
+        # Rising frequency sweep
+        freq = 100 + 600 * progress
+        val = (math.sin(2 * math.pi * freq * t) * 0.5 +
+               math.sin(2 * math.pi * freq * 1.5 * t) * 0.25 +
+               math.sin(2 * math.pi * freq * 2 * t) * 0.15 +
+               math.sin(2 * math.pi * 30 * t) * 0.3 * (1 - progress))  # sub bass rumble
+        # Sparkle pings layered on top
+        sparkle = math.sin(2 * math.pi * (800 + 400 * math.sin(t * 12)) * t) * 0.15 * progress
+        env = min(1.0, i / (sr * 0.05)) * max(0, 1.0 - max(0, progress - 0.7) / 0.3)
+        buf.append(_clamp((val + sparkle) * 0.8 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
 # Build SFX dict
 SFX = {
     "buy": _make_cha_ching(),
@@ -423,6 +443,7 @@ SFX = {
     "milestone": _make_milestone(),
     "save": _make_save(),
     "rebirth": _make_rebirth(),
+    "rainbow": _make_rainbow(),
 }
 
 # All the funny click sounds — deep, goofy, ridiculous
@@ -899,6 +920,8 @@ class GameState:
         self.cookie_target_scale = 1.0
         self.golden_cookie = None  # (x, y, timer, type)
         self.golden_timer = 0
+        self.rainbow_cookie = None  # {x, y, timer, type}
+        self.rainbow_timer = 0
         self.multiplier = 1.0
         self.multiplier_timer = 0.0
         self.frenzy_timer = 0.0
@@ -955,6 +978,8 @@ class GameState:
         self.milestone_idx = 0
         self.golden_cookie = None
         self.golden_timer = 0
+        self.rainbow_cookie = None
+        self.rainbow_timer = 0
         self.multiplier = 1.0
         self.multiplier_timer = 0.0
         self.scroll_offset = 0
@@ -999,6 +1024,20 @@ class GameState:
             self.golden_cookie["timer"] -= dt
             if self.golden_cookie["timer"] <= 0:
                 self.golden_cookie = None
+
+        # Rainbow cookie spawning (very rare — every 2-5 min)
+        self.rainbow_timer += dt
+        if self.rainbow_cookie is None and self.rainbow_timer > random.uniform(120, 300):
+            self.rainbow_timer = 0
+            rx = random.randint(60, 390)
+            ry = random.randint(120, 420)
+            rtype = random.choice(["mega_click", "mega_production"])
+            self.rainbow_cookie = {"x": rx, "y": ry, "timer": 6.0, "type": rtype}
+
+        if self.rainbow_cookie:
+            self.rainbow_cookie["timer"] -= dt
+            if self.rainbow_cookie["timer"] <= 0:
+                self.rainbow_cookie = None
 
         # Multiplier timer
         if self.multiplier_timer > 0:
@@ -1129,6 +1168,41 @@ def spawn_particles(gs, x, y, amount):
         })
 
 
+def handle_rainbow_click(gs, mx, my):
+    """Handle clicking the ultra-rare rainbow cookie."""
+    if gs.rainbow_cookie is None:
+        return
+    rc = gs.rainbow_cookie
+    dx = mx - rc["x"]
+    dy = my - rc["y"]
+    if dx * dx + dy * dy < 35 * 35:
+        if rc["type"] == "mega_click":
+            bonus = max(1000, gs.click_power * 100000 * gs.rebirth_multiplier)
+            gs.cookies += bonus
+            gs.total_cookies += bonus
+            gs.lifetime_cookies += bonus
+            gs.notification = f"🌈 RAINBOW COOKIE! 100,000x CLICK = +{format_number(bonus)}!!!"
+        else:  # mega_production
+            bonus = max(1000, gs.cps * 100000)
+            gs.cookies += bonus
+            gs.total_cookies += bonus
+            gs.lifetime_cookies += bonus
+            gs.notification = f"🌈 RAINBOW COOKIE! 100,000x PRODUCTION = +{format_number(bonus)}!!!"
+        gs.notif_timer = 6.0
+        gs.rainbow_cookie = None
+        # MASSIVE particle explosion
+        for _ in range(30):
+            gs.particles.append({
+                "x": rc["x"] + random.randint(-60, 60),
+                "y": rc["y"] + random.randint(-40, 20),
+                "speed": random.uniform(80, 200),
+                "alpha": 255,
+                "life": 2.5,
+                "text": random.choice(["🌈", "💎", "✨", "🦄", "🌟", "💰", "🍪", "⭐"]),
+                "is_emoji": True,
+            })
+
+
 def handle_golden_click(gs, mx, my):
     if gs.golden_cookie is None:
         return
@@ -1222,6 +1296,52 @@ def draw_game(gs):
             surf = font_md.render(p["text"], True, GOLD)
         surf.set_alpha(alpha)
         screen.blit(surf, (int(p["x"]) - surf.get_width() // 2, int(p["y"]) - surf.get_height() // 2))
+
+    # Rainbow cookie (ultra rare!)
+    if gs.rainbow_cookie:
+        rc = gs.rainbow_cookie
+        t_now = time.time()
+        pulse = 1.0 + 0.2 * math.sin(t_now * 6)
+        rr = int(30 * pulse)
+        # Rainbow color cycling
+        hue_shift = (t_now * 3) % 6
+        # Convert hue to RGB
+        hi = int(hue_shift) % 6
+        f = hue_shift - int(hue_shift)
+        rainbow_colors = [
+            (255, int(255 * f), 0),
+            (int(255 * (1 - f)), 255, 0),
+            (0, 255, int(255 * f)),
+            (0, int(255 * (1 - f)), 255),
+            (int(255 * f), 0, 255),
+            (255, 0, int(255 * (1 - f))),
+        ]
+        rc_color = rainbow_colors[hi]
+        # Multiple glow rings
+        for ring in range(3, 0, -1):
+            glow_r = rr * ring * 1.5
+            glow_surf = pygame.Surface((int(glow_r * 2), int(glow_r * 2)), pygame.SRCALPHA)
+            glow_alpha = max(20, 60 // ring)
+            glow_c = (rc_color[0], rc_color[1], rc_color[2], glow_alpha)
+            pygame.draw.circle(glow_surf, glow_c, (int(glow_r), int(glow_r)), int(glow_r))
+            screen.blit(glow_surf, (rc["x"] - int(glow_r), rc["y"] - int(glow_r)))
+        # Cookie body with rainbow outline
+        pygame.draw.circle(screen, rc_color, (rc["x"], rc["y"]), rr)
+        # Inner white shine
+        pygame.draw.circle(screen, (255, 255, 255), (rc["x"] - rr // 4, rc["y"] - rr // 4), rr // 3)
+        # Rotating sparkles around it
+        for s in range(6):
+            angle = t_now * 3 + s * (math.pi / 3)
+            sx = rc["x"] + int(math.cos(angle) * (rr + 12))
+            sy = rc["y"] + int(math.sin(angle) * (rr + 12))
+            spark = font_xs.render("✦", True, rc_color)
+            screen.blit(spark, (sx - spark.get_width() // 2, sy - spark.get_height() // 2))
+        # Rainbow emoji in center
+        rb_emoji = font_md.render("🌈", True, WHITE)
+        screen.blit(rb_emoji, (rc["x"] - rb_emoji.get_width() // 2, rc["y"] - rb_emoji.get_height() // 2))
+        # Timer countdown text
+        timer_txt = font_xs.render(f"{rc['timer']:.1f}s", True, WHITE)
+        screen.blit(timer_txt, (rc["x"] - timer_txt.get_width() // 2, rc["y"] + rr + 8))
 
     # Golden cookie
     if gs.golden_cookie:
@@ -1417,6 +1537,12 @@ def main():
                         gs.cookie_target_scale = 1.0
                         spawn_particles(gs, mx, my, amount)
                         play_click_sfx()
+
+                    # Check rainbow cookie
+                    had_rainbow = gs.rainbow_cookie is not None
+                    handle_rainbow_click(gs, mx, my)
+                    if had_rainbow and gs.rainbow_cookie is None:
+                        play_sfx("rainbow")
 
                     # Check golden cookie
                     had_golden = gs.golden_cookie is not None
