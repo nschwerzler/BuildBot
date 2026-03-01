@@ -58,6 +58,9 @@ font_xs   = pygame.font.SysFont("Segoe UI", 14)
 font_emoji = pygame.font.SysFont("Segoe UI Emoji", 36)
 
 # ── Sound Effects (generated programmatically) ─────────────────────────
+def _clamp(v):
+    return max(-32767, min(32767, int(v)))
+
 def _make_sound(freq, duration=0.12, volume=0.35, wave="sine", freq_end=None):
     """Generate a short sound effect from a waveform."""
     sample_rate = 44100
@@ -103,7 +106,7 @@ def _make_wet_fart():
             env = 1.0
         else:
             env = max(0, 1.0 - (t - 0.15) / 0.3)
-        buf.append(int(val * 0.7 * 32767 * env))
+        buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -117,7 +120,7 @@ def _make_squeaky_toy():
         f = 2000 + 800 * math.sin(2 * math.pi * 25 * t)
         val = math.sin(2 * math.pi * f * t)
         env = max(0, 1.0 - (t / dur) * 0.5) * (min(1, t / 0.01))  # quick attack
-        buf.append(int(val * 0.75 * 32767 * env))
+        buf.append(_clamp(val * 0.75 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -138,7 +141,7 @@ def _make_old_man_cough():
         else:
             env = max(0, 0.2 - (t - 0.22) / 0.08)
         tone = math.sin(2 * math.pi * 180 * t) * 0.3
-        buf.append(int((noise * 0.7 + tone) * 0.7 * 32767 * env))
+        buf.append(_clamp((noise * 0.7 + tone) * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -152,7 +155,7 @@ def _make_cartoon_boing():
         f = 300 + 500 * abs(math.sin(2 * math.pi * 8 * t)) * max(0, 1 - t / dur)
         val = math.sin(2 * math.pi * f * t)
         env = max(0, 1.0 - t / dur * 0.7)
-        buf.append(int(val * 0.8 * 32767 * env))
+        buf.append(_clamp(val * 0.8 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -166,7 +169,7 @@ def _make_slide_whistle_down():
         f = 1500 * (1.0 - t / dur * 0.85) + 20 * math.sin(2 * math.pi * 4 * t)
         val = math.sin(2 * math.pi * f * t)
         env = max(0, 1.0 - t / dur * 0.6)
-        buf.append(int(val * 0.7 * 32767 * env))
+        buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -186,7 +189,7 @@ def _make_burp():
             env = t / 0.03
         else:
             env = max(0, 1.0 - (t - 0.03) / (dur - 0.03))
-        buf.append(int(val * 0.75 * 32767 * env))
+        buf.append(_clamp(val * 0.75 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -208,7 +211,7 @@ def _make_slip_fall():
             noise = random.uniform(-0.5, 0.5)
             val = val * 0.5 + noise * 0.5
             env = max(0, 1.0 - (t - 0.2) / 0.15)
-        buf.append(int(val * 0.8 * 32767 * env))
+        buf.append(_clamp(val * 0.8 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -227,7 +230,7 @@ def _make_honk():
             env = 0.1
         else:
             env = max(0, 0.9 - (t - 0.13) / 0.12)
-        buf.append(int(val * 0.75 * 32767 * env))
+        buf.append(_clamp(val * 0.75 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -242,7 +245,7 @@ def _make_rubber_duck():
         f = max(f, 300)
         val = (1.0 if math.sin(2 * math.pi * f * t) > 0 else -1.0)
         env = max(0, 1.0 - t / dur * 0.4) * min(1, t / 0.008)
-        buf.append(int(val * 0.7 * 32767 * env))
+        buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -265,7 +268,7 @@ def _make_whoopee_cushion():
             env = 1.0
         else:
             env = max(0, 1.0 - (t - dur * 0.4) / (dur * 0.6))
-        buf.append(int(val * 0.8 * 32767 * env))
+        buf.append(_clamp(val * 0.8 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -279,7 +282,7 @@ def _make_record_scratch():
         val = (2.0 * (f * t % 1.0) - 1.0)  # sawtooth
         noise = random.uniform(-0.2, 0.2)
         env = max(0, 1.0 - t / dur * 0.5)
-        buf.append(int((val + noise) * 0.6 * 32767 * env))
+        buf.append(_clamp((val + noise) * 0.6 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -294,7 +297,7 @@ def _make_yodel():
         f = 400 if cycle > 0 else 800
         val = math.sin(2 * math.pi * f * t)
         env = max(0, 1.0 - t / dur * 0.7)
-        buf.append(int(val * 0.7 * 32767 * env))
+        buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -307,7 +310,7 @@ def _make_cha_ching():
         f = 1200 if t < 0.12 else 1600
         val = math.sin(2 * math.pi * f * t)
         env = max(0, 1.0 - (t / dur))
-        buf.append(int(val * 0.7 * 32767 * env))
+        buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -328,7 +331,7 @@ def _make_fail():
             if freq == 293:
                 val *= (1 + 0.3 * math.sin(2 * math.pi * 5 * t))
             env = max(0, 1.0 - (i / n) * 0.3)
-            buf.append(int(val * 0.65 * 32767 * env))
+            buf.append(_clamp(val * 0.65 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -343,7 +346,7 @@ def _make_golden():
                math.sin(2 * math.pi * (1800 + 300 * math.sin(2 * math.pi * 11 * t)) * t) * 0.3 +
                math.sin(2 * math.pi * (2400 + 150 * math.sin(2 * math.pi * 5 * t)) * t) * 0.2)
         env = max(0, 1.0 - t / dur * 0.6)
-        buf.append(int(val * 0.7 * 32767 * env))
+        buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -364,7 +367,7 @@ def _make_milestone():
                 env = 0.9
             else:
                 val = 0; env = 0
-            buf.append(int(val * 0.75 * 32767 * env))
+            buf.append(_clamp(val * 0.75 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -379,7 +382,7 @@ def _make_save():
             t = i / sr
             val = math.sin(2 * math.pi * freq * t) + 0.3 * math.sin(2 * math.pi * freq * 2 * t)
             env = max(0, 1.0 - (i / n) * 0.5)
-            buf.append(int(val * 0.7 * 32767 * env))
+            buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
@@ -395,7 +398,7 @@ def _make_rebirth():
             t = i / sr
             val = math.sin(2 * math.pi * freq * t) + 0.3 * math.sin(2 * math.pi * freq * 2 * t)
             env = max(0, 1.0 - (i / n) * 0.4)
-            buf.append(int(val * 0.7 * 32767 * env))
+            buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
