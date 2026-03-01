@@ -416,8 +416,15 @@ SFX = {
 }
 
 # All the funny click sounds — deep, goofy, ridiculous
+# Weighted list – boing, burp (mega fart), and honk are 3× more common
+_boing   = _make_deep_boing()
+_burp    = _make_mega_fart()
+_honk    = _make_deep_honk()
+
 _click_sounds = [
-    _make_mega_fart(),
+    _burp, _burp, _burp,       # burp  – common
+    _boing, _boing, _boing,    # boing – common
+    _honk, _honk, _honk,       # honk  – common
     _make_tuba_blast(),
     _make_deep_bonk(),
     _make_belly_flop(),
@@ -425,9 +432,7 @@ _click_sounds = [
     _make_grandpa_snore(),
     _make_foghorn(),
     _make_cartoon_fall(),
-    _make_deep_boing(),
     _make_explosion(),
-    _make_deep_honk(),
     _make_bass_drop(),
 ]
 
