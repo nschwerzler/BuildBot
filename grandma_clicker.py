@@ -920,8 +920,10 @@ class GameState:
         self.cookie_target_scale = 1.0
         self.golden_cookie = None  # (x, y, timer, type)
         self.golden_timer = 0
+        self.golden_next_spawn = random.uniform(30, 60)
         self.rainbow_cookie = None  # {x, y, timer, type}
         self.rainbow_timer = 0
+        self.rainbow_next_spawn = random.uniform(45, 120)
         self.multiplier = 1.0
         self.multiplier_timer = 0.0
         self.frenzy_timer = 0.0
@@ -1021,8 +1023,10 @@ class GameState:
         self.milestone_idx = 0
         self.golden_cookie = None
         self.golden_timer = 0
+        self.golden_next_spawn = random.uniform(30, 60)
         self.rainbow_cookie = None
         self.rainbow_timer = 0
+        self.rainbow_next_spawn = random.uniform(45, 120)
         self.multiplier = 1.0
         self.multiplier_timer = 0.0
         self.scroll_offset = 0
@@ -1057,8 +1061,9 @@ class GameState:
 
         # Golden cookie spawning
         self.golden_timer += dt
-        if self.golden_cookie is None and self.golden_timer > random.uniform(30, 60):
+        if self.golden_cookie is None and self.golden_timer > self.golden_next_spawn:
             self.golden_timer = 0
+            self.golden_next_spawn = random.uniform(30, 60)
             gx = random.randint(50, 400)
             gy = random.randint(100, 500)
             self.golden_cookie = {"x": gx, "y": gy, "timer": 10.0, "type": random.choice(["x2", "x5", "frenzy", "bonus"])}
@@ -1068,10 +1073,11 @@ class GameState:
             if self.golden_cookie["timer"] <= 0:
                 self.golden_cookie = None
 
-        # Rainbow cookie spawning (very rare — every 2-5 min)
+        # Rainbow cookie spawning (rare — every 45-120s)
         self.rainbow_timer += dt
-        if self.rainbow_cookie is None and self.rainbow_timer > random.uniform(120, 300):
+        if self.rainbow_cookie is None and self.rainbow_timer > self.rainbow_next_spawn:
             self.rainbow_timer = 0
+            self.rainbow_next_spawn = random.uniform(45, 120)
             rx = random.randint(60, 390)
             ry = random.randint(120, 420)
             rtype = random.choice(["mega_click", "mega_production"])
