@@ -933,6 +933,11 @@ class GameState:
         self.rebirths = 0
         self.rebirth_multiplier = 1.0  # permanent 2x per rebirth
         self.lifetime_cookies = 0.0  # never resets
+        # Dev mode
+        self.dev_mode = False
+        self.dev_panel_open = False
+        self.dev_code_buffer = ""  # tracks typed keys
+        self.dev_code = "cookies12346"
 
     def get_cost(self, idx):
         up = UPGRADES[idx]
@@ -1496,6 +1501,148 @@ def draw_game(gs):
     return upgrade_rects
 
 
+# ── Dev Panel Drawing ───────────────────────────────────────────────────
+DEV_BUTTONS = [
+    ("Give 1,000",        "give_1k"),
+    ("Give 1,000,000",    "give_1m"),
+    ("Give 1,000,000,000","give_1b"),
+    ("Give 1 Trillion",   "give_1t"),
+    ("Give 1 Quadrillion", "give_1q"),
+    ("Spawn Golden",      "spawn_golden"),
+    ("Spawn Rainbow",     "spawn_rainbow"),
+    ("Max All Upgrades",  "max_upgrades"),
+    ("+10 Rebirths",      "add_rebirths"),
+    ("100x Multiplier 60s", "big_mult"),
+    ("Reset Progress",    "reset"),
+]
+
+def draw_dev_panel(gs):
+    """Draw the secret dev panel overlay."""
+    if not gs.dev_panel_open:
+        return []
+    # Darken background
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    screen.blit(overlay, (0, 0))
+
+    # Panel
+    pw, ph = 360, 460
+    px = WIDTH // 2 - pw // 2
+    py = HEIGHT // 2 - ph // 2
+    panel_rect = pygame.Rect(px, py, pw, ph)
+    draw_rounded_rect(screen, (30, 30, 40), panel_rect, radius=16, border=3, border_color=(255, 60, 60))
+
+    # Title
+    title = font_lg.render("🔧 DEV MODE", True, (255, 80, 80))
+    screen.blit(title, (px + pw // 2 - title.get_width() // 2, py + 10))
+
+    # Close button
+    close_rect = pygame.Rect(px + pw - 40, py + 8, 30, 30)
+    draw_rounded_rect(screen, (200, 50, 50), close_rect, radius=8)
+    x_txt = font_md.render("X", True, WHITE)
+    screen.blit(x_txt, (close_rect.centerx - x_txt.get_width() // 2, close_rect.centery - x_txt.get_height() // 2))
+
+    # Buttons
+    mx, my = pygame.mouse.get_pos()
+    btn_rects = []
+    by = py + 50
+    for label, action in DEV_BUTTONS:
+        btn_rect = pygame.Rect(px + 20, by, pw - 40, 34)
+        hover = btn_rect.collidepoint(mx, my)
+        if action == "reset":
+            col = (180, 40, 40) if not hover else (220, 60, 60)
+        else:
+            col = (70, 70, 90) if not hover else (100, 100, 130)
+        draw_rounded_rect(screen, col, btn_rect, radius=8)
+        lbl = font_sm.render(label, True, WHITE)
+        screen.blit(lbl, (btn_rect.centerx - lbl.get_width() // 2, btn_rect.centery - lbl.get_height() // 2))
+        btn_rects.append((btn_rect, action))
+        by += 38
+
+    # Footer
+    foot = font_xs.render("Type 'cookies12346' to toggle", True, (120, 120, 140))
+    screen.blit(foot, (px + pw // 2 - foot.get_width() // 2, py + ph - 22))
+
+    pygame.display.flip()
+    return [(close_rect, "close")] + btn_rects
+
+
+def handle_dev_action(gs, action):
+    """Execute a dev panel action."""
+    if action == "close":
+        gs.dev_panel_open = False
+    elif action == "give_1k":
+        gs.cookies += 1_000
+        gs.total_cookies += 1_000
+        gs.lifetime_cookies += 1_000
+        gs.notification = "🔧 DEV: +1,000 cookies"
+        gs.notif_timer = 2.0
+    elif action == "give_1m":
+        gs.cookies += 1_000_000
+        gs.total_cookies += 1_000_000
+        gs.lifetime_cookies += 1_000_000
+        gs.notification = "🔧 DEV: +1,000,000 cookies"
+        gs.notif_timer = 2.0
+    elif action == "give_1b":
+        gs.cookies += 1_000_000_000
+        gs.total_cookies += 1_000_000_000
+        gs.lifetime_cookies += 1_000_000_000
+        gs.notification = "🔧 DEV: +1,000,000,000 cookies"
+        gs.notif_timer = 2.0
+    elif action == "give_1t":
+        gs.cookies += 1_000_000_000_000
+        gs.total_cookies += 1_000_000_000_000
+        gs.lifetime_cookies += 1_000_000_000_000
+        gs.notification = "🔧 DEV: +1 Trillion cookies"
+        gs.notif_timer = 2.0
+    elif action == "give_1q":
+        gs.cookies += 1_000_000_000_000_000
+        gs.total_cookies += 1_000_000_000_000_000
+        gs.lifetime_cookies += 1_000_000_000_000_000
+        gs.notification = "🔧 DEV: +1 Quadrillion cookies"
+        gs.notif_timer = 2.0
+    elif action == "spawn_golden":
+        gx = random.randint(50, 400)
+        gy = random.randint(100, 500)
+        gs.golden_cookie = {"x": gx, "y": gy, "timer": 30.0, "type": random.choice(["x2", "x5", "frenzy", "bonus"])}
+        gs.notification = "🔧 DEV: Golden cookie spawned!"
+        gs.notif_timer = 2.0
+    elif action == "spawn_rainbow":
+        rx = random.randint(60, 390)
+        ry = random.randint(120, 420)
+        rtype = random.choice(["mega_click", "mega_production"])
+        gs.rainbow_cookie = {"x": rx, "y": ry, "timer": 30.0, "type": rtype}
+        gs.notification = "🔧 DEV: Rainbow cookie spawned!"
+        gs.notif_timer = 2.0
+    elif action == "max_upgrades":
+        for i in range(len(UPGRADES)):
+            gs.owned[i] = max(gs.owned[i], 100)
+        # Recalculate click_power and cps
+        gs.click_power = 1
+        gs.cps = 0.0
+        for i, up in enumerate(UPGRADES):
+            gs.click_power += up["click_bonus"] * gs.owned[i]
+            gs.cps += up["cps_bonus"] * gs.owned[i]
+        gs.notification = "🔧 DEV: All upgrades set to 100!"
+        gs.notif_timer = 2.0
+    elif action == "add_rebirths":
+        gs.rebirths += 10
+        gs.rebirth_multiplier = 2.0 ** gs.rebirths
+        gs.notification = f"🔧 DEV: +10 rebirths! Now {gs.rebirth_multiplier}x"
+        gs.notif_timer = 2.0
+    elif action == "big_mult":
+        gs.multiplier = 100.0
+        gs.multiplier_timer = 60.0
+        gs.notification = "🔧 DEV: 100x multiplier for 60s!"
+        gs.notif_timer = 2.0
+    elif action == "reset":
+        gs.__init__()
+        gs.notification = "🔧 DEV: Progress reset!"
+        gs.notif_timer = 2.0
+        gs.dev_mode = True
+        gs.dev_panel_open = True
+
+
 # ── Main Loop ───────────────────────────────────────────────────────────
 def main():
     gs = GameState()
@@ -1516,6 +1663,12 @@ def main():
             auto_save_timer = 0
 
         upgrade_rects = draw_game(gs)
+
+        # Draw dev panel on top if open
+        dev_btn_rects = []
+        if gs.dev_panel_open:
+            dev_btn_rects = draw_dev_panel(gs)
+
         gs.update(dt)
 
         for event in pygame.event.get():
@@ -1523,6 +1676,26 @@ def main():
                 gs.save()
                 pygame.quit()
                 sys.exit()
+
+            # Dev panel clicks take priority
+            if gs.dev_panel_open and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mx, my = event.pos
+                clicked_dev = False
+                for btn_rect, action in dev_btn_rects:
+                    if btn_rect.collidepoint(mx, my):
+                        handle_dev_action(gs, action)
+                        clicked_dev = True
+                        break
+                if clicked_dev:
+                    continue
+                # Click outside panel closes it
+                pw, ph = 360, 460
+                px = WIDTH // 2 - pw // 2
+                py = HEIGHT // 2 - ph // 2
+                panel_rect = pygame.Rect(px, py, pw, ph)
+                if not panel_rect.collidepoint(mx, my):
+                    gs.dev_panel_open = False
+                continue
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = event.pos
@@ -1607,7 +1780,25 @@ def main():
                         gs.scroll_offset = max(max_scroll, gs.scroll_offset - 40)
 
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_s:
+                # Dev code input tracking
+                key_name = event.unicode.lower() if event.unicode else ""
+                if key_name and key_name.isalnum():
+                    gs.dev_code_buffer += key_name
+                    # Keep buffer trimmed to code length
+                    if len(gs.dev_code_buffer) > len(gs.dev_code):
+                        gs.dev_code_buffer = gs.dev_code_buffer[-len(gs.dev_code):]
+                    # Check for match
+                    if gs.dev_code_buffer == gs.dev_code:
+                        gs.dev_mode = True
+                        gs.dev_panel_open = not gs.dev_panel_open
+                        gs.dev_code_buffer = ""
+                        if gs.dev_panel_open:
+                            gs.notification = "🔧 DEV MODE ACTIVATED!"
+                        else:
+                            gs.notification = "🔧 Dev panel closed"
+                        gs.notif_timer = 2.0
+
+                if event.key == pygame.K_s and not gs.dev_panel_open:
                     gs.save()
                     gs.notification = "💾 Game saved!"
                     gs.notif_timer = 2.0
