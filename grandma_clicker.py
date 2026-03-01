@@ -45,6 +45,16 @@ BTN_PURPLE   = (150, 90, 180)
 BTN_PURPLE_H = (170, 110, 200)
 BTN_ORANGE   = (220, 150, 50)
 BTN_ORANGE_H = (240, 170, 70)
+BTN_TEAL     = (40, 170, 160)
+BTN_TEAL_H   = (60, 190, 180)
+BTN_PINK     = (200, 80, 150)
+BTN_PINK_H   = (220, 100, 170)
+BTN_GOLD     = (200, 170, 40)
+BTN_GOLD_H   = (220, 190, 60)
+BTN_CYAN     = (50, 160, 210)
+BTN_CYAN_H   = (70, 180, 230)
+BTN_LIME     = (130, 200, 50)
+BTN_LIME_H   = (150, 220, 70)
 WHITE        = (255, 255, 255)
 BLACK        = (0, 0, 0)
 SHADOW       = (0, 0, 0, 60)
@@ -537,6 +547,274 @@ UPGRADES = [
         "cps_bonus": 200,
         "color": BTN_PURPLE,
         "color_h": BTN_PURPLE_H,
+    },
+    # ── Tier 2: Getting serious ─────────────────────────
+    {
+        "name": "Cookie Cloner",
+        "emoji": "🧬",
+        "desc": "+100 per click",
+        "base_cost": 350000,
+        "cost_mult": 1.30,
+        "click_bonus": 100,
+        "cps_bonus": 0,
+        "color": BTN_TEAL,
+        "color_h": BTN_TEAL_H,
+    },
+    {
+        "name": "Grandma Army",
+        "emoji": "👵👵",
+        "desc": "+500 cookies/sec",
+        "base_cost": 800000,
+        "cost_mult": 1.35,
+        "click_bonus": 0,
+        "cps_bonus": 500,
+        "color": BTN_PINK,
+        "color_h": BTN_PINK_H,
+    },
+    {
+        "name": "Cookie Satellite",
+        "emoji": "🛰️",
+        "desc": "+1,500 cookies/sec",
+        "base_cost": 2500000,
+        "cost_mult": 1.38,
+        "click_bonus": 0,
+        "cps_bonus": 1500,
+        "color": BTN_CYAN,
+        "color_h": BTN_CYAN_H,
+    },
+    {
+        "name": "Golden Spatula",
+        "emoji": "🥇",
+        "desc": "+500 per click",
+        "base_cost": 5000000,
+        "cost_mult": 1.32,
+        "click_bonus": 500,
+        "cps_bonus": 0,
+        "color": BTN_GOLD,
+        "color_h": BTN_GOLD_H,
+    },
+    {
+        "name": "Cookie Planet",
+        "emoji": "🪐",
+        "desc": "+5,000 cookies/sec",
+        "base_cost": 15000000,
+        "cost_mult": 1.40,
+        "click_bonus": 0,
+        "cps_bonus": 5000,
+        "color": BTN_ORANGE,
+        "color_h": BTN_ORANGE_H,
+    },
+    {
+        "name": "Quantum Whisk",
+        "emoji": "⚛️",
+        "desc": "+2,000 per click",
+        "base_cost": 40000000,
+        "cost_mult": 1.35,
+        "click_bonus": 2000,
+        "cps_bonus": 0,
+        "color": BTN_PURPLE,
+        "color_h": BTN_PURPLE_H,
+    },
+    {
+        "name": "Cookie Dimension",
+        "emoji": "🌌",
+        "desc": "+15,000 cookies/sec",
+        "base_cost": 100000000,
+        "cost_mult": 1.42,
+        "click_bonus": 0,
+        "cps_bonus": 15000,
+        "color": BTN_BLUE,
+        "color_h": BTN_BLUE_H,
+    },
+    # ── Tier 3: Going crazy ─────────────────────────────
+    {
+        "name": "Butter Blaster",
+        "emoji": "🧈",
+        "desc": "+8,000 per click",
+        "base_cost": 300000000,
+        "cost_mult": 1.38,
+        "click_bonus": 8000,
+        "cps_bonus": 0,
+        "color": BTN_LIME,
+        "color_h": BTN_LIME_H,
+    },
+    {
+        "name": "Grandma Singularity",
+        "emoji": "🕳️",
+        "desc": "+50,000 cookies/sec",
+        "base_cost": 800000000,
+        "cost_mult": 1.45,
+        "click_bonus": 0,
+        "cps_bonus": 50000,
+        "color": BTN_RED,
+        "color_h": BTN_RED_H,
+    },
+    {
+        "name": "Sugar Nuke",
+        "emoji": "☢️",
+        "desc": "+25,000 per click",
+        "base_cost": 2000000000,
+        "cost_mult": 1.40,
+        "click_bonus": 25000,
+        "cps_bonus": 0,
+        "color": BTN_GREEN,
+        "color_h": BTN_GREEN_H,
+    },
+    {
+        "name": "Cookie God",
+        "emoji": "👼",
+        "desc": "+150,000 cookies/sec",
+        "base_cost": 5000000000,
+        "cost_mult": 1.48,
+        "click_bonus": 0,
+        "cps_bonus": 150000,
+        "color": BTN_GOLD,
+        "color_h": BTN_GOLD_H,
+    },
+    {
+        "name": "Flour Power",
+        "emoji": "💪",
+        "desc": "+80,000 per click",
+        "base_cost": 12000000000,
+        "cost_mult": 1.42,
+        "click_bonus": 80000,
+        "cps_bonus": 0,
+        "color": BTN_TEAL,
+        "color_h": BTN_TEAL_H,
+    },
+    {
+        "name": "Cookie Multiverse",
+        "emoji": "🔮",
+        "desc": "+500,000 cookies/sec",
+        "base_cost": 30000000000,
+        "cost_mult": 1.50,
+        "click_bonus": 0,
+        "cps_bonus": 500000,
+        "color": BTN_PURPLE,
+        "color_h": BTN_PURPLE_H,
+    },
+    # ── Tier 4: Absurdly powerful ───────────────────────
+    {
+        "name": "Dough Dragon",
+        "emoji": "🐉",
+        "desc": "+300,000 per click",
+        "base_cost": 80000000000,
+        "cost_mult": 1.45,
+        "click_bonus": 300000,
+        "cps_bonus": 0,
+        "color": BTN_RED,
+        "color_h": BTN_RED_H,
+    },
+    {
+        "name": "Infinity Oven",
+        "emoji": "♾️",
+        "desc": "+2M cookies/sec",
+        "base_cost": 200000000000,
+        "cost_mult": 1.52,
+        "click_bonus": 0,
+        "cps_bonus": 2000000,
+        "color": BTN_ORANGE,
+        "color_h": BTN_ORANGE_H,
+    },
+    {
+        "name": "Grandma Matrix",
+        "emoji": "🤖",
+        "desc": "+1M per click",
+        "base_cost": 500000000000,
+        "cost_mult": 1.48,
+        "click_bonus": 1000000,
+        "cps_bonus": 0,
+        "color": BTN_CYAN,
+        "color_h": BTN_CYAN_H,
+    },
+    {
+        "name": "Cookie Nebula",
+        "emoji": "🌠",
+        "desc": "+8M cookies/sec",
+        "base_cost": 1500000000000,
+        "cost_mult": 1.55,
+        "click_bonus": 0,
+        "cps_bonus": 8000000,
+        "color": BTN_BLUE,
+        "color_h": BTN_BLUE_H,
+    },
+    {
+        "name": "Anti-Matter Mixer",
+        "emoji": "⚗️",
+        "desc": "+4M per click",
+        "base_cost": 5000000000000,
+        "cost_mult": 1.50,
+        "click_bonus": 4000000,
+        "cps_bonus": 0,
+        "color": BTN_PINK,
+        "color_h": BTN_PINK_H,
+    },
+    {
+        "name": "Cookie Big Bang",
+        "emoji": "💥",
+        "desc": "+30M cookies/sec",
+        "base_cost": 15000000000000,
+        "cost_mult": 1.58,
+        "click_bonus": 0,
+        "cps_bonus": 30000000,
+        "color": BTN_LIME,
+        "color_h": BTN_LIME_H,
+    },
+    # ── Tier 5: Endgame ─────────────────────────────────
+    {
+        "name": "Chrono Cookie",
+        "emoji": "⌛",
+        "desc": "+15M per click",
+        "base_cost": 50000000000000,
+        "cost_mult": 1.52,
+        "click_bonus": 15000000,
+        "cps_bonus": 0,
+        "color": BTN_GOLD,
+        "color_h": BTN_GOLD_H,
+    },
+    {
+        "name": "Cookie Overlord",
+        "emoji": "👑",
+        "desc": "+100M cookies/sec",
+        "base_cost": 150000000000000,
+        "cost_mult": 1.60,
+        "click_bonus": 0,
+        "cps_bonus": 100000000,
+        "color": BTN_RED,
+        "color_h": BTN_RED_H,
+    },
+    {
+        "name": "Chocolate Void",
+        "emoji": "🍫",
+        "desc": "+50M per click",
+        "base_cost": 500000000000000,
+        "cost_mult": 1.55,
+        "click_bonus": 50000000,
+        "cps_bonus": 0,
+        "color": BTN_TEAL,
+        "color_h": BTN_TEAL_H,
+    },
+    {
+        "name": "Cookie Afterlife",
+        "emoji": "👻",
+        "desc": "+500M cookies/sec",
+        "base_cost": 2000000000000000,
+        "cost_mult": 1.62,
+        "click_bonus": 0,
+        "cps_bonus": 500000000,
+        "color": BTN_PURPLE,
+        "color_h": BTN_PURPLE_H,
+    },
+    {
+        "name": "Grandma Ascension",
+        "emoji": "🧓✨",
+        "desc": "+200M per click",
+        "base_cost": 8000000000000000,
+        "cost_mult": 1.58,
+        "click_bonus": 200000000,
+        "cps_bonus": 0,
+        "color": BTN_PINK,
+        "color_h": BTN_PINK_H,
     },
 ]
 
@@ -1187,19 +1465,20 @@ def main():
                         gs.notif_timer = 2.0
                         play_sfx("save")
 
-                # Scroll in shop
-                elif event.button == 4:  # Scroll up
-                    gs.scroll_offset = min(0, gs.scroll_offset + 30)
-                elif event.button == 5:  # Scroll down
-                    max_scroll = -(len(UPGRADES) * 71 - (HEIGHT - 70))
-                    gs.scroll_offset = max(max_scroll, gs.scroll_offset - 30)
+                # Scroll in shop (only when mouse is over shop panel)
+                elif event.button == 4 and mx >= 460:  # Scroll up
+                    gs.scroll_offset = min(0, gs.scroll_offset + 40)
+                elif event.button == 5 and mx >= 460:  # Scroll down
+                    max_scroll = min(0, -(len(UPGRADES) * 71 - (HEIGHT - 70)))
+                    gs.scroll_offset = max(max_scroll, gs.scroll_offset - 40)
 
             elif event.type == pygame.MOUSEWHEEL:
-                if event.y > 0:
-                    gs.scroll_offset = min(0, gs.scroll_offset + 30)
-                elif event.y < 0:
-                    max_scroll = -(len(UPGRADES) * 71 - (HEIGHT - 70))
-                    gs.scroll_offset = max(max_scroll, gs.scroll_offset - 30)
+                if mx >= 460:  # Only scroll when mouse is over shop panel
+                    if event.y > 0:
+                        gs.scroll_offset = min(0, gs.scroll_offset + 40)
+                    elif event.y < 0:
+                        max_scroll = min(0, -(len(UPGRADES) * 71 - (HEIGHT - 70)))
+                        gs.scroll_offset = max(max_scroll, gs.scroll_offset - 40)
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_s:
