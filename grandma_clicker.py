@@ -63,15 +63,11 @@ def _clamp(v):
 
 def _make_sound(freq, duration=0.12, volume=0.35, wave="sine", freq_end=None):
     """Generate a short sound effect from a waveform."""
-    sample_rate = 44100
-    n_samples = int(sample_rate * duration)
-    buf = arr_mod.array("h")  # signed 16-bit
-    for i in range(n_samples):
-        t = i / sample_rate
-        if freq_end is not None:
-            f = freq + (freq_end - freq) * (i / n_samples)
-        else:
-            f = freq
+    sr = 44100; n = int(sr * duration)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sr
+        f = freq + (freq_end - freq) * (i / n) if freq_end is not None else freq
         if wave == "sine":
             val = math.sin(2 * math.pi * f * t)
         elif wave == "square":
@@ -80,324 +76,331 @@ def _make_sound(freq, duration=0.12, volume=0.35, wave="sine", freq_end=None):
             val = 2.0 * (f * t % 1.0) - 1.0
         else:
             val = math.sin(2 * math.pi * f * t)
-        env = max(0, 1.0 - (i / n_samples) * 0.8)
-        sample = int(val * volume * 32767 * env)
-        sample = max(-32767, min(32767, sample))
-        buf.append(sample)
-    snd = pygame.mixer.Sound(buffer=buf)
-    return snd
+        env = max(0, 1.0 - (i / n) * 0.8)
+        buf.append(_clamp(val * volume * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
 
 
-def _make_wet_fart():
-    """Big wet fart — the classic."""
-    sr = 44100; dur = 0.45; n = int(sr * dur)
+# ─── CLICK SOUNDS (low-pitched, goofy, over-the-top) ───────────────────
+
+def _make_mega_fart():
+    """Massive, deep, rumbly fart that could shake a room."""
+    sr = 44100; dur = 0.55; n = int(sr * dur)
     buf = arr_mod.array("h")
     for i in range(n):
         t = i / sr
-        rumble = math.sin(2 * math.pi * (55 + 30 * math.sin(2 * math.pi * 6 * t)) * t)
-        buzz = (1.0 if math.sin(2 * math.pi * 120 * t) > 0 else -1.0) * 0.4
-        noise = random.uniform(-0.6, 0.6)
-        flutter = math.sin(2 * math.pi * 15 * t) * 0.3  # flappy vibration
-        val = (rumble * 0.4 + buzz + noise + flutter)
-        # Swell then decay
-        if t < 0.05:
-            env = t / 0.05
-        elif t < 0.15:
+        # Very low base frequency with wobble
+        base_f = 35 + 15 * math.sin(2 * math.pi * 4 * t)
+        rumble = math.sin(2 * math.pi * base_f * t)
+        # Flappy lips vibration
+        flap = math.sin(2 * math.pi * 18 * t) * math.sin(2 * math.pi * 45 * t)
+        # Noisy crackle
+        noise = random.uniform(-0.4, 0.4)
+        val = rumble * 0.5 + flap * 0.3 + noise * 0.2
+        # Big attack, slow taper
+        if t < 0.04:
+            env = t / 0.04
+        elif t < 0.2:
             env = 1.0
         else:
-            env = max(0, 1.0 - (t - 0.15) / 0.3)
-        buf.append(_clamp(val * 0.7 * 32767 * env))
+            env = max(0, 1.0 - (t - 0.2) / 0.35)
+        buf.append(_clamp(val * 0.9 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
-def _make_squeaky_toy():
-    """Dog squeaky toy — absurdly high pitched squeak."""
-    sr = 44100; dur = 0.18; n = int(sr * dur)
-    buf = arr_mod.array("h")
-    for i in range(n):
-        t = i / sr
-        # Rapid pitch wobble for that rubbery squeak feel
-        f = 2000 + 800 * math.sin(2 * math.pi * 25 * t)
-        val = math.sin(2 * math.pi * f * t)
-        env = max(0, 1.0 - (t / dur) * 0.5) * (min(1, t / 0.01))  # quick attack
-        buf.append(_clamp(val * 0.75 * 32767 * env))
-    return pygame.mixer.Sound(buffer=buf)
-
-
-def _make_old_man_cough():
-    """Grandpa-style cough — burst of noise."""
+def _make_tuba_blast():
+    """Obnoxious tuba BWAAAH — deep brass honk."""
     sr = 44100; dur = 0.3; n = int(sr * dur)
     buf = arr_mod.array("h")
     for i in range(n):
         t = i / sr
-        noise = random.uniform(-1, 1)
-        # Two bursts
-        if t < 0.08:
-            env = (1.0 - t / 0.08) * 0.9
-        elif t < 0.12:
-            env = 0.1
-        elif t < 0.22:
-            env = (1.0 - (t - 0.12) / 0.1) * 0.7
-        else:
-            env = max(0, 0.2 - (t - 0.22) / 0.08)
-        tone = math.sin(2 * math.pi * 180 * t) * 0.3
-        buf.append(_clamp((noise * 0.7 + tone) * 0.7 * 32767 * env))
+        f = 58  # very low Bb
+        # Rich brass harmonics
+        val = (math.sin(2 * math.pi * f * t) * 0.5 +
+               math.sin(2 * math.pi * f * 2 * t) * 0.3 +
+               math.sin(2 * math.pi * f * 3 * t) * 0.15 +
+               math.sin(2 * math.pi * f * 4 * t) * 0.05)
+        env = min(1, t / 0.02) * max(0, 1 - t / dur * 0.5)
+        buf.append(_clamp(val * 0.85 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
-def _make_cartoon_boing():
-    """Classic cartoon spring boing — rapidly oscillating pitch."""
-    sr = 44100; dur = 0.35; n = int(sr * dur)
+def _make_deep_bonk():
+    """Heavy cartoon bonk — like getting hit with an anvil."""
+    sr = 44100; dur = 0.25; n = int(sr * dur)
     buf = arr_mod.array("h")
     for i in range(n):
         t = i / sr
-        # Bouncing frequency that oscillates and decays
-        f = 300 + 500 * abs(math.sin(2 * math.pi * 8 * t)) * max(0, 1 - t / dur)
-        val = math.sin(2 * math.pi * f * t)
-        env = max(0, 1.0 - t / dur * 0.7)
-        buf.append(_clamp(val * 0.8 * 32767 * env))
+        # Very low impact tone that drops
+        f = 120 * max(0, 1 - t / dur * 2) + 40
+        val = (1.0 if math.sin(2 * math.pi * f * t) > 0 else -1.0)
+        noise = random.uniform(-0.3, 0.3) if t < 0.05 else 0
+        val = val * 0.7 + noise
+        env = max(0, 1.0 - t / dur)
+        buf.append(_clamp(val * 0.9 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
-def _make_slide_whistle_down():
-    """Cartoon fail slide whistle going DOWN — wah wah."""
+def _make_belly_flop():
+    """Belly flop splat — heavy impact + wobble."""
+    sr = 44100; dur = 0.3; n = int(sr * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sr
+        if t < 0.03:
+            # Initial slap — burst of noise
+            val = random.uniform(-1, 1)
+            env = 1.0
+        else:
+            # Deep wobbling aftermath
+            f = 50 + 30 * math.sin(2 * math.pi * 6 * t)
+            val = math.sin(2 * math.pi * f * t)
+            noise = random.uniform(-0.15, 0.15)
+            val = val * 0.7 + noise
+            env = max(0, 1.0 - (t - 0.03) / (dur - 0.03))
+        buf.append(_clamp(val * 0.85 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+
+def _make_toilet_flush():
+    """Toilet swirl sound — descending warble into gurgle."""
     sr = 44100; dur = 0.5; n = int(sr * dur)
     buf = arr_mod.array("h")
     for i in range(n):
         t = i / sr
-        # Slide from high to low with a wobble
-        f = 1500 * (1.0 - t / dur * 0.85) + 20 * math.sin(2 * math.pi * 4 * t)
-        val = math.sin(2 * math.pi * f * t)
-        env = max(0, 1.0 - t / dur * 0.6)
-        buf.append(_clamp(val * 0.7 * 32767 * env))
+        progress = t / dur
+        # Descending swirl
+        f = 200 * (1 - progress * 0.8) + 30
+        swirl = math.sin(2 * math.pi * f * t + 5 * math.sin(2 * math.pi * 3 * t))
+        gurgle = random.uniform(-0.3, 0.3) * (0.3 + progress * 0.7)
+        val = swirl * 0.6 + gurgle
+        env = min(1, t / 0.03) * max(0, 1 - progress * 0.4)
+        buf.append(_clamp(val * 0.8 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
-def _make_burp():
-    """Big grandpa burp."""
-    sr = 44100; dur = 0.4; n = int(sr * dur)
-    buf = arr_mod.array("h")
-    for i in range(n):
-        t = i / sr
-        # Low gurgling + buzz
-        f = 70 + 20 * math.sin(2 * math.pi * 8 * t)
-        rumble = math.sin(2 * math.pi * f * t)
-        buzz = (1.0 if math.sin(2 * math.pi * 90 * t) > 0 else -1.0)
-        noise = random.uniform(-0.3, 0.3)
-        val = rumble * 0.5 + buzz * 0.3 + noise
-        if t < 0.03:
-            env = t / 0.03
-        else:
-            env = max(0, 1.0 - (t - 0.03) / (dur - 0.03))
-        buf.append(_clamp(val * 0.75 * 32767 * env))
-    return pygame.mixer.Sound(buffer=buf)
-
-
-def _make_slip_fall():
-    """Cartoon slip and fall — descending slide + impact."""
-    sr = 44100; dur = 0.35; n = int(sr * dur)
+def _make_grandpa_snore():
+    """One big snore — inhale + vibrate exhale."""
+    sr = 44100; dur = 0.5; n = int(sr * dur)
     buf = arr_mod.array("h")
     for i in range(n):
         t = i / sr
         if t < 0.2:
-            # Descending whistle
-            f = 1200 - 4000 * t
-            val = math.sin(2 * math.pi * max(f, 100) * t)
-            env = 0.8
-        else:
-            # Impact bonk
-            f = 80
-            val = (1.0 if math.sin(2 * math.pi * f * t) > 0 else -1.0)
+            # Inhale — rising noise
             noise = random.uniform(-0.5, 0.5)
-            val = val * 0.5 + noise * 0.5
-            env = max(0, 1.0 - (t - 0.2) / 0.15)
+            tone = math.sin(2 * math.pi * 90 * t) * 0.3
+            env = (t / 0.2) * 0.7
+            val = noise * 0.5 + tone
+        else:
+            # Exhale — deep vibrating buzz
+            f = 55 + 10 * math.sin(2 * math.pi * 12 * t)
+            val = math.sin(2 * math.pi * f * t)
+            rattle = (1.0 if math.sin(2 * math.pi * 25 * t) > 0 else -1.0) * 0.3
+            val = val * 0.5 + rattle
+            env = max(0, 1.0 - (t - 0.2) / 0.3) * 0.8
+        buf.append(_clamp(val * 0.85 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+
+def _make_foghorn():
+    """Deep foghorn BWOOOOO — low and loud."""
+    sr = 44100; dur = 0.4; n = int(sr * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sr
+        f = 75  # very deep
+        val = (math.sin(2 * math.pi * f * t) * 0.6 +
+               math.sin(2 * math.pi * f * 1.5 * t) * 0.25 +
+               math.sin(2 * math.pi * f * 2 * t) * 0.15)
+        # Slight wobble
+        val *= (1 + 0.2 * math.sin(2 * math.pi * 2 * t))
+        env = min(1, t / 0.04) * max(0, 1 - (t / dur) * 0.3)
+        buf.append(_clamp(val * 0.85 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+
+def _make_cartoon_fall():
+    """Long cartoon falling whistle — starts mid, goes DEEP."""
+    sr = 44100; dur = 0.4; n = int(sr * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sr
+        progress = t / dur
+        f = 400 * (1 - progress) ** 2 + 30  # exponential drop to bass
+        val = math.sin(2 * math.pi * f * t)
+        env = min(1, t / 0.02) * max(0.2, 1 - progress * 0.5)
         buf.append(_clamp(val * 0.8 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
-def _make_honk():
-    """Clown horn honk — HONK HONK."""
-    sr = 44100; dur = 0.25; n = int(sr * dur)
+def _make_deep_boing():
+    """Super deep cartoon boing — DOIOIOIOING."""
+    sr = 44100; dur = 0.4; n = int(sr * dur)
     buf = arr_mod.array("h")
     for i in range(n):
         t = i / sr
-        f = 280
-        val = math.sin(2 * math.pi * f * t) + 0.5 * math.sin(2 * math.pi * f * 3 * t)
-        # Two honks
-        if t < 0.1:
-            env = 0.9
-        elif t < 0.13:
-            env = 0.1
-        else:
-            env = max(0, 0.9 - (t - 0.13) / 0.12)
-        buf.append(_clamp(val * 0.75 * 32767 * env))
+        # Low frequency that bounces
+        bounce = abs(math.sin(2 * math.pi * 6 * t))
+        f = 60 + 80 * bounce * max(0, 1 - t / dur)
+        val = math.sin(2 * math.pi * f * t)
+        env = max(0, 1.0 - t / dur * 0.6)
+        buf.append(_clamp(val * 0.85 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
-def _make_rubber_duck():
-    """Exaggerated rubber duck — SQUEEEAK then drop."""
-    sr = 44100; dur = 0.2; n = int(sr * dur)
-    buf = arr_mod.array("h")
-    for i in range(n):
-        t = i / sr
-        # High squeak that drops
-        f = 1800 - 3000 * (t / dur)
-        f = max(f, 300)
-        val = (1.0 if math.sin(2 * math.pi * f * t) > 0 else -1.0)
-        env = max(0, 1.0 - t / dur * 0.4) * min(1, t / 0.008)
-        buf.append(_clamp(val * 0.7 * 32767 * env))
-    return pygame.mixer.Sound(buffer=buf)
-
-
-def _make_whoopee_cushion():
-    """Long, glorious whoopee cushion — the full experience."""
-    sr = 44100; dur = 0.6; n = int(sr * dur)
-    buf = arr_mod.array("h")
-    for i in range(n):
-        t = i / sr
-        # Flapping + rumble + noise
-        flap_rate = 20 + 15 * (t / dur)  # flapping speeds up
-        flap = math.sin(2 * math.pi * flap_rate * t)
-        rumble = math.sin(2 * math.pi * (60 + 10 * flap) * t)
-        noise = random.uniform(-0.5, 0.5)
-        val = (rumble * 0.4 + abs(flap) * noise * 0.4 + flap * 0.2)
-        # Build up then decay
-        if t < 0.08:
-            env = t / 0.08
-        elif t < dur * 0.4:
-            env = 1.0
-        else:
-            env = max(0, 1.0 - (t - dur * 0.4) / (dur * 0.6))
-        buf.append(_clamp(val * 0.8 * 32767 * env))
-    return pygame.mixer.Sound(buffer=buf)
-
-
-def _make_record_scratch():
-    """DJ record scratch — ziiiip."""
-    sr = 44100; dur = 0.2; n = int(sr * dur)
-    buf = arr_mod.array("h")
-    for i in range(n):
-        t = i / sr
-        f = 3000 * (1 - t / dur) + 100
-        val = (2.0 * (f * t % 1.0) - 1.0)  # sawtooth
-        noise = random.uniform(-0.2, 0.2)
-        env = max(0, 1.0 - t / dur * 0.5)
-        buf.append(_clamp((val + noise) * 0.6 * 32767 * env))
-    return pygame.mixer.Sound(buffer=buf)
-
-
-def _make_yodel():
-    """Tiny yodel — alternating high and low really fast."""
+def _make_explosion():
+    """Cartoon explosion — KABOOM bass hit + rumble."""
     sr = 44100; dur = 0.35; n = int(sr * dur)
     buf = arr_mod.array("h")
     for i in range(n):
         t = i / sr
-        # Alternate between low and high rapidly
-        cycle = math.sin(2 * math.pi * 12 * t)
-        f = 400 if cycle > 0 else 800
-        val = math.sin(2 * math.pi * f * t)
-        env = max(0, 1.0 - t / dur * 0.7)
+        if t < 0.04:
+            # Initial blast — noise + bass
+            val = random.uniform(-1, 1) * 0.6 + math.sin(2 * math.pi * 40 * t) * 0.4
+            env = 1.0
+        else:
+            # Deep rumbling decay
+            f = 35 + 10 * random.uniform(-1, 1)
+            val = math.sin(2 * math.pi * f * t) * 0.5 + random.uniform(-0.3, 0.3)
+            env = max(0, 1 - (t - 0.04) / (dur - 0.04))
+        buf.append(_clamp(val * 0.9 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+
+def _make_deep_honk():
+    """Deep clown horn — comically low HONK HONK."""
+    sr = 44100; dur = 0.3; n = int(sr * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sr
+        f = 90  # much lower than before
+        val = (math.sin(2 * math.pi * f * t) +
+               0.4 * math.sin(2 * math.pi * f * 3 * t) +
+               0.2 * math.sin(2 * math.pi * f * 5 * t))
+        # Two honks
+        if t < 0.12:
+            env = 0.9
+        elif t < 0.16:
+            env = 0.05
+        else:
+            env = max(0, 0.9 - (t - 0.16) / 0.14)
         buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
-def _make_cha_ching():
-    """Ka-ching purchase sound."""
-    sr = 44100; dur = 0.25; n = int(sr * dur)
+def _make_bass_drop():
+    """Dubstep bass drop — BWWWWUB."""
+    sr = 44100; dur = 0.3; n = int(sr * dur)
     buf = arr_mod.array("h")
     for i in range(n):
         t = i / sr
-        f = 1200 if t < 0.12 else 1600
-        val = math.sin(2 * math.pi * f * t)
-        env = max(0, 1.0 - (t / dur))
-        buf.append(_clamp(val * 0.7 * 32767 * env))
+        # Rapidly descending into sub bass
+        f = 300 * max(0, 1 - t / dur * 3) + 30
+        val = 1.0 if math.sin(2 * math.pi * f * t) > 0 else -1.0
+        # Add wobble
+        val *= (1 + 0.5 * math.sin(2 * math.pi * 8 * t))
+        env = max(0, 1 - t / dur * 0.6)
+        buf.append(_clamp(val * 0.6 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+
+# ─── UI / EVENT SOUNDS ─────────────────────────────────────────────────
+
+def _make_cha_ching():
+    """Ka-ching purchase — lower, punchier."""
+    sr = 44100; dur = 0.2; n = int(sr * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sr
+        f = 600 if t < 0.08 else 800
+        val = math.sin(2 * math.pi * f * t) + 0.3 * math.sin(2 * math.pi * f * 2 * t)
+        env = max(0, 1.0 - t / dur * 0.7)
+        buf.append(_clamp(val * 0.75 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
 def _make_fail():
-    """Sad trombone wah-wah-wah-wahhh."""
+    """Tuba sad trombone — wah wah wah wahhh (LOW)."""
     sr = 44100
-    notes = [(350, 0.2), (330, 0.2), (311, 0.2), (293, 0.4)]  # Bb-A-Ab-G descending
+    notes = [(175, 0.2), (165, 0.2), (156, 0.2), (147, 0.45)]  # one octave lower
     buf = arr_mod.array("h")
     for freq, dur in notes:
         n = int(sr * dur)
         for i in range(n):
             t = i / sr
-            # Trombone-like: fundamental + harmonics
-            val = (math.sin(2 * math.pi * freq * t) * 0.6 +
-                   math.sin(2 * math.pi * freq * 2 * t) * 0.25 +
-                   math.sin(2 * math.pi * freq * 3 * t) * 0.15)
-            # Vibrato on last note
-            if freq == 293:
-                val *= (1 + 0.3 * math.sin(2 * math.pi * 5 * t))
+            val = (math.sin(2 * math.pi * freq * t) * 0.5 +
+                   math.sin(2 * math.pi * freq * 2 * t) * 0.3 +
+                   math.sin(2 * math.pi * freq * 3 * t) * 0.15 +
+                   math.sin(2 * math.pi * freq * 4 * t) * 0.05)
+            if freq == 147:
+                val *= (1 + 0.4 * math.sin(2 * math.pi * 4 * t))
             env = max(0, 1.0 - (i / n) * 0.3)
-            buf.append(_clamp(val * 0.65 * 32767 * env))
-    return pygame.mixer.Sound(buffer=buf)
-
-
-def _make_golden():
-    """Magical sparkle — ascending chime cascade."""
-    sr = 44100; dur = 0.5; n = int(sr * dur)
-    buf = arr_mod.array("h")
-    for i in range(n):
-        t = i / sr
-        # Multiple sparkle tones that shimmer
-        val = (math.sin(2 * math.pi * (1200 + 200 * math.sin(2 * math.pi * 7 * t)) * t) * 0.4 +
-               math.sin(2 * math.pi * (1800 + 300 * math.sin(2 * math.pi * 11 * t)) * t) * 0.3 +
-               math.sin(2 * math.pi * (2400 + 150 * math.sin(2 * math.pi * 5 * t)) * t) * 0.2)
-        env = max(0, 1.0 - t / dur * 0.6)
-        buf.append(_clamp(val * 0.7 * 32767 * env))
-    return pygame.mixer.Sound(buffer=buf)
-
-
-def _make_milestone():
-    """MLG air horn — dun dun dun DUNNN."""
-    sr = 44100
-    buf = arr_mod.array("h")
-    # Three short blasts then one long
-    pattern = [(0.08, 1.0), (0.04, 0.0), (0.08, 1.0), (0.04, 0.0), (0.08, 1.0), (0.06, 0.0), (0.3, 1.0)]
-    for dur, on in pattern:
-        n = int(sr * dur)
-        for i in range(n):
-            t = i / sr
-            if on > 0:
-                val = (math.sin(2 * math.pi * 540 * t) * 0.5 +
-                       math.sin(2 * math.pi * 810 * t) * 0.3 +
-                       math.sin(2 * math.pi * 1080 * t) * 0.2)
-                env = 0.9
-            else:
-                val = 0; env = 0
-            buf.append(_clamp(val * 0.75 * 32767 * env))
-    return pygame.mixer.Sound(buffer=buf)
-
-
-def _make_save():
-    """Mario coin sound — bling!"""
-    sr = 44100
-    buf = arr_mod.array("h")
-    # B5 then E6
-    for freq, dur in [(988, 0.08), (1319, 0.2)]:
-        n = int(sr * dur)
-        for i in range(n):
-            t = i / sr
-            val = math.sin(2 * math.pi * freq * t) + 0.3 * math.sin(2 * math.pi * freq * 2 * t)
-            env = max(0, 1.0 - (i / n) * 0.5)
             buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
 
+def _make_golden():
+    """Low magical sparkle — deep chimes."""
+    sr = 44100; dur = 0.5; n = int(sr * dur)
+    buf = arr_mod.array("h")
+    for i in range(n):
+        t = i / sr
+        val = (math.sin(2 * math.pi * (400 + 80 * math.sin(2 * math.pi * 5 * t)) * t) * 0.4 +
+               math.sin(2 * math.pi * (600 + 100 * math.sin(2 * math.pi * 7 * t)) * t) * 0.35 +
+               math.sin(2 * math.pi * (200 + 50 * math.sin(2 * math.pi * 3 * t)) * t) * 0.25)
+        env = max(0, 1.0 - t / dur * 0.5)
+        buf.append(_clamp(val * 0.75 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+
+def _make_milestone():
+    """Deep air horn — three blasts + long BWAAAAH."""
+    sr = 44100; buf = arr_mod.array("h")
+    pattern = [(0.1, True), (0.05, False), (0.1, True), (0.05, False),
+               (0.1, True), (0.06, False), (0.35, True)]
+    for dur, on in pattern:
+        n = int(sr * dur)
+        for i in range(n):
+            t = i / sr
+            if on:
+                f = 180  # low air horn
+                val = (math.sin(2 * math.pi * f * t) * 0.5 +
+                       math.sin(2 * math.pi * f * 1.5 * t) * 0.3 +
+                       math.sin(2 * math.pi * f * 2 * t) * 0.2)
+                env = 0.9
+            else:
+                val = 0; env = 0
+            buf.append(_clamp(val * 0.8 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+
+def _make_save():
+    """Chunky save sound — low bloop bloop."""
+    sr = 44100; buf = arr_mod.array("h")
+    for freq, dur in [(250, 0.08), (350, 0.15)]:
+        n = int(sr * dur)
+        for i in range(n):
+            t = i / sr
+            val = math.sin(2 * math.pi * freq * t) + 0.25 * math.sin(2 * math.pi * freq * 2 * t)
+            env = max(0, 1 - (i / n) * 0.5)
+            buf.append(_clamp(val * 0.75 * 32767 * env))
+    return pygame.mixer.Sound(buffer=buf)
+
+
 def _make_rebirth():
-    """Epic ascending rebirth fanfare — dramatic."""
+    """Deep epic rebirth — ascending from sub bass."""
     sr = 44100
-    notes = [(440, 0.08), (554, 0.08), (659, 0.08), (880, 0.1),
-             (1047, 0.1), (1319, 0.15), (1760, 0.25)]
+    notes = [(110, 0.08), (147, 0.08), (165, 0.08), (220, 0.1),
+             (262, 0.1), (330, 0.12), (440, 0.2)]
     buf = arr_mod.array("h")
     for freq, dur in notes:
         n = int(sr * dur)
         for i in range(n):
             t = i / sr
-            val = math.sin(2 * math.pi * freq * t) + 0.3 * math.sin(2 * math.pi * freq * 2 * t)
-            env = max(0, 1.0 - (i / n) * 0.4)
+            val = (math.sin(2 * math.pi * freq * t) +
+                   0.3 * math.sin(2 * math.pi * freq * 2 * t) +
+                   0.15 * math.sin(2 * math.pi * freq * 3 * t))
+            env = max(0, 1.0 - (i / n) * 0.3)
             buf.append(_clamp(val * 0.7 * 32767 * env))
     return pygame.mixer.Sound(buffer=buf)
 
@@ -412,20 +415,20 @@ SFX = {
     "rebirth": _make_rebirth(),
 }
 
-# All the funny click sounds — every click picks randomly from these
+# All the funny click sounds — deep, goofy, ridiculous
 _click_sounds = [
-    _make_wet_fart(),
-    _make_squeaky_toy(),
-    _make_old_man_cough(),
-    _make_cartoon_boing(),
-    _make_slide_whistle_down(),
-    _make_burp(),
-    _make_slip_fall(),
-    _make_honk(),
-    _make_rubber_duck(),
-    _make_whoopee_cushion(),
-    _make_record_scratch(),
-    _make_yodel(),
+    _make_mega_fart(),
+    _make_tuba_blast(),
+    _make_deep_bonk(),
+    _make_belly_flop(),
+    _make_toilet_flush(),
+    _make_grandpa_snore(),
+    _make_foghorn(),
+    _make_cartoon_fall(),
+    _make_deep_boing(),
+    _make_explosion(),
+    _make_deep_honk(),
+    _make_bass_drop(),
 ]
 
 def play_sfx(name):
