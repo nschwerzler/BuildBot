@@ -996,8 +996,8 @@ class GameState:
 
     def click(self):
         amount = self.click_power * self.multiplier * self.rebirth_multiplier
-        if amount > 1e30:
-            amount = 1e30
+        if amount != amount or amount == float('inf'):
+            amount = 1e300
         self.cookies += amount
         self.total_cookies += amount
         self.lifetime_cookies += amount
@@ -1007,28 +1007,34 @@ class GameState:
 
     def get_rebirth_cost(self):
         try:
-            cost = int(1_000_000 * (2 ** min(self.rebirths, 1000)))
+            cost = 1_000_000 * (2 ** min(self.rebirths, 1000))
+            if cost == float('inf') or cost != cost:
+                cost = 1e300
         except (OverflowError, ValueError):
-            cost = int(1e30)
-        return min(cost, int(1e30))
+            cost = 1e300
+        return cost
 
     def can_rebirth(self):
         return self.cookies >= self.get_rebirth_cost()
 
     def _cap_values(self):
-        """Prevent any value from becoming inf."""
-        cap = 1e30
-        self.cookies = min(self.cookies, cap)
-        self.total_cookies = min(self.total_cookies, cap)
-        self.lifetime_cookies = min(self.lifetime_cookies, cap)
-        self.rebirth_multiplier = min(self.rebirth_multiplier, 1e15)
+        """Prevent values from becoming actual inf/nan."""
+        cap = 1e300
+        if self.cookies != self.cookies or self.cookies == float('inf'):
+            self.cookies = cap
+        if self.total_cookies != self.total_cookies or self.total_cookies == float('inf'):
+            self.total_cookies = cap
+        if self.lifetime_cookies != self.lifetime_cookies or self.lifetime_cookies == float('inf'):
+            self.lifetime_cookies = cap
+        if self.rebirth_multiplier != self.rebirth_multiplier or self.rebirth_multiplier == float('inf'):
+            self.rebirth_multiplier = 1e200
 
     def rebirth(self):
         cost = self.get_rebirth_cost()
         if self.cookies < cost:
             return False
         self.rebirths += 1
-        self.rebirth_multiplier = min(2.0 ** min(self.rebirths, 1000), 1e15)
+        self.rebirth_multiplier = min(2.0 ** min(self.rebirths, 1000), 1e200)
         # Reset progress but keep lifetime stats & rebirths
         self.cookies = 0.0
         self.total_cookies = 0.0
@@ -1050,8 +1056,8 @@ class GameState:
     def update(self, dt):
         # CPS
         earned = self.cps * self.multiplier * self.rebirth_multiplier * dt
-        if earned > 1e30:
-            earned = 1e30
+        if earned != earned or earned == float('inf'):
+            earned = 1e300
         self.cookies += earned
         self.total_cookies += earned
         self.lifetime_cookies += earned
@@ -1164,24 +1170,27 @@ class GameState:
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────
+# Number suffixes that scale practically to infinity
+_SUFFIXES = [
+    (1e63, "Vigintillion"), (1e60, "Novemdecillion"), (1e57, "Octodecillion"),
+    (1e54, "Septendecillion"), (1e51, "Sexdecillion"), (1e48, "Quindecillion"),
+    (1e45, "Quattuordecillion"), (1e42, "Tredecillion"), (1e39, "Duodecillion"),
+    (1e36, "Undecillion"), (1e33, "Decillion"), (1e30, "Nonillion"),
+    (1e27, "Octillion"), (1e24, "Septillion"), (1e21, "Sextillion"),
+    (1e18, "Quintillion"), (1e15, "Quadrillion"), (1e12, "Trillion"),
+    (1e9, "Billion"), (1e6, "Million"),
+]
+
 def format_number(n):
     if n != n or n == float('inf') or n == float('-inf'):
         return "∞"
     n = float(n)
-    if abs(n) >= 1e18:
-        return f"{n / 1e18:.1f} Quintillion"
-    elif abs(n) >= 1e15:
-        return f"{n / 1e15:.1f} Quadrillion"
-    elif abs(n) >= 1e12:
-        return f"{n / 1e12:.1f} Trillion"
-    elif abs(n) >= 1e9:
-        return f"{n / 1e9:.1f} Billion"
-    elif abs(n) >= 1e6:
-        return f"{n / 1e6:.1f} Million"
-    elif abs(n) >= 1e3:
+    for threshold, name in _SUFFIXES:
+        if abs(n) >= threshold:
+            return f"{n / threshold:.1f} {name}"
+    if abs(n) >= 1e3:
         return f"{n / 1e3:.1f}K"
-    else:
-        return f"{int(n)}"
+    return f"{int(n)}"
 
 
 def draw_rounded_rect(surface, color, rect, radius=12, border=0, border_color=None):
@@ -1725,7 +1734,7 @@ def handle_dev_action(gs, action):
         gs.notif_timer = 2.0
     elif action == "add_rebirths":
         gs.rebirths += 10
-        gs.rebirth_multiplier = min(2.0 ** min(gs.rebirths, 1000), 1e15)
+        gs.rebirth_multiplier = min(2.0 ** min(gs.rebirths, 1000), 1e200)
         gs.notification = f"🔧 DEV: +10 rebirths! Now {format_number(gs.rebirth_multiplier)}x"
         gs.notif_timer = 2.0
     elif action == "big_mult":

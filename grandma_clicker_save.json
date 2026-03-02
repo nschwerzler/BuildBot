@@ -1,7 +1,7 @@
 {
-  "cookies": 3095.8074999818195,
-  "total_cookies": 3177.8074999803957,
-  "total_clicks": 50,
+  "cookies": 3166.9959999805083,
+  "total_cookies": 3248.995999979166,
+  "total_clicks": 45,
   "click_power": 3,
   "cps": 0.5,
   "owned": [
@@ -43,5 +43,5 @@
   "multiplier_timer": 0.0,
   "rebirths": 0,
   "rebirth_multiplier": 1.0,
-  "lifetime_cookies": 3.857500000000019
+  "lifetime_cookies": 120.02599999997942
 }
