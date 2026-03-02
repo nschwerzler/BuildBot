@@ -1,0 +1,2580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Realm Runners: The Ultimate Adventure</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; cursor: crosshair; }
+canvas { display: block; }
+
+/* HUD */
+#hud { position: fixed; top: 0; left: 0; width: 100%; pointer-events: none; z-index: 100; }
+#health-bar, #stamina-bar, #xp-bar { height: 8px; border-radius: 4px; transition: width 0.3s; }
+#health-container, #stamina-container, #xp-container {
+  position: absolute; height: 8px; border-radius: 4px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3);
+}
+#health-container { top: 12px; left: 12px; width: 200px; }
+#health-bar { background: linear-gradient(90deg, #ff4444, #ff6666); width: 100%; }
+#stamina-container { top: 26px; left: 12px; width: 160px; }
+#stamina-bar { background: linear-gradient(90deg, #44cc44, #66ff66); width: 100%; }
+#xp-container { top: 40px; left: 12px; width: 140px; }
+#xp-bar { background: linear-gradient(90deg, #4488ff, #66aaff); width: 0%; }
+
+#level-display { position: absolute; top: 8px; left: 220px; color: #ffd700; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+#coin-display { position: absolute; top: 8px; right: 12px; color: #ffd700; font-size: 16px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+#zone-display { position: absolute; top: 30px; right: 12px; color: #aaddff; font-size: 13px; text-shadow: 1px 1px 2px #000; }
+#quest-display { position: absolute; top: 52px; right: 12px; color: #ffcc66; font-size: 12px; text-shadow: 1px 1px 2px #000; max-width: 250px; text-align: right; }
+
+/* Minimap */
+#minimap { position: fixed; bottom: 12px; right: 12px; width: 150px; height: 150px; border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; overflow: hidden; z-index: 100; background: rgba(0,30,0,0.6); }
+#minimap canvas { width: 100%; height: 100%; border-radius: 50%; }
+
+/* Crosshair */
+#crosshair { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 20px; height: 20px; z-index: 100; pointer-events: none; }
+#crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(255,255,255,0.7); }
+#crosshair::before { width: 2px; height: 20px; left: 9px; top: 0; }
+#crosshair::after { width: 20px; height: 2px; left: 0; top: 9px; }
+
+/* Notifications */
+#notifications { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 200; pointer-events: none; }
+.notification { background: rgba(0,0,0,0.8); color: #fff; padding: 8px 20px; border-radius: 6px; margin-bottom: 6px;
+  font-size: 14px; text-align: center; animation: notifIn 0.3s ease, notifOut 0.5s ease 2.5s forwards; border: 1px solid rgba(255,255,255,0.2); }
+@keyframes notifIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes notifOut { to { opacity: 0; transform: translateY(-20px); } }
+
+/* Dialogue */
+#dialogue-box { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); width: 600px; max-width: 90%;
+  background: rgba(0,0,20,0.9); border: 2px solid #4488cc; border-radius: 12px; padding: 20px; z-index: 300;
+  display: none; color: #fff; pointer-events: auto; }
+#dialogue-name { color: #ffd700; font-weight: bold; font-size: 16px; margin-bottom: 8px; }
+#dialogue-text { font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
+#dialogue-choices { display: flex; flex-direction: column; gap: 6px; }
+.dialogue-choice { background: rgba(68,136,204,0.3); border: 1px solid #4488cc; border-radius: 6px; padding: 8px 14px;
+  color: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s; pointer-events: auto; }
+.dialogue-choice:hover { background: rgba(68,136,204,0.6); transform: translateX(4px); }
+
+/* Inventory */
+#inventory-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 500px; max-width: 90%;
+  background: rgba(0,0,20,0.95); border: 2px solid #886644; border-radius: 12px; padding: 20px; z-index: 400;
+  display: none; color: #fff; }
+#inventory-title { color: #ffd700; font-size: 18px; font-weight: bold; margin-bottom: 12px; text-align: center; }
+#inventory-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.inv-slot { width: 60px; height: 60px; background: rgba(100,80,60,0.4); border: 1px solid rgba(136,102,68,0.6);
+  border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer;
+  position: relative; transition: all 0.2s; }
+.inv-slot:hover { background: rgba(100,80,60,0.7); border-color: #ffd700; }
+.inv-slot .count { position: absolute; bottom: 2px; right: 4px; font-size: 10px; color: #ffd700; }
+.inv-slot .item-name { position: absolute; bottom: -16px; font-size: 8px; color: #ccc; white-space: nowrap; }
+
+/* Bullet Hell Overlay */
+#bullet-hell { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 400px; height: 300px;
+  background: rgba(0,0,0,0.95); border: 3px solid #ff6600; border-radius: 12px; z-index: 350; display: none; overflow: hidden; }
+#bullet-hell canvas { width: 100%; height: 100%; }
+#bh-info { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12px; }
+
+/* Title Screen */
+#title-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0a0a2e, #1a0a3e, #0a2a2e);
+  z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#title-screen h1 { font-size: 48px; color: #ffd700; text-shadow: 0 0 20px #ff8800, 0 0 40px #ff4400; margin-bottom: 8px;
+  animation: titleGlow 2s ease-in-out infinite alternate; }
+@keyframes titleGlow { from { text-shadow: 0 0 20px #ff8800, 0 0 40px #ff4400; } to { text-shadow: 0 0 30px #ffaa00, 0 0 60px #ff6600; } }
+#title-screen h2 { font-size: 18px; color: #aaddff; margin-bottom: 30px; font-weight: normal; }
+#title-screen .subtitle { font-size: 12px; color: #888; margin-bottom: 20px; max-width: 500px; text-align: center; line-height: 1.4; }
+.title-btn { background: linear-gradient(135deg, #4488cc, #2266aa); border: 2px solid #66aaee; border-radius: 8px;
+  color: #fff; padding: 12px 40px; font-size: 16px; cursor: pointer; margin: 6px; transition: all 0.3s; }
+.title-btn:hover { background: linear-gradient(135deg, #66aaee, #4488cc); transform: scale(1.05); box-shadow: 0 0 20px rgba(68,136,204,0.5); }
+#controls-info { position: absolute; bottom: 20px; color: #666; font-size: 11px; text-align: center; }
+
+/* Loading */
+#loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 600;
+  display: none; align-items: center; justify-content: center; flex-direction: column; color: #fff; }
+#loading-bar-outer { width: 300px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin-top: 20px; }
+#loading-bar-inner { width: 0%; height: 100%; background: #ffd700; border-radius: 3px; transition: width 0.3s; }
+
+/* Pause */
+#pause-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+  z-index: 450; display: none; align-items: center; justify-content: center; flex-direction: column; }
+#pause-menu h2 { color: #ffd700; font-size: 32px; margin-bottom: 20px; }
+
+/* Cooking */
+#cooking-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 400px;
+  background: rgba(20,10,0,0.95); border: 2px solid #ff8844; border-radius: 12px; padding: 20px; z-index: 400;
+  display: none; color: #fff; }
+#cooking-title { color: #ff8844; font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 12px; }
+#cooking-slots { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
+.cook-slot { width: 50px; height: 50px; background: rgba(100,60,20,0.5); border: 1px solid #ff8844; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; }
+#cook-btn { display: block; margin: 0 auto; background: #ff6600; border: none; color: #fff; padding: 8px 30px;
+  border-radius: 6px; cursor: pointer; font-size: 14px; }
+#cook-btn:hover { background: #ff8833; }
+#cook-result { text-align: center; margin-top: 8px; color: #ffd700; font-size: 13px; }
+
+/* Death Screen */
+#death-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(80,0,0,0.9);
+  z-index: 500; display: none; align-items: center; justify-content: center; flex-direction: column; }
+#death-screen h2 { color: #ff4444; font-size: 42px; margin-bottom: 10px; }
+#death-screen p { color: #ffaaaa; margin-bottom: 20px; }
+
+/* Tooltip */
+#tooltip { position: fixed; background: rgba(0,0,0,0.9); color: #fff; padding: 6px 10px; border-radius: 4px;
+  font-size: 12px; z-index: 500; display: none; pointer-events: none; border: 1px solid rgba(255,255,255,0.2); }
+
+/* Interact prompt */
+#interact-prompt { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7);
+  color: #ffd700; padding: 8px 20px; border-radius: 6px; font-size: 14px; z-index: 100; display: none;
+  border: 1px solid rgba(255,215,0,0.4); }
+</style>
+</head>
+<body>
+
+<!-- Title Screen -->
+<div id="title-screen">
+  <h1>REALM RUNNERS</h1>
+  <h2>The Ultimate Adventure</h2>
+  <div class="subtitle">
+    A 3D adventure combining Portal puzzles, Undertale choices, Donkey Kong platforming,
+    Zelda exploration, Arena combat, Cookie collecting, Pet companions, Tower climbing,
+    and so much more across 8 unique realms!
+  </div>
+  <button class="title-btn" onclick="startGame()">New Game</button>
+  <button class="title-btn" onclick="loadGame()">Continue</button>
+  <div id="controls-info">
+    WASD - Move | Mouse - Look | Space - Jump | Shift - Sprint | E - Interact | I - Inventory<br>
+    F - Attack | G - Special | Tab - Map | C - Crouch | Q - Paraglide | Esc - Pause
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading">
+  <div style="font-size:24px;">Loading Realms...</div>
+  <div id="loading-bar-outer"><div id="loading-bar-inner"></div></div>
+  <div id="loading-text" style="margin-top:10px;font-size:12px;color:#888;">Generating worlds...</div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="health-container"><div id="health-bar"></div></div>
+  <div id="stamina-container"><div id="stamina-bar"></div></div>
+  <div id="xp-container"><div id="xp-bar"></div></div>
+  <div id="level-display">Lv 1</div>
+  <div id="coin-display">🪙 0</div>
+  <div id="zone-display">Dream Hub</div>
+  <div id="quest-display"></div>
+</div>
+
+<div id="crosshair"></div>
+<div id="notifications"></div>
+<div id="interact-prompt">Press E to interact</div>
+<div id="tooltip"></div>
+
+<!-- Dialogue -->
+<div id="dialogue-box">
+  <div id="dialogue-name"></div>
+  <div id="dialogue-text"></div>
+  <div id="dialogue-choices"></div>
+</div>
+
+<!-- Inventory -->
+<div id="inventory-panel">
+  <div id="inventory-title">🎒 Inventory</div>
+  <div id="inventory-grid"></div>
+  <div style="text-align:center;margin-top:12px;color:#888;font-size:11px;">Click item to use | Press I to close</div>
+</div>
+
+<!-- Bullet Hell -->
+<div id="bullet-hell">
+  <div id="bh-info">Dodge! Move with Arrow Keys</div>
+  <canvas id="bh-canvas"></canvas>
+</div>
+
+<!-- Cooking -->
+<div id="cooking-panel">
+  <div id="cooking-title">🍳 Cooking Pot</div>
+  <div id="cooking-slots"></div>
+  <button id="cook-btn" onclick="cookItems()">Cook!</button>
+  <div id="cook-result"></div>
+  <button onclick="document.getElementById('cooking-panel').style.display='none'" style="display:block;margin:8px auto 0;background:none;border:1px solid #666;color:#aaa;padding:4px 16px;border-radius:4px;cursor:pointer;">Close</button>
+</div>
+
+<!-- Pause -->
+<div id="pause-menu">
+  <h2>⏸ Paused</h2>
+  <button class="title-btn" onclick="resumeGame()">Resume</button>
+  <button class="title-btn" onclick="saveGame()">Save Game</button>
+  <button class="title-btn" onclick="location.reload()">Main Menu</button>
+</div>
+
+<!-- Death -->
+<div id="death-screen">
+  <h2>You Fell...</h2>
+  <p>But the adventure continues!</p>
+  <button class="title-btn" onclick="respawn()">Respawn</button>
+</div>
+
+<!-- Minimap -->
+<div id="minimap"><canvas id="minimap-canvas" width="150" height="150"></canvas></div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ===================== GAME STATE =====================
+const state = {
+  hp: 100, maxHp: 100, stamina: 100, maxStamina: 100, xp: 0, xpNeeded: 100,
+  level: 1, coins: 0, zone: 'hub', attack: 10, defense: 5, speed: 0.15,
+  inventory: [], maxInventory: 24, quests: [], completedQuests: [],
+  mercyKills: { mercy: 0, fight: 0 }, cookingSlots: [null, null, null],
+  paragliding: false, crouching: false, sprinting: false,
+  artifacts: [], totalArtifacts: 8, companions: [],
+  dayTime: 0.5, daySpeed: 0.0001
+};
+
+// ===================== GLOBALS =====================
+let scene, camera, renderer, clock, player, mixer;
+let velocity = new THREE.Vector3();
+let onGround = true;
+let keys = {};
+let isDead = false;
+let arenaWave = 1;
+let mouseX = 0, mouseY = 0;
+let yaw = 0, pitch = 0;
+let locked = false;
+let paused = false;
+let entities = [];
+let collectibles = [];
+let portals = [];
+let npcs = [];
+let enemies = [];
+let projectiles = [];
+let particles = [];
+let interactTarget = null;
+let bulletHellActive = false;
+let gravity = -0.015;
+let jumpForce = 0.25;
+let sprintMult = 1.8;
+let attackCooldown = 0;
+let damageCooldown = 0;
+let minimapCtx;
+let zoneGroups = {};
+
+// Zone definitions
+const ZONES = {
+  hub: { name: 'Dream Hub', color: 0x2a4a2a, skyColor: 0x1a2a4a, groundColor: 0x3a5a3a, size: 100, y: 0 },
+  portal: { name: 'Portal Peaks', color: 0x3a3a5a, skyColor: 0x1a1a3a, groundColor: 0x4a4a6a, size: 80, y: 0 },
+  undertale: { name: 'Mercy Meadows', color: 0x2a1a3a, skyColor: 0x0a0a1a, groundColor: 0x3a2a4a, size: 70, y: 0 },
+  dk: { name: 'Jungle Rush', color: 0x1a4a1a, skyColor: 0x0a3a2a, groundColor: 0x2a5a1a, size: 80, y: 0 },
+  arena: { name: 'Battle Arena', color: 0x4a2a1a, skyColor: 0x2a1a0a, groundColor: 0x5a3a2a, size: 60, y: 0 },
+  cookie: { name: 'Cookie Kingdom', color: 0x4a3a2a, skyColor: 0x3a2a1a, groundColor: 0x6a5a3a, size: 70, y: 0 },
+  evolution: { name: 'Evolution Grove', color: 0x0a4a3a, skyColor: 0x0a2a2a, groundColor: 0x1a5a4a, size: 80, y: 0 },
+  tower: { name: 'Tower of Trials', color: 0x3a3a3a, skyColor: 0x1a1a1a, groundColor: 0x5a5a5a, size: 40, y: 0 },
+  zelda: { name: 'Hyrule Fields', color: 0x3a5a2a, skyColor: 0x4a7aaa, groundColor: 0x4a6a2a, size: 120, y: 0 }
+};
+
+// ===================== INIT =====================
+function init() {
+  scene = new THREE.Scene();
+  clock = new THREE.Clock();
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500);
+  camera.position.set(0, 3, 5);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  document.body.appendChild(renderer.domElement);
+
+  // Minimap
+  minimapCtx = document.getElementById('minimap-canvas').getContext('2d');
+
+  // Player
+  createPlayer();
+
+  // Lighting
+  setupLighting();
+
+  // Build hub world
+  buildZone('hub');
+
+  // Events
+  setupEvents();
+
+  // Start loop
+  animate();
+}
+
+// ===================== PLAYER =====================
+function createPlayer() {
+  const group = new THREE.Group();
+
+  // Body
+  const bodyGeo = new THREE.CapsuleGeometry(0.3, 0.8, 4, 8);
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4488cc, roughness: 0.6 });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = 0.7;
+  body.castShadow = true;
+  group.add(body);
+
+  // Head
+  const headGeo = new THREE.SphereGeometry(0.22, 8, 8);
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xffcc99, roughness: 0.5 });
+  const head = new THREE.Mesh(headGeo, headMat);
+  head.position.y = 1.35;
+  head.castShadow = true;
+  group.add(head);
+
+  // Eyes
+  const eyeGeo = new THREE.SphereGeometry(0.04, 6, 6);
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x2244aa, emissive: 0x112244 });
+  const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+  eyeL.position.set(-0.08, 1.38, -0.18);
+  group.add(eyeL);
+  const eyeR = eyeL.clone();
+  eyeR.position.x = 0.08;
+  group.add(eyeR);
+
+  // Cape
+  const capeGeo = new THREE.PlaneGeometry(0.5, 0.7);
+  const capeMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, side: THREE.DoubleSide, roughness: 0.8 });
+  const cape = new THREE.Mesh(capeGeo, capeMat);
+  cape.position.set(0, 0.8, 0.25);
+  cape.rotation.x = 0.15;
+  group.add(cape);
+
+  // Sword (right hand)
+  const swordGeo = new THREE.BoxGeometry(0.05, 0.6, 0.05);
+  const swordMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
+  const sword = new THREE.Mesh(swordGeo, swordMat);
+  sword.position.set(-0.4, 0.6, -0.1);
+  sword.rotation.z = 0.3;
+  sword.name = 'sword';
+  group.add(sword);
+
+  // Handle
+  const handleGeo = new THREE.BoxGeometry(0.07, 0.12, 0.07);
+  const handleMat = new THREE.MeshStandardMaterial({ color: 0x884422 });
+  const handle = new THREE.Mesh(handleGeo, handleMat);
+  handle.position.set(-0.4, 0.28, -0.1);
+  group.add(handle);
+
+  group.position.set(0, 1, 0);
+  group.castShadow = true;
+  player = group;
+  scene.add(player);
+}
+
+// ===================== LIGHTING =====================
+function setupLighting() {
+  const ambient = new THREE.AmbientLight(0x404060, 0.5);
+  scene.add(ambient);
+
+  const sun = new THREE.DirectionalLight(0xffeedd, 1.2);
+  sun.position.set(50, 80, 30);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far = 200;
+  sun.shadow.camera.left = -60;
+  sun.shadow.camera.right = 60;
+  sun.shadow.camera.top = 60;
+  sun.shadow.camera.bottom = -60;
+  sun.name = 'sun';
+  scene.add(sun);
+
+  const hemi = new THREE.HemisphereLight(0x87ceeb, 0x362907, 0.4);
+  scene.add(hemi);
+
+  // Fog
+  scene.fog = new THREE.FogExp2(0x1a2a4a, 0.008);
+}
+
+// ===================== ZONE BUILDERS =====================
+function clearZone() {
+  // Remove old dynamic objects
+  entities.forEach(e => scene.remove(e.mesh));
+  collectibles.forEach(c => scene.remove(c.mesh));
+  portals.forEach(p => scene.remove(p.mesh));
+  npcs.forEach(n => scene.remove(n.mesh));
+  enemies.forEach(e => scene.remove(e.mesh));
+  projectiles.forEach(p => scene.remove(p.mesh));
+
+  entities = []; collectibles = []; portals = []; npcs = []; enemies = []; projectiles = [];
+
+  // Remove zone group
+  Object.values(zoneGroups).forEach(g => scene.remove(g));
+  zoneGroups = {};
+}
+
+function buildZone(zoneName) {
+  clearZone();
+  state.zone = zoneName;
+  const z = ZONES[zoneName];
+  document.getElementById('zone-display').textContent = z.name;
+  scene.fog = new THREE.FogExp2(z.skyColor, 0.006);
+  scene.background = new THREE.Color(z.skyColor);
+
+  const group = new THREE.Group();
+  zoneGroups[zoneName] = group;
+
+  // Ground
+  const groundGeo = new THREE.PlaneGeometry(z.size * 2, z.size * 2, 32, 32);
+  // Add terrain variation
+  const pos = groundGeo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i);
+    pos.setZ(i, Math.sin(x * 0.1) * Math.cos(y * 0.1) * 2 + Math.sin(x * 0.3 + y * 0.2) * 0.5);
+  }
+  groundGeo.computeVertexNormals();
+  const groundMat = new THREE.MeshStandardMaterial({ color: z.groundColor, roughness: 0.9, flatShading: true });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  ground.name = 'ground';
+  group.add(ground);
+
+  // Build zone-specific content
+  switch(zoneName) {
+    case 'hub': buildHub(group); break;
+    case 'portal': buildPortalPeaks(group); break;
+    case 'undertale': buildMercyMeadows(group); break;
+    case 'dk': buildJungleRush(group); break;
+    case 'arena': buildArena(group); break;
+    case 'cookie': buildCookieKingdom(group); break;
+    case 'evolution': buildEvolutionGrove(group); break;
+    case 'tower': buildTowerOfTrials(group); break;
+    case 'zelda': buildHyruleFields(group); break;
+  }
+
+  scene.add(group);
+
+  // Reset player position
+  player.position.set(0, 2, 0);
+  velocity.set(0, 0, 0);
+}
+
+// ---- HUB WORLD ----
+function buildHub(group) {
+  // Central fountain
+  const fountainBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(3, 3.5, 1, 16),
+    new THREE.MeshStandardMaterial({ color: 0x667788, roughness: 0.4 })
+  );
+  fountainBase.position.y = 0.5;
+  fountainBase.castShadow = true;
+  group.add(fountainBase);
+
+  const water = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.8, 2.8, 0.1, 16),
+    new THREE.MeshStandardMaterial({ color: 0x4488cc, transparent: true, opacity: 0.7, roughness: 0.1 })
+  );
+  water.position.y = 1.05;
+  water.name = 'water_fountain';
+  group.add(water);
+
+  // Portal ring
+  const portalZones = ['portal', 'undertale', 'dk', 'arena', 'cookie', 'evolution', 'tower', 'zelda'];
+  const portalColors = [0x4466ff, 0xff66ff, 0x44ff44, 0xff4444, 0xffaa44, 0x44ffaa, 0x888888, 0x66ccff];
+  const portalNames = ['Portal Peaks', 'Mercy Meadows', 'Jungle Rush', 'Battle Arena', 'Cookie Kingdom', 'Evolution Grove', 'Tower of Trials', 'Hyrule Fields'];
+
+  portalZones.forEach((pz, i) => {
+    const angle = (i / portalZones.length) * Math.PI * 2;
+    const x = Math.cos(angle) * 20;
+    const z2 = Math.sin(angle) * 20;
+    createPortal(group, x, 0, z2, pz, portalColors[i], portalNames[i]);
+  });
+
+  // Decorative trees
+  for (let i = 0; i < 30; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * 50;
+    createTree(group, Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+  }
+
+  // Coins scattered
+  for (let i = 0; i < 15; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 5 + Math.random() * 40;
+    createCoin(group, Math.cos(angle) * dist, 1, Math.sin(angle) * dist);
+  }
+
+  // Hub NPC - Guide
+  createNPC(group, 5, 0, -3, 'Elder Sage', 0x8844aa, [
+    { text: "Welcome, Realm Runner! The eight realms have been fractured. You must collect an artifact from each to restore balance.", choices: [
+      { label: "Tell me more", next: 1 },
+      { label: "I'm ready!", next: 2 }
+    ]},
+    { text: "Each realm holds unique challenges. Portal Peaks tests your mind with teleport puzzles. Mercy Meadows will test your heart - will you fight or show mercy? The Jungle is pure platforming. The Arena is combat. Explore them all!", choices: [
+      { label: "Thank you!", next: -1 }
+    ]},
+    { text: "Step into any portal to begin. Good luck, hero! And remember - in Mercy Meadows, every choice matters.", choices: [
+      { label: "Let's go!", next: -1 }
+    ]}
+  ]);
+
+  // Hub NPC - Shop
+  createNPC(group, -5, 0, -5, 'Cookie Merchant', 0xffaa44, [
+    { text: "Hey there! Want to buy something?", choices: [
+      { label: "Health Potion (20 coins)", action: () => buyItem('Health Potion', '❤️', 20, { heal: 50 }) },
+      { label: "Stamina Elixir (15 coins)", action: () => buyItem('Stamina Elixir', '💚', 15, { staminaRestore: 60 }) },
+      { label: "Attack Boost (30 coins)", action: () => buyItem('Attack Boost', '⚔️', 30, { attackBuff: 5 }) },
+      { label: "Nevermind", next: -1 }
+    ]}
+  ]);
+
+  // Cooking pot
+  createCookingPot(group, 8, 0, 5);
+
+  // Return portal indicator
+  notify('Welcome to the Dream Hub! Visit portals to explore each realm.');
+}
+
+// ---- PORTAL PEAKS ----
+function buildPortalPeaks(group) {
+  // Puzzle platforms with teleport pads
+  const platforms = [];
+  for (let i = 0; i < 8; i++) {
+    const x = Math.cos(i * 0.8) * (10 + i * 4);
+    const z = Math.sin(i * 0.8) * (10 + i * 4);
+    const y = i * 1.5;
+    const plat = createPlatform(group, x, y, z, 3 + Math.random() * 2, 0.5, 3 + Math.random() * 2, 0x4455aa);
+    platforms.push({ x, y, z });
+  }
+
+  // Teleport pad pairs (Portal-style)
+  for (let i = 0; i < 3; i++) {
+    const a = platforms[i * 2];
+    const b = platforms[i * 2 + 1];
+    if (a && b) {
+      createTeleportPad(group, a.x, a.y + 0.5, a.z, b.x, b.y + 0.5, b.z, 0xff8800);
+      createTeleportPad(group, b.x, b.y + 0.5, b.z, a.x, a.y + 0.5, a.z, 0x0088ff);
+    }
+  }
+
+  // Moving platform
+  const movPlat = createPlatform(group, 20, 5, 0, 4, 0.5, 4, 0x6666aa);
+  entities.push({ mesh: movPlat, type: 'moving_platform', startX: 20, startZ: 0, range: 15, speed: 0.01, time: 0 });
+
+  // Puzzle cubes (push to pressure plate - Portal Companion Cube style)
+  for (let i = 0; i < 3; i++) {
+    const cube = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 0.8, 0.8),
+      new THREE.MeshStandardMaterial({ color: 0xff6688, roughness: 0.3 })
+    );
+    // Heart decal
+    cube.position.set(-10 + i * 5, 1, 15);
+    cube.castShadow = true;
+    cube.name = 'companion_cube';
+    group.add(cube);
+    entities.push({ mesh: cube, type: 'pushable', pushed: false });
+  }
+
+  // Artifact
+  createArtifact(group, platforms[7]?.x || 30, (platforms[7]?.y || 10) + 2, platforms[7]?.z || 0, 'Portal Crystal', 0x4466ff);
+
+  // Coins
+  platforms.forEach(p => createCoin(group, p.x, p.y + 2, p.z));
+
+  // Return portal
+  createPortal(group, 0, 0, -10, 'hub', 0xffffff, 'Return to Hub');
+
+  // NPC
+  createNPC(group, 3, 0, -5, 'GLaDOS-Lite', 0xcccccc, [
+    { text: "Welcome to the testing facility. I mean, Portal Peaks. You will solve puzzles using teleport pads. Step on orange to teleport to blue, and vice versa. The artifact awaits at the top.", choices: [
+      { label: "Sounds fun!", next: -1 },
+      { label: "Is there cake?", next: 1 }
+    ]},
+    { text: "The cake is... actually, yes! There's a cookie at the top. I'm not like the other AI.", choices: [
+      { label: "Great!", next: -1 }
+    ]}
+  ]);
+
+  notify('🔮 Portal Peaks - Solve teleport puzzles to reach the artifact!');
+}
+
+// ---- MERCY MEADOWS (UNDERTALE) ----
+function buildMercyMeadows(group) {
+  // Purple/dark atmosphere
+  scene.fog = new THREE.FogExp2(0x1a0a2a, 0.012);
+
+  // Flower patches
+  for (let i = 0; i < 40; i++) {
+    const flower = new THREE.Mesh(
+      new THREE.ConeGeometry(0.2, 0.4, 6),
+      new THREE.MeshStandardMaterial({ color: [0xffff44, 0xff44ff, 0x44ffff, 0xff8844][i % 4] })
+    );
+    flower.position.set(
+      (Math.random() - 0.5) * 60,
+      0.2,
+      (Math.random() - 0.5) * 60
+    );
+    group.add(flower);
+  }
+
+  // Ruins-style walls
+  for (let i = 0; i < 6; i++) {
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(8, 4, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x6a3a7a, roughness: 0.9 })
+    );
+    wall.position.set(
+      (Math.random() - 0.5) * 40,
+      2,
+      (Math.random() - 0.5) * 40
+    );
+    wall.rotation.y = Math.random() * Math.PI;
+    wall.castShadow = true;
+    group.add(wall);
+  }
+
+  // Undertale-style enemies (cute creatures you can fight or spare)
+  const creatures = [
+    { name: 'Froggit', color: 0x44aa44, x: 10, z: 10, dialogue: "Ribbit... (This creature doesn't seem hostile)" },
+    { name: 'Whimsun', color: 0xffaaff, x: -8, z: 15, dialogue: "The tiny creature trembles nervously..." },
+    { name: 'Moldsmal', color: 0xaaaa66, x: 15, z: -5, dialogue: "It jiggles quietly. It seems content." },
+    { name: 'Loox', color: 0xcc8844, x: -12, z: -10, dialogue: "Don't pick on me! ...Please?" },
+    { name: 'Vegetoid', color: 0x44cc44, x: 5, z: -15, dialogue: "Eat your greens! Here, have a carrot!" }
+  ];
+
+  creatures.forEach(c => {
+    createMercyEnemy(group, c.x, 0, c.z, c.name, c.color, c.dialogue);
+  });
+
+  // Big encounter - Toriel-like character
+  createNPC(group, 0, 0, -25, 'Mother Willow', 0xffffff, [
+    { text: "My child... you've come so far through the meadows. I must ask: have you shown mercy to the creatures here?", choices: [
+      { label: "I spared them all", next: 1 },
+      { label: "I... fought some", next: 2 },
+      { label: "What's the right answer?", next: 3 }
+    ]},
+    { text: "Your heart is pure! The realm recognizes your kindness. Take this artifact, you've earned it through compassion.", choices: [
+      { label: "Thank you!", action: () => { giveArtifact('Soul of Mercy'); notify('💜 You received the Soul of Mercy!'); } }
+    ]},
+    { text: "Fighting isn't always the answer... but I understand the world can be harsh. Come back when you've shown more mercy.", choices: [
+      { label: "I'll try harder", next: -1 }
+    ]},
+    { text: "There is no right answer, only YOUR answer. But in this realm, showing mercy earns the greatest reward. Every creature deserves a chance.", choices: [
+      { label: "I understand", next: -1 }
+    ]}
+  ]);
+
+  // Artifact (also given by Mother Willow)
+  createArtifact(group, 0, 2, -30, 'Soul of Mercy', 0xff66ff);
+
+  createPortal(group, 0, 0, 25, 'hub', 0xffffff, 'Return to Hub');
+  createCoin(group, 5, 1, 5);
+  createCoin(group, -5, 1, 5);
+  createCoin(group, 0, 1, -5);
+
+  notify('💜 Mercy Meadows - Will you fight or show mercy?');
+}
+
+// ---- JUNGLE RUSH (DK) ----
+function buildJungleRush(group) {
+  scene.fog = new THREE.FogExp2(0x0a3a1a, 0.01);
+
+  // Jungle trees
+  for (let i = 0; i < 40; i++) {
+    const x = (Math.random() - 0.5) * 120;
+    const z = (Math.random() - 0.5) * 120;
+    createPalmTree(group, x, 0, z);
+  }
+
+  // Platforming course
+  const coursePoints = [];
+  for (let i = 0; i < 15; i++) {
+    const x = i * 6 - 30;
+    const y = Math.sin(i * 0.5) * 3 + i * 0.8;
+    const z = Math.cos(i * 0.7) * 8;
+    createPlatform(group, x, y, z, 3, 0.3, 3, 0x886633);
+    coursePoints.push({ x, y, z });
+
+    // Some have coins
+    if (i % 2 === 0) createCoin(group, x, y + 2, z);
+  }
+
+  // Rolling barrels (DK-style)
+  for (let i = 0; i < 5; i++) {
+    const barrel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.5, 0.8, 12),
+      new THREE.MeshStandardMaterial({ color: 0x884422, roughness: 0.8 })
+    );
+    barrel.rotation.z = Math.PI / 2;
+    barrel.position.set(-30 + i * 12, 3, Math.random() * 10 - 5);
+    barrel.castShadow = true;
+    group.add(barrel);
+    enemies.push({
+      mesh: barrel, type: 'barrel', hp: 999, maxHp: 999, name: 'Rolling Barrel',
+      speed: 0.08 + Math.random() * 0.05, damage: 15, startX: barrel.position.x,
+      direction: 1, range: 10
+    });
+  }
+
+  // Vines (climbable)
+  for (let i = 0; i < 6; i++) {
+    const vine = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, 8, 6),
+      new THREE.MeshStandardMaterial({ color: 0x228822 })
+    );
+    vine.position.set(-20 + i * 10, 4, i % 2 === 0 ? 5 : -5);
+    group.add(vine);
+    entities.push({ mesh: vine, type: 'vine', climbable: true });
+  }
+
+  // Banana collectibles
+  for (let i = 0; i < 10; i++) {
+    createCollectible(group, (Math.random() - 0.5) * 60, 2 + Math.random() * 5, (Math.random() - 0.5) * 40, '🍌', 'Banana', 0xffdd00, { heal: 5 });
+  }
+
+  // DK-style enemy (gorilla)
+  createEnemy(group, 40, 12, 0, 'Kong Guardian', 0x664422, 80, 20, 3);
+
+  // Artifact at end
+  createArtifact(group, 60, 15, 0, 'Jungle Crown', 0x44ff44);
+
+  createPortal(group, 0, 0, -15, 'hub', 0xffffff, 'Return to Hub');
+
+  notify('🌴 Jungle Rush - Platform your way through! Watch for barrels!');
+}
+
+// ---- BATTLE ARENA ----
+function buildArena(group) {
+  arenaWave = 1;
+  scene.fog = new THREE.FogExp2(0x2a1a0a, 0.008);
+
+  // Arena walls
+  const wallGeo = new THREE.TorusGeometry(25, 1, 8, 32);
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x664422, roughness: 0.8 });
+  const arenaWall = new THREE.Mesh(wallGeo, wallMat);
+  arenaWall.position.y = 2;
+  arenaWall.rotation.x = Math.PI / 2;
+  group.add(arenaWall);
+
+  // Arena floor (circle)
+  const arenaFloor = new THREE.Mesh(
+    new THREE.CircleGeometry(24, 32),
+    new THREE.MeshStandardMaterial({ color: 0x553322, roughness: 0.9 })
+  );
+  arenaFloor.rotation.x = -Math.PI / 2;
+  arenaFloor.position.y = 0.1;
+  arenaFloor.receiveShadow = true;
+  group.add(arenaFloor);
+
+  // Pillars
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const pillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.6, 5, 8),
+      new THREE.MeshStandardMaterial({ color: 0x886644, roughness: 0.7 })
+    );
+    pillar.position.set(Math.cos(angle) * 22, 2.5, Math.sin(angle) * 22);
+    pillar.castShadow = true;
+    group.add(pillar);
+    // Torch on top
+    const torch = new THREE.Mesh(
+      new THREE.SphereGeometry(0.3, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xff4400, emissiveIntensity: 2 })
+    );
+    torch.position.set(Math.cos(angle) * 22, 5.5, Math.sin(angle) * 22);
+    group.add(torch);
+    const light = new THREE.PointLight(0xff6600, 1, 15);
+    light.position.copy(torch.position);
+    group.add(light);
+  }
+
+  // Wave enemies
+  spawnArenaWave(group, 1);
+
+  // NPC (Arena Master)
+  createNPC(group, 0, 0, -22, 'Arena Master', 0xff4444, [
+    { text: "Welcome, warrior! Defeat all enemies in each wave to progress. Survive 5 waves to claim the Arena artifact! Current wave: 1", choices: [
+      { label: "Bring it on!", next: -1 },
+      { label: "Any tips?", next: 1 }
+    ]},
+    { text: "Use F to attack, keep moving, and don't get surrounded! Some enemies are fast, others hit hard. Collect health drops from defeated foes.", choices: [
+      { label: "Got it!", next: -1 }
+    ]}
+  ]);
+
+  createPortal(group, 0, 0, -28, 'hub', 0xffffff, 'Return to Hub');
+
+  notify('⚔️ Battle Arena - Defeat waves of enemies!');
+}
+
+// ---- COOKIE KINGDOM ----
+function buildCookieKingdom(group) {
+  scene.fog = new THREE.FogExp2(0x3a2a1a, 0.006);
+
+  // Giant cookie structures
+  for (let i = 0; i < 5; i++) {
+    const cookie = new THREE.Mesh(
+      new THREE.CylinderGeometry(3, 3, 1, 16),
+      new THREE.MeshStandardMaterial({ color: 0xcc9944, roughness: 0.9 })
+    );
+    cookie.position.set(
+      (Math.random() - 0.5) * 50,
+      0.5,
+      (Math.random() - 0.5) * 50
+    );
+    cookie.castShadow = true;
+    group.add(cookie);
+
+    // Chocolate chips
+    for (let j = 0; j < 5; j++) {
+      const chip = new THREE.Mesh(
+        new THREE.SphereGeometry(0.3, 6, 6),
+        new THREE.MeshStandardMaterial({ color: 0x442211 })
+      );
+      const a2 = Math.random() * Math.PI * 2;
+      chip.position.set(
+        cookie.position.x + Math.cos(a2) * 2,
+        1.1,
+        cookie.position.z + Math.sin(a2) * 2
+      );
+      group.add(chip);
+    }
+  }
+
+  // Cookie collectibles EVERYWHERE (clicker game style)
+  for (let i = 0; i < 40; i++) {
+    createCollectible(
+      group,
+      (Math.random() - 0.5) * 80,
+      0.5 + Math.random() * 3,
+      (Math.random() - 0.5) * 80,
+      '🍪', 'Cookie', 0xddaa55, { cookie: true, value: 1 }
+    );
+  }
+
+  // Golden cookies (worth more)
+  for (let i = 0; i < 5; i++) {
+    createCollectible(
+      group,
+      (Math.random() - 0.5) * 60,
+      2 + Math.random() * 4,
+      (Math.random() - 0.5) * 60,
+      '🌟', 'Golden Cookie', 0xffd700, { cookie: true, value: 10 }
+    );
+  }
+
+  // Candy cane trees
+  for (let i = 0; i < 10; i++) {
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.2, 0.2, 4, 8),
+      new THREE.MeshStandardMaterial({ color: 0xff4444 })
+    );
+    trunk.position.set((Math.random() - 0.5) * 60, 2, (Math.random() - 0.5) * 60);
+    group.add(trunk);
+    const top = new THREE.Mesh(
+      new THREE.SphereGeometry(1.5, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xffccee })
+    );
+    top.position.copy(trunk.position);
+    top.position.y = 4.5;
+    group.add(top);
+  }
+
+  // Cookie Monster NPC
+  createNPC(group, 0, 0, -5, 'Cookie Monster', 0x4488ff, [
+    { text: "COOKIES! Me love cookies! Collect 20 cookies and me give you special artifact! You have: " + (state.inventory.filter(i => i.name === 'Cookie').length) + " cookies!", choices: [
+      { label: "I'll get them!", next: -1 },
+      { label: "Here are my cookies!", action: () => {
+        const cookieCount = state.inventory.filter(i => i.name === 'Cookie').length;
+        if (cookieCount >= 20) {
+          // Remove 20 cookies
+          let removed = 0;
+          state.inventory = state.inventory.filter(i => {
+            if (i.name === 'Cookie' && removed < 20) { removed++; return false; }
+            return true;
+          });
+          giveArtifact('Cookie Crown');
+          notify('🍪 Cookie Monster gave you the Cookie Crown!');
+        } else {
+          notify('Need ' + (20 - cookieCount) + ' more cookies!');
+        }
+      }}
+    ]}
+  ]);
+
+  createArtifact(group, 30, 3, 30, 'Cookie Crown', 0xffaa44);
+  createPortal(group, 0, 0, -20, 'hub', 0xffffff, 'Return to Hub');
+
+  notify('🍪 Cookie Kingdom - Collect ALL the cookies!');
+}
+
+// ---- EVOLUTION GROVE ----
+function buildEvolutionGrove(group) {
+  scene.fog = new THREE.FogExp2(0x0a2a2a, 0.008);
+
+  // Mystical trees with glowing leaves
+  for (let i = 0; i < 20; i++) {
+    const x = (Math.random() - 0.5) * 100;
+    const z = (Math.random() - 0.5) * 100;
+    createGlowTree(group, x, 0, z);
+  }
+
+  // Mushrooms
+  for (let i = 0; i < 15; i++) {
+    const mush = new THREE.Group();
+    const stem = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.15, 0.2, 0.6, 8),
+      new THREE.MeshStandardMaterial({ color: 0xeeeecc })
+    );
+    const cap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: [0xff4444, 0x4444ff, 0x44ff44, 0xffff44][i % 4], emissive: 0x222222, emissiveIntensity: 0.5 })
+    );
+    cap.position.y = 0.6;
+    cap.rotation.x = Math.PI;
+    mush.add(stem);
+    mush.add(cap);
+    mush.position.set((Math.random() - 0.5) * 60, 0, (Math.random() - 0.5) * 60);
+    group.add(mush);
+  }
+
+  // Pet companions
+  const petTypes = [
+    { name: 'Forest Fox', color: 0xff8844, ability: 'Speed +20%' },
+    { name: 'Crystal Owl', color: 0x8888ff, ability: 'See hidden items' },
+    { name: 'Moss Turtle', color: 0x448844, ability: 'Defense +10' },
+    { name: 'Fire Salamander', color: 0xff4422, ability: 'Attack +8' }
+  ];
+
+  petTypes.forEach((pet, i) => {
+    const angle = (i / petTypes.length) * Math.PI * 2;
+    const x = Math.cos(angle) * 15;
+    const z = Math.sin(angle) * 15;
+    createPetCompanion(group, x, 0, z, pet.name, pet.color, pet.ability);
+  });
+
+  // Evolution crystals
+  for (let i = 0; i < 8; i++) {
+    createCollectible(
+      group,
+      (Math.random() - 0.5) * 60,
+      1 + Math.random() * 2,
+      (Math.random() - 0.5) * 60,
+      '💎', 'Evolution Crystal', 0x88ffaa, { evolution: true }
+    );
+  }
+
+  // NPC - Druid
+  createNPC(group, 0, 0, -8, 'Ancient Druid', 0x44aa44, [
+    { text: "The grove holds ancient companions waiting for a worthy partner. Approach a pet creature to befriend it! Collect evolution crystals to help them grow stronger.", choices: [
+      { label: "How do I evolve them?", next: 1 },
+      { label: "I'll explore!", next: -1 }
+    ]},
+    { text: "Gather 5 evolution crystals, then interact with your companion. They'll transform into a stronger form with enhanced abilities!", choices: [
+      { label: "Amazing!", next: -1 }
+    ]}
+  ]);
+
+  createArtifact(group, 0, 3, -40, 'Primal Essence', 0x44ffaa);
+  createPortal(group, 0, 0, 20, 'hub', 0xffffff, 'Return to Hub');
+
+  // Some coins and food
+  for (let i = 0; i < 8; i++) {
+    createCoin(group, (Math.random() - 0.5) * 40, 1, (Math.random() - 0.5) * 40);
+  }
+  for (let i = 0; i < 5; i++) {
+    createCollectible(group, (Math.random() - 0.5) * 50, 0.5, (Math.random() - 0.5) * 50, '🍎', 'Apple', 0xff4444, { food: true, heal: 10 });
+  }
+
+  notify('🌿 Evolution Grove - Find a companion and help it evolve!');
+}
+
+// ---- TOWER OF TRIALS ----
+function buildTowerOfTrials(group) {
+  scene.fog = new THREE.FogExp2(0x1a1a2a, 0.005);
+
+  // Tower structure - stacked floors
+  const floors = 10;
+  for (let f = 0; f < floors; f++) {
+    const radius = 12 - f * 0.5;
+    const y = f * 5;
+
+    // Floor platform
+    const floor = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius + 0.5, 0.5, 16),
+      new THREE.MeshStandardMaterial({ color: 0x555566, roughness: 0.8 })
+    );
+    floor.position.y = y;
+    floor.receiveShadow = true;
+    group.add(floor);
+
+    // Walls with gaps
+    for (let w = 0; w < 8; w++) {
+      if (w === (f + 2) % 8) continue; // Gap for passage
+      const angle = (w / 8) * Math.PI * 2;
+      const wall = new THREE.Mesh(
+        new THREE.BoxGeometry(radius * 0.7, 4.5, 0.5),
+        new THREE.MeshStandardMaterial({ color: 0x444455, roughness: 0.9 })
+      );
+      wall.position.set(
+        Math.cos(angle) * (radius - 0.5),
+        y + 2.5,
+        Math.sin(angle) * (radius - 0.5)
+      );
+      wall.rotation.y = angle + Math.PI / 2;
+      wall.castShadow = true;
+      group.add(wall);
+    }
+
+    // Stairs/ramp to next floor
+    if (f < floors - 1) {
+      const stairAngle = ((f + 2) % 8) / 8 * Math.PI * 2;
+      const ramp = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 0.3, 6),
+        new THREE.MeshStandardMaterial({ color: 0x666677 })
+      );
+      ramp.position.set(
+        Math.cos(stairAngle) * (radius - 3),
+        y + 2.5,
+        Math.sin(stairAngle) * (radius - 3)
+      );
+      ramp.rotation.set(-0.4, stairAngle, 0);
+      group.add(ramp);
+    }
+
+    // Enemies on some floors
+    if (f > 0 && f % 2 === 0) {
+      createEnemy(group, Math.cos(f) * 5, y + 1, Math.sin(f) * 5, `Floor ${f} Guard`, 0x888888, 30 + f * 10, 8 + f * 2, 2);
+    }
+
+    // Coins on each floor
+    createCoin(group, Math.cos(f * 1.5) * 4, y + 1.5, Math.sin(f * 1.5) * 4);
+
+    // Supply crate every 3 floors (Broadcast Tower style)
+    if (f % 3 === 0 && f > 0) {
+      createCollectible(group, 0, y + 1, 0, '📦', 'Supply Crate', 0x886644, { heal: 20, random: true });
+    }
+  }
+
+  // Artifact at top
+  createArtifact(group, 0, floors * 5 + 2, 0, 'Tower Beacon', 0x888888);
+
+  createPortal(group, 0, 0, -15, 'hub', 0xffffff, 'Return to Hub');
+
+  notify('🗼 Tower of Trials - Climb to the top! 10 floors of challenges!');
+}
+
+// ---- HYRULE FIELDS (ZELDA) ----
+function buildHyruleFields(group) {
+  scene.fog = new THREE.FogExp2(0x4a7aaa, 0.004);
+
+  // Vast open fields with rolling hills
+  const fieldGeo = new THREE.PlaneGeometry(240, 240, 64, 64);
+  const fPos = fieldGeo.attributes.position;
+  for (let i = 0; i < fPos.count; i++) {
+    const x = fPos.getX(i), y = fPos.getY(i);
+    fPos.setZ(i,
+      Math.sin(x * 0.03) * 4 +
+      Math.cos(y * 0.05) * 3 +
+      Math.sin(x * 0.1 + y * 0.08) * 1.5 +
+      Math.random() * 0.3
+    );
+  }
+  fieldGeo.computeVertexNormals();
+  const fieldMat = new THREE.MeshStandardMaterial({ color: 0x4a8a2a, roughness: 0.9, flatShading: true });
+  const field = new THREE.Mesh(fieldGeo, fieldMat);
+  field.rotation.x = -Math.PI / 2;
+  field.receiveShadow = true;
+  // Replace the default ground
+  group.children.forEach(c => { if (c.name === 'ground') group.remove(c); });
+  group.add(field);
+
+  // Trees (various)
+  for (let i = 0; i < 50; i++) {
+    const x = (Math.random() - 0.5) * 180;
+    const z = (Math.random() - 0.5) * 180;
+    createTree(group, x, getTerrainHeight(x, z, fPos, fieldGeo), z);
+  }
+
+  // Tall climbable tower (for paragliding)
+  const tower = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.5, 2, 25, 8),
+    new THREE.MeshStandardMaterial({ color: 0x667788, roughness: 0.6 })
+  );
+  tower.position.set(20, 12.5, -20);
+  tower.castShadow = true;
+  group.add(tower);
+  entities.push({ mesh: tower, type: 'climbable', height: 25 });
+
+  // Paraglide launch platform
+  const launchPad = new THREE.Mesh(
+    new THREE.CylinderGeometry(3, 3, 0.3, 12),
+    new THREE.MeshStandardMaterial({ color: 0x6688aa })
+  );
+  launchPad.position.set(20, 25.2, -20);
+  group.add(launchPad);
+  entities.push({ mesh: launchPad, type: 'paraglide_launch' });
+
+  // Shrine entrance (puzzle)
+  const shrine = new THREE.Group();
+  const shrineBase = new THREE.Mesh(
+    new THREE.BoxGeometry(4, 3, 4),
+    new THREE.MeshStandardMaterial({ color: 0x445566, emissive: 0x112233, emissiveIntensity: 0.3 })
+  );
+  shrineBase.position.y = 1.5;
+  shrine.add(shrineBase);
+  const shrineGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 8, 8),
+    new THREE.MeshStandardMaterial({ color: 0x44aaff, emissive: 0x44aaff, emissiveIntensity: 2 })
+  );
+  shrineGlow.position.y = 3.5;
+  shrine.add(shrineGlow);
+  shrine.position.set(-30, 0, 10);
+  group.add(shrine);
+  entities.push({ mesh: shrine, type: 'shrine', activated: false });
+
+  // Cooking pot
+  createCookingPot(group, -10, 0, 5);
+
+  // Food ingredients scattered
+  const foods = ['🍎', '🥕', '🍖', '🥩', '🌶️', '🍄'];
+  const foodNames = ['Apple', 'Carrot', 'Drumstick', 'Raw Meat', 'Pepper', 'Mushroom'];
+  for (let i = 0; i < 20; i++) {
+    const fi = Math.floor(Math.random() * foods.length);
+    createCollectible(
+      group,
+      (Math.random() - 0.5) * 120,
+      1,
+      (Math.random() - 0.5) * 120,
+      foods[fi], foodNames[fi], 0x88aa44, { food: true, heal: 5 + Math.floor(Math.random() * 15) }
+    );
+  }
+
+  // Enemies (Bokoblin-style)
+  for (let i = 0; i < 8; i++) {
+    const x = (Math.random() - 0.5) * 100;
+    const z = (Math.random() - 0.5) * 100;
+    createEnemy(group, x, 1, z, 'Moblin', 0x884444, 40, 12, 2.5);
+  }
+
+  // Korok seeds (hidden collectibles)
+  for (let i = 0; i < 10; i++) {
+    createCollectible(
+      group,
+      (Math.random() - 0.5) * 140,
+      0.5,
+      (Math.random() - 0.5) * 140,
+      '🌱', 'Spirit Seed', 0x88cc44, { spiritSeed: true }
+    );
+  }
+
+  // Many coins
+  for (let i = 0; i < 20; i++) {
+    createCoin(group, (Math.random() - 0.5) * 100, 1, (Math.random() - 0.5) * 100);
+  }
+
+  // Old Man NPC (BotW style)
+  createNPC(group, 5, 0, 5, 'Old Wanderer', 0x886644, [
+    { text: "Ah, you've awakened at last! This realm stretches far and wide. Climb the tower to survey the land, then use Q to paraglide down! The shrine holds a puzzle, and the cooking pot can combine food into hearty meals.", choices: [
+      { label: "About paragliding?", next: 1 },
+      { label: "About cooking?", next: 2 },
+      { label: "Where's the artifact?", next: 3 }
+    ]},
+    { text: "Jump from a high place and press Q while in the air. You'll glide gently down! Your stamina will drain while gliding though, so watch the green bar.", choices: [
+      { label: "Thanks!", next: -1 }
+    ]},
+    { text: "Stand near a cooking pot and press E. Add food items from your inventory, then cook! Different combinations give different results. Meat + Pepper = Spicy meal that boosts attack!", choices: [
+      { label: "I'll try it!", next: -1 }
+    ]},
+    { text: "Complete the shrine puzzle and defeat the guardians of this land. The artifact will reveal itself to a worthy hero.", choices: [
+      { label: "On my way!", next: -1 }
+    ]}
+  ]);
+
+  createArtifact(group, -30, 4, 10, 'Triforce Shard', 0x66ccff);
+  createPortal(group, 0, 0, 30, 'hub', 0xffffff, 'Return to Hub');
+
+  notify('🏔️ Hyrule Fields - Explore, cook, paraglide, and discover!');
+}
+
+// ===================== ENTITY CREATORS =====================
+function createPortal(group, x, y, z, targetZone, color, label) {
+  const portalGroup = new THREE.Group();
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(1.5, 0.15, 8, 24),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.8 })
+  );
+  ring.position.y = 2;
+  portalGroup.add(ring);
+
+  const glow = new THREE.Mesh(
+    new THREE.CircleGeometry(1.3, 16),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1.5, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+  );
+  glow.position.y = 2;
+  portalGroup.add(glow);
+
+  // Label
+  const light = new THREE.PointLight(color, 0.8, 8);
+  light.position.y = 2;
+  portalGroup.add(light);
+
+  // Base
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.8, 2, 0.3, 16),
+    new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.7 })
+  );
+  portalGroup.add(base);
+
+  portalGroup.position.set(x, y, z);
+  group.add(portalGroup);
+
+  portals.push({ mesh: portalGroup, target: targetZone, label, color });
+}
+
+function createTree(group, x, y, z) {
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2, 0.35, 3, 6),
+    new THREE.MeshStandardMaterial({ color: 0x664422, roughness: 0.9 })
+  );
+  trunk.position.y = 1.5;
+  trunk.castShadow = true;
+  tree.add(trunk);
+
+  const sizes = [1.8, 1.3, 0.8];
+  const heights = [2.8, 3.8, 4.6];
+  sizes.forEach((s, i) => {
+    const leaves = new THREE.Mesh(
+      new THREE.SphereGeometry(s, 6, 6),
+      new THREE.MeshStandardMaterial({ color: 0x228833 + Math.floor(Math.random() * 0x224422), roughness: 0.8 })
+    );
+    leaves.position.y = heights[i];
+    leaves.castShadow = true;
+    tree.add(leaves);
+  });
+
+  tree.position.set(x, y, z);
+  group.add(tree);
+}
+
+function createPalmTree(group, x, y, z) {
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.15, 0.25, 5, 6),
+    new THREE.MeshStandardMaterial({ color: 0x886633, roughness: 0.9 })
+  );
+  trunk.position.y = 2.5;
+  tree.add(trunk);
+
+  for (let i = 0; i < 5; i++) {
+    const leaf = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.05, 3),
+      new THREE.MeshStandardMaterial({ color: 0x44aa22 })
+    );
+    leaf.position.set(0, 5, 0);
+    leaf.rotation.y = (i / 5) * Math.PI * 2;
+    leaf.rotation.x = 0.5;
+    tree.add(leaf);
+  }
+
+  tree.position.set(x, y, z);
+  group.add(tree);
+}
+
+function createGlowTree(group, x, y, z) {
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2, 0.3, 4, 6),
+    new THREE.MeshStandardMaterial({ color: 0x554433 })
+  );
+  trunk.position.y = 2;
+  tree.add(trunk);
+
+  const leaves = new THREE.Mesh(
+    new THREE.SphereGeometry(2, 8, 8),
+    new THREE.MeshStandardMaterial({
+      color: 0x22aa66,
+      emissive: [0x44ff88, 0x88ff44, 0x44ffaa][Math.floor(Math.random() * 3)],
+      emissiveIntensity: 0.3,
+      transparent: true, opacity: 0.8
+    })
+  );
+  leaves.position.y = 4.5;
+  tree.add(leaves);
+
+  const glow = new THREE.PointLight([0x44ff88, 0x88ff44, 0x44ffaa][Math.floor(Math.random() * 3)], 0.5, 8);
+  glow.position.y = 4.5;
+  tree.add(glow);
+
+  tree.position.set(x, y, z);
+  group.add(tree);
+}
+
+function createPlatform(group, x, y, z, w, h, d, color) {
+  const plat = new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, d),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.7 })
+  );
+  plat.position.set(x, y, z);
+  plat.castShadow = true;
+  plat.receiveShadow = true;
+  group.add(plat);
+  entities.push({ mesh: plat, type: 'platform' });
+  return plat;
+}
+
+function createCoin(group, x, y, z) {
+  const coin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.25, 0.25, 0.06, 12),
+    new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2, emissive: 0x886600, emissiveIntensity: 0.3 })
+  );
+  coin.position.set(x, y, z);
+  coin.rotation.x = Math.PI / 2;
+  group.add(coin);
+  collectibles.push({ mesh: coin, type: 'coin', value: 1, collected: false });
+}
+
+function createCollectible(group, x, y, z, emoji, name, color, props) {
+  const coll = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 8, 8),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.3, transparent: true, opacity: 0.9 })
+  );
+  coll.position.set(x, y, z);
+  group.add(coll);
+  collectibles.push({ mesh: coll, type: 'item', name, emoji, collected: false, ...props });
+}
+
+function createArtifact(group, x, y, z, name, color) {
+  const artGroup = new THREE.Group();
+
+  const crystal = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.5, 0),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1, transparent: true, opacity: 0.8 })
+  );
+  crystal.position.y = 1;
+  artGroup.add(crystal);
+
+  const glow = new THREE.PointLight(color, 1.5, 10);
+  glow.position.y = 1;
+  artGroup.add(glow);
+
+  // Pedestal
+  const pedestal = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.8, 1, 0.5, 8),
+    new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4 })
+  );
+  artGroup.add(pedestal);
+
+  artGroup.position.set(x, y, z);
+  group.add(artGroup);
+  collectibles.push({ mesh: artGroup, type: 'artifact', name, collected: false, color });
+}
+
+function createNPC(group, x, y, z, name, color, dialogueTree) {
+  const npcGroup = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.3, 0.8, 4, 8),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.6 })
+  );
+  body.position.y = 0.7;
+  body.castShadow = true;
+  npcGroup.add(body);
+
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.25, 8, 8),
+    new THREE.MeshStandardMaterial({ color: 0xffcc99 })
+  );
+  head.position.y = 1.4;
+  npcGroup.add(head);
+
+  // Name floating above
+  const nameLight = new THREE.PointLight(color, 0.3, 5);
+  nameLight.position.y = 2;
+  npcGroup.add(nameLight);
+
+  npcGroup.position.set(x, y + 1, z);
+  group.add(npcGroup);
+  npcs.push({ mesh: npcGroup, name, dialogue: dialogueTree, currentNode: 0 });
+}
+
+function createEnemy(group, x, y, z, name, color, hp, damage, speed) {
+  const enemyGroup = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.35, 0.7, 4, 8),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.7 })
+  );
+  body.position.y = 0.7;
+  body.castShadow = true;
+  enemyGroup.add(body);
+
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 6, 6),
+    new THREE.MeshStandardMaterial({ color: Math.min(0xffffff, color + 0x111111) })
+  );
+  head.position.y = 1.35;
+  enemyGroup.add(head);
+
+  // Eyes (red)
+  const eye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 4, 4),
+    new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1 })
+  );
+  eye.position.set(-0.1, 1.4, -0.22);
+  enemyGroup.add(eye);
+  const eye2 = eye.clone();
+  eye2.position.x = 0.1;
+  enemyGroup.add(eye2);
+
+  // Health bar
+  const hpBarBg = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 0.1),
+    new THREE.MeshBasicMaterial({ color: 0x440000, side: THREE.DoubleSide })
+  );
+  hpBarBg.position.y = 2;
+  enemyGroup.add(hpBarBg);
+
+  const hpBar = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 0.08),
+    new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide })
+  );
+  hpBar.position.y = 2;
+  hpBar.position.z = -0.01;
+  hpBar.name = 'hpbar';
+  enemyGroup.add(hpBar);
+
+  enemyGroup.position.set(x, y, z);
+  group.add(enemyGroup);
+  enemies.push({ mesh: enemyGroup, name, hp, maxHp: hp, damage, speed: speed * 0.01, color, type: 'melee', alive: true });
+}
+
+function createMercyEnemy(group, x, y, z, name, color, dialogue) {
+  const creatureGroup = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.4, 8, 8),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.6 })
+  );
+  body.position.y = 0.7;
+  body.castShadow = true;
+  creatureGroup.add(body);
+
+  const eye1 = new THREE.Mesh(
+    new THREE.SphereGeometry(0.08, 6, 6),
+    new THREE.MeshStandardMaterial({ color: 0x111111 })
+  );
+  eye1.position.set(-0.12, 0.85, -0.3);
+  creatureGroup.add(eye1);
+  const eye2 = eye1.clone();
+  eye2.position.x = 0.12;
+  creatureGroup.add(eye2);
+
+  creatureGroup.position.set(x, y + 0.5, z);
+  group.add(creatureGroup);
+
+  npcs.push({
+    mesh: creatureGroup, name, isMercyCreature: true,
+    dialogue: [
+      { text: dialogue, choices: [
+        { label: "❤️ MERCY (Spare)", action: () => {
+          state.mercyKills.mercy++;
+          notify(`💛 You spared ${name}! (Mercy: ${state.mercyKills.mercy})`);
+          state.xp += 15;
+          creatureGroup.visible = false;
+        }},
+        { label: "⚔️ FIGHT", action: () => {
+          state.mercyKills.fight++;
+          state.xp += 5;
+          state.coins += 3;
+          notify(`⚔️ You fought ${name}... (Fights: ${state.mercyKills.fight})`);
+          creatureGroup.visible = false;
+        }},
+        { label: "💬 ACT (Talk)", next: 1 }
+      ]},
+      { text: `You talk to ${name}. It seems to appreciate the company. Maybe showing mercy is the better path?`, choices: [
+        { label: "❤️ MERCY (Spare)", action: () => {
+          state.mercyKills.mercy++;
+          state.xp += 20;
+          notify(`💛 ${name} was touched by your kindness! (Mercy: ${state.mercyKills.mercy})`);
+          creatureGroup.visible = false;
+        }},
+        { label: "⚔️ FIGHT anyway", action: () => {
+          state.mercyKills.fight++;
+          state.xp += 5;
+          notify(`💔 ${name} looked disappointed... (Fights: ${state.mercyKills.fight})`);
+          creatureGroup.visible = false;
+        }}
+      ]}
+    ],
+    currentNode: 0
+  });
+}
+
+function createPetCompanion(group, x, y, z, name, color, ability) {
+  const petGroup = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.35, 8, 8),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.5 })
+  );
+  body.position.y = 0.5;
+  petGroup.add(body);
+
+  // Ears/features
+  const ear1 = new THREE.Mesh(
+    new THREE.ConeGeometry(0.1, 0.3, 4),
+    new THREE.MeshStandardMaterial({ color })
+  );
+  ear1.position.set(-0.15, 0.85, 0);
+  petGroup.add(ear1);
+  const ear2 = ear1.clone();
+  ear2.position.x = 0.15;
+  petGroup.add(ear2);
+
+  // Eyes
+  const eye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.05, 6, 6),
+    new THREE.MeshStandardMaterial({ color: 0x111111 })
+  );
+  eye.position.set(-0.1, 0.6, -0.28);
+  petGroup.add(eye);
+  const eye2 = eye.clone();
+  eye2.position.x = 0.1;
+  petGroup.add(eye2);
+
+  const glow = new THREE.PointLight(color, 0.3, 5);
+  glow.position.y = 0.5;
+  petGroup.add(glow);
+
+  petGroup.position.set(x, y + 0.5, z);
+  group.add(petGroup);
+
+  npcs.push({
+    mesh: petGroup, name, isPet: true,
+    dialogue: [{
+      text: `A wild ${name} approaches! It has the ability: ${ability}. Would you like to befriend it?`,
+      choices: [
+        { label: "Befriend!", action: () => {
+          if (state.companions.length < 2) {
+            state.companions.push({ name, ability, color, level: 1 });
+            notify(`🐾 ${name} joined your party! Ability: ${ability}`);
+            petGroup.visible = false;
+          } else {
+            notify('You already have 2 companions! Release one first.');
+          }
+        }},
+        { label: "Not now", next: -1 }
+      ]
+    }],
+    currentNode: 0
+  });
+}
+
+function createTeleportPad(group, x, y, z, tx, ty, tz, color) {
+  const pad = new THREE.Mesh(
+    new THREE.CylinderGeometry(1, 1, 0.1, 16),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.8, transparent: true, opacity: 0.7 })
+  );
+  pad.position.set(x, y, z);
+  group.add(pad);
+
+  const glow = new THREE.PointLight(color, 1, 5);
+  glow.position.set(x, y + 1, z);
+  group.add(glow);
+
+  entities.push({ mesh: pad, type: 'telepad', targetX: tx, targetY: ty, targetZ: tz });
+}
+
+function createCookingPot(group, x, y, z) {
+  const pot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.6, 0.4, 0.5, 12),
+    new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.5, metalness: 0.5 })
+  );
+  pot.position.set(x, y + 0.25, z);
+  group.add(pot);
+
+  // Fire
+  const fire = new THREE.PointLight(0xff6600, 1, 5);
+  fire.position.set(x, y + 0.5, z);
+  group.add(fire);
+
+  const flame = new THREE.Mesh(
+    new THREE.ConeGeometry(0.3, 0.5, 6),
+    new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff4400, emissiveIntensity: 2, transparent: true, opacity: 0.7 })
+  );
+  flame.position.set(x, y + 0.1, z);
+  group.add(flame);
+
+  entities.push({ mesh: pot, type: 'cooking_pot' });
+}
+
+function spawnArenaWave(group, wave) {
+  const count = 3 + wave * 2;
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const dist = 10 + Math.random() * 8;
+    createEnemy(
+      group,
+      Math.cos(angle) * dist, 1, Math.sin(angle) * dist,
+      `Wave ${wave} Fighter`,
+      0xaa4444 + wave * 0x111100,
+      20 + wave * 10,
+      5 + wave * 3,
+      1.5 + wave * 0.3
+    );
+  }
+}
+
+// ===================== ITEM SYSTEM =====================
+function addToInventory(name, emoji, props) {
+  if (state.inventory.length >= state.maxInventory) {
+    notify('Inventory full!');
+    return false;
+  }
+  state.inventory.push({ name, emoji, ...props });
+  notify(`+${emoji} ${name}`);
+  return true;
+}
+
+function buyItem(name, emoji, cost, props) {
+  if (state.coins >= cost) {
+    if (addToInventory(name, emoji, props)) {
+      state.coins -= cost;
+      updateHUD();
+      notify(`Bought ${name} for ${cost} coins!`);
+    }
+  } else {
+    notify(`Need ${cost} coins! (Have: ${state.coins})`);
+  }
+  closeDialogue();
+}
+
+function useItem(index) {
+  const item = state.inventory[index];
+  if (!item) return;
+
+  if (item.heal) {
+    state.hp = Math.min(state.maxHp, state.hp + item.heal);
+    notify(`❤️ Healed ${item.heal} HP!`);
+  }
+  if (item.staminaRestore) {
+    state.stamina = Math.min(state.maxStamina, state.stamina + item.staminaRestore);
+    notify(`💚 Restored ${item.staminaRestore} Stamina!`);
+  }
+  if (item.attackBuff) {
+    state.attack += item.attackBuff;
+    notify(`⚔️ Attack +${item.attackBuff}!`);
+  }
+
+  state.inventory.splice(index, 1);
+  renderInventory();
+  updateHUD();
+}
+
+function giveArtifact(name) {
+  if (!state.artifacts.includes(name)) {
+    state.artifacts.push(name);
+    state.xp += 100;
+    notify(`🏆 ARTIFACT COLLECTED: ${name} (${state.artifacts.length}/${state.totalArtifacts})`);
+    if (state.artifacts.length >= state.totalArtifacts) {
+      notify('🎉 ALL ARTIFACTS COLLECTED! You saved the realms!');
+    }
+  }
+}
+
+// ===================== COOKING =====================
+window.cookItems = function() {
+  const foodItems = state.inventory.filter(i => i.food);
+  if (foodItems.length === 0) {
+    document.getElementById('cook-result').textContent = 'No food ingredients!';
+    return;
+  }
+
+  // Take up to 3 food items
+  const used = [];
+  let totalHeal = 0;
+  let bonus = '';
+
+  for (let i = 0; i < Math.min(3, foodItems.length); i++) {
+    const idx = state.inventory.indexOf(foodItems[i]);
+    if (idx !== -1) {
+      totalHeal += foodItems[i].heal || 5;
+      used.push(foodItems[i].name);
+      state.inventory.splice(idx, 1);
+    }
+  }
+
+  // Bonus for variety
+  const unique = new Set(used).size;
+  if (unique >= 3) { totalHeal *= 2; bonus = ' (Variety Bonus!)'; }
+  else if (unique >= 2) { totalHeal = Math.floor(totalHeal * 1.5); bonus = ' (Combo!)'; }
+
+  const mealName = unique >= 3 ? 'Gourmet Feast' : unique >= 2 ? 'Hearty Stew' : 'Simple Meal';
+  addToInventory(mealName, '🍲', { heal: totalHeal, food: false });
+
+  document.getElementById('cook-result').textContent = `Cooked: ${mealName} (Heals ${totalHeal} HP)${bonus}`;
+  renderInventory();
+};
+
+// ===================== BULLET HELL MINI-GAME =====================
+let bhCanvas, bhCtx, bhPlayer, bhBullets, bhTimer, bhAnimId;
+
+function startBulletHell() {
+  bulletHellActive = true;
+  document.getElementById('bullet-hell').style.display = 'block';
+  bhCanvas = document.getElementById('bh-canvas');
+  bhCanvas.width = 400;
+  bhCanvas.height = 300;
+  bhCtx = bhCanvas.getContext('2d');
+  bhPlayer = { x: 200, y: 250, w: 12, h: 12, speed: 3 };
+  bhBullets = [];
+  bhTimer = 0;
+
+  // Spawn pattern
+  function bhLoop() {
+    if (!bulletHellActive) return;
+    bhCtx.fillStyle = '#000';
+    bhCtx.fillRect(0, 0, 400, 300);
+
+    bhTimer++;
+
+    // Spawn bullets
+    if (bhTimer % 15 === 0) {
+      const pattern = Math.floor(bhTimer / 100) % 3;
+      if (pattern === 0) {
+        bhBullets.push({ x: Math.random() * 380, y: -10, vx: 0, vy: 2 + Math.random() * 2, r: 4, color: '#ff4444' });
+      } else if (pattern === 1) {
+        const angle = Math.random() * Math.PI;
+        bhBullets.push({ x: 200, y: 0, vx: Math.cos(angle) * 3, vy: Math.sin(angle) * 2 + 1, r: 5, color: '#44ff44' });
+      } else {
+        for (let i = 0; i < 3; i++) {
+          bhBullets.push({ x: i * 150 + 50, y: -10, vx: Math.sin(bhTimer * 0.1 + i) * 2, vy: 2, r: 4, color: '#ff88ff' });
+        }
+      }
+    }
+
+    // Move & draw bullets
+    bhBullets = bhBullets.filter(b => {
+      b.x += b.vx; b.y += b.vy;
+      bhCtx.fillStyle = b.color;
+      bhCtx.beginPath();
+      bhCtx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      bhCtx.fill();
+      return b.y < 310 && b.x > -10 && b.x < 410;
+    });
+
+    // Move player with arrow keys
+    if (keys['ArrowLeft']) bhPlayer.x -= bhPlayer.speed;
+    if (keys['ArrowRight']) bhPlayer.x += bhPlayer.speed;
+    if (keys['ArrowUp']) bhPlayer.y -= bhPlayer.speed;
+    if (keys['ArrowDown']) bhPlayer.y += bhPlayer.speed;
+    bhPlayer.x = Math.max(0, Math.min(400 - bhPlayer.w, bhPlayer.x));
+    bhPlayer.y = Math.max(0, Math.min(300 - bhPlayer.h, bhPlayer.y));
+
+    // Draw player (heart soul - Undertale style)
+    bhCtx.fillStyle = '#ff4444';
+    bhCtx.beginPath();
+    const hx = bhPlayer.x + 6, hy = bhPlayer.y + 6;
+    bhCtx.moveTo(hx, hy + 3);
+    bhCtx.lineTo(hx - 6, hy - 3);
+    bhCtx.lineTo(hx, hy - 8);
+    bhCtx.lineTo(hx + 6, hy - 3);
+    bhCtx.closePath();
+    bhCtx.fill();
+
+    // Collision
+    for (const b of bhBullets) {
+      const dx = b.x - (bhPlayer.x + 6);
+      const dy = b.y - (bhPlayer.y + 6);
+      if (Math.sqrt(dx * dx + dy * dy) < b.r + 5) {
+        state.hp -= 10;
+        updateHUD();
+        if (state.hp <= 0) {
+          endBulletHell(false);
+          return;
+        }
+        // Flash
+        bhCtx.fillStyle = 'rgba(255,0,0,0.3)';
+        bhCtx.fillRect(0, 0, 400, 300);
+        // Remove bullet
+        const idx = bhBullets.indexOf(b);
+        if (idx !== -1) bhBullets.splice(idx, 1);
+      }
+    }
+
+    // Timer display
+    const timeLeft = Math.max(0, 10 - Math.floor(bhTimer / 60));
+    document.getElementById('bh-info').textContent = `Dodge! Time: ${timeLeft}s | HP: ${state.hp}`;
+
+    // Win after 10 seconds
+    if (bhTimer >= 600) {
+      endBulletHell(true);
+      return;
+    }
+
+    bhAnimId = requestAnimationFrame(bhLoop);
+  }
+  bhLoop();
+}
+
+function endBulletHell(won) {
+  bulletHellActive = false;
+  document.getElementById('bullet-hell').style.display = 'none';
+  cancelAnimationFrame(bhAnimId);
+  if (won) {
+    notify('💜 You survived the bullet hell! +50 XP');
+    state.xp += 50;
+  } else {
+    notify('💀 Hit too many times!');
+  }
+}
+
+// ===================== EVENTS =====================
+function setupEvents() {
+  document.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    keys[e.code] = true;
+
+    if (e.key === 'Escape') {
+      if (document.getElementById('inventory-panel').style.display === 'block') {
+        document.getElementById('inventory-panel').style.display = 'none';
+        return;
+      }
+      if (document.getElementById('dialogue-box').style.display === 'block') {
+        closeDialogue();
+        return;
+      }
+      if (document.getElementById('cooking-panel').style.display === 'block') {
+        document.getElementById('cooking-panel').style.display = 'none';
+        return;
+      }
+      togglePause();
+    }
+
+    if (paused) return;
+
+    if (e.key.toLowerCase() === 'e') tryInteract();
+    if (e.key.toLowerCase() === 'i') toggleInventory();
+    if (e.key.toLowerCase() === 'f') playerAttack();
+    if (e.key.toLowerCase() === 'q') toggleParaGlide();
+  });
+
+  document.addEventListener('keyup', e => {
+    keys[e.key.toLowerCase()] = false;
+    keys[e.code] = false;
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!locked) return;
+    yaw -= e.movementX * 0.002;
+    pitch -= e.movementY * 0.002;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch));
+  });
+
+  document.addEventListener('click', () => {
+    if (!locked && document.getElementById('title-screen').style.display === 'none') {
+      renderer.domElement.requestPointerLock();
+    }
+  });
+
+  document.addEventListener('pointerlockchange', () => {
+    locked = !!document.pointerLockElement;
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+// ===================== INTERACTION =====================
+function tryInteract() {
+  // Check portals
+  for (const p of portals) {
+    const dist = player.position.distanceTo(p.mesh.position);
+    if (dist < 3) {
+      buildZone(p.target);
+      return;
+    }
+  }
+
+  // Check NPCs
+  for (const n of npcs) {
+    if (!n.mesh.visible) continue;
+    const dist = player.position.distanceTo(n.mesh.position);
+    if (dist < 3) {
+      openDialogue(n);
+      return;
+    }
+  }
+
+  // Check cooking pot
+  for (const e of entities) {
+    if (e.type === 'cooking_pot') {
+      const dist = player.position.distanceTo(e.mesh.position);
+      if (dist < 3) {
+        document.getElementById('cooking-panel').style.display = 'block';
+        document.exitPointerLock();
+        return;
+      }
+    }
+  }
+
+  // Check telepad
+  for (const e of entities) {
+    if (e.type === 'telepad') {
+      const dist = player.position.distanceTo(e.mesh.position);
+      if (dist < 2) {
+        player.position.set(e.targetX, e.targetY + 1, e.targetZ);
+        velocity.set(0, 0, 0);
+        notify('✨ Teleported!');
+        spawnParticles(player.position, 0x4488ff, 15);
+        return;
+      }
+    }
+  }
+
+  // Check shrine
+  for (const e of entities) {
+    if (e.type === 'shrine' && !e.activated) {
+      const dist = player.position.distanceTo(e.mesh.position);
+      if (dist < 5) {
+        e.activated = true;
+        notify('🔮 Shrine activated! A bullet-hell challenge begins!');
+        startBulletHell();
+        return;
+      }
+    }
+  }
+}
+
+function openDialogue(npc) {
+  const node = npc.dialogue[npc.currentNode];
+  if (!node) return;
+
+  document.exitPointerLock();
+  const box = document.getElementById('dialogue-box');
+  box.style.display = 'block';
+  document.getElementById('dialogue-name').textContent = npc.name;
+  document.getElementById('dialogue-text').textContent = node.text;
+
+  const choicesDiv = document.getElementById('dialogue-choices');
+  choicesDiv.innerHTML = '';
+
+  node.choices.forEach(choice => {
+    const btn = document.createElement('div');
+    btn.className = 'dialogue-choice';
+    btn.textContent = choice.label;
+    btn.onclick = () => {
+      if (choice.action) choice.action();
+      if (choice.next !== undefined) {
+        if (choice.next === -1) {
+          closeDialogue();
+          npc.currentNode = 0;
+        } else {
+          npc.currentNode = choice.next;
+          openDialogue(npc);
+        }
+      } else {
+        closeDialogue();
+        npc.currentNode = 0;
+      }
+    };
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function closeDialogue() {
+  document.getElementById('dialogue-box').style.display = 'none';
+}
+
+// ===================== COMBAT =====================
+function playerAttack() {
+  if (attackCooldown > 0) return;
+  attackCooldown = 20;
+
+  // Animate sword
+  const sword = player.getObjectByName('sword');
+  if (sword) {
+    sword.rotation.x = -1.5;
+    setTimeout(() => { if (sword) sword.rotation.x = 0; }, 200);
+  }
+
+  // Check enemies in range
+  const attackRange = 2.5;
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion);
+
+  for (const e of enemies) {
+    if (!e.alive) continue;
+    const dist = player.position.distanceTo(e.mesh.position);
+    if (dist < attackRange) {
+      const toEnemy = e.mesh.position.clone().sub(player.position).normalize();
+      if (forward.dot(toEnemy) > 0.3 || dist < 1.5) {
+        e.hp -= state.attack;
+        spawnParticles(e.mesh.position, 0xff4444, 5);
+
+        // Update health bar
+        const hpbar = e.mesh.getObjectByName('hpbar');
+        if (hpbar) hpbar.scale.x = Math.max(0, e.hp / e.maxHp);
+
+        if (e.hp <= 0) {
+          e.alive = false;
+          e.mesh.visible = false;
+          state.xp += 20;
+          state.coins += Math.floor(Math.random() * 5) + 2;
+          notify(`⚔️ Defeated ${e.name}! +20 XP`);
+
+          // Drop health sometimes
+          if (Math.random() > 0.5) {
+            const g = zoneGroups[state.zone];
+            if (g) createCollectible(g, e.mesh.position.x, e.mesh.position.y, e.mesh.position.z, '❤️', 'Heart', 0xff4444, { heal: 15 });
+          }
+
+          // Check arena wave completion
+          if (state.zone === 'arena') {
+            const alive = enemies.filter(en => en.alive);
+            if (alive.length === 0) {
+              arenaWave++;
+              if (arenaWave <= 5) {
+                notify(`Wave ${arenaWave - 1} complete! Next wave incoming...`);
+                setTimeout(() => {
+                  const g = zoneGroups[state.zone];
+                  if (g) spawnArenaWave(g, arenaWave);
+                }, 2000);
+              } else {
+                giveArtifact('Arena Champion');
+                notify('🏆 You cleared all waves! Arena Champion artifact earned!');
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// ===================== PARAGLIDING =====================
+function toggleParaGlide() {
+  if (!onGround && !state.paragliding && player.position.y > 3) {
+    state.paragliding = true;
+    notify('🪂 Paragliding!');
+  } else if (state.paragliding) {
+    state.paragliding = false;
+  }
+}
+
+// ===================== PARTICLES =====================
+function spawnParticles(pos, color, count) {
+  for (let i = 0; i < count; i++) {
+    const p = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 4, 4),
+      new THREE.MeshBasicMaterial({ color, transparent: true })
+    );
+    p.position.copy(pos);
+    scene.add(p);
+    particles.push({
+      mesh: p,
+      vel: new THREE.Vector3((Math.random() - 0.5) * 0.1, Math.random() * 0.1, (Math.random() - 0.5) * 0.1),
+      life: 30 + Math.random() * 20
+    });
+  }
+}
+
+// ===================== UI =====================
+function updateHUD() {
+  document.getElementById('health-bar').style.width = (state.hp / state.maxHp * 100) + '%';
+  document.getElementById('stamina-bar').style.width = (state.stamina / state.maxStamina * 100) + '%';
+  document.getElementById('xp-bar').style.width = (state.xp % state.xpNeeded) / state.xpNeeded * 100 + '%';
+  document.getElementById('level-display').textContent = `Lv ${state.level} | 🐾 ${state.companions.length} | 🏆 ${state.artifacts.length}/${state.totalArtifacts}`;
+  document.getElementById('coin-display').textContent = `🪙 ${state.coins}`;
+}
+
+function notify(text) {
+  const div = document.createElement('div');
+  div.className = 'notification';
+  div.textContent = text;
+  document.getElementById('notifications').appendChild(div);
+  setTimeout(() => div.remove(), 3000);
+}
+
+function toggleInventory() {
+  const panel = document.getElementById('inventory-panel');
+  if (panel.style.display === 'block') {
+    panel.style.display = 'none';
+    renderer.domElement.requestPointerLock();
+  } else {
+    panel.style.display = 'block';
+    document.exitPointerLock();
+    renderInventory();
+  }
+}
+
+function renderInventory() {
+  const grid = document.getElementById('inventory-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < state.maxInventory; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'inv-slot';
+    if (state.inventory[i]) {
+      const item = state.inventory[i];
+      slot.textContent = item.emoji || '📦';
+      const name = document.createElement('span');
+      name.className = 'item-name';
+      name.textContent = item.name;
+      slot.appendChild(name);
+      if (item.heal || item.staminaRestore || item.attackBuff) {
+        slot.onclick = () => useItem(i);
+        slot.style.cursor = 'pointer';
+      }
+    }
+    grid.appendChild(slot);
+  }
+}
+
+function togglePause() {
+  paused = !paused;
+  document.getElementById('pause-menu').style.display = paused ? 'flex' : 'none';
+  if (paused) document.exitPointerLock();
+}
+
+window.resumeGame = function() {
+  paused = false;
+  document.getElementById('pause-menu').style.display = 'none';
+  renderer.domElement.requestPointerLock();
+};
+
+window.respawn = function() {
+  state.hp = state.maxHp;
+  state.stamina = state.maxStamina;
+  state.coins = Math.max(0, state.coins - 10);
+  isDead = false;
+  document.getElementById('death-screen').style.display = 'none';
+  player.position.set(0, 2, 0);
+  velocity.set(0, 0, 0);
+  updateHUD();
+  renderer.domElement.requestPointerLock();
+};
+
+// ===================== SAVE/LOAD =====================
+window.saveGame = function() {
+  const save = {
+    hp: state.hp, maxHp: state.maxHp, stamina: state.stamina, maxStamina: state.maxStamina,
+    xp: state.xp, level: state.level, coins: state.coins, zone: state.zone,
+    attack: state.attack, defense: state.defense, inventory: state.inventory,
+    artifacts: state.artifacts, companions: state.companions,
+    mercyKills: state.mercyKills, completedQuests: state.completedQuests
+  };
+  localStorage.setItem('realmRunnersSave', JSON.stringify(save));
+  notify('💾 Game Saved!');
+};
+
+window.loadGame = function() {
+  const raw = localStorage.getItem('realmRunnersSave');
+  if (!raw) {
+    notify('No save found! Starting new game.');
+    startGame();
+    return;
+  }
+  const save = JSON.parse(raw);
+  Object.assign(state, save);
+  document.getElementById('title-screen').style.display = 'none';
+  buildZone(state.zone);
+  updateHUD();
+  renderer.domElement.requestPointerLock();
+  notify('📂 Game Loaded!');
+};
+
+// ===================== HELPER =====================
+function getTerrainHeight(wx, wz, posAttr, geo) {
+  // Approximate terrain height
+  const params = geo.parameters;
+  const hw = params.width / 2;
+  const hh = params.height / 2;
+  const gridX = Math.floor((wx + hw) / params.width * params.widthSegments);
+  const gridZ = Math.floor((wz + hh) / params.height * params.heightSegments);
+  const idx = gridZ * (params.widthSegments + 1) + gridX;
+  if (idx >= 0 && idx < posAttr.count) {
+    return posAttr.getZ(idx);
+  }
+  return 0;
+}
+
+// ===================== MINIMAP =====================
+function updateMinimap() {
+  const ctx = minimapCtx;
+  const w = 150, h = 150;
+  ctx.fillStyle = 'rgba(0,30,0,0.8)';
+  ctx.fillRect(0, 0, w, h);
+
+  const scale = 1.5;
+  const cx = w / 2, cy = h / 2;
+
+  // Draw entities
+  collectibles.forEach(c => {
+    if (c.collected) return;
+    const rx = (c.mesh.position.x - player.position.x) * scale + cx;
+    const ry = (c.mesh.position.z - player.position.z) * scale + cy;
+    if (rx > 0 && rx < w && ry > 0 && ry < h) {
+      ctx.fillStyle = c.type === 'coin' ? '#ffd700' : c.type === 'artifact' ? '#ff44ff' : '#44ff44';
+      ctx.fillRect(rx - 1, ry - 1, 3, 3);
+    }
+  });
+
+  portals.forEach(p => {
+    const rx = (p.mesh.position.x - player.position.x) * scale + cx;
+    const ry = (p.mesh.position.z - player.position.z) * scale + cy;
+    if (rx > 0 && rx < w && ry > 0 && ry < h) {
+      ctx.fillStyle = '#4488ff';
+      ctx.beginPath();
+      ctx.arc(rx, ry, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+  enemies.forEach(e => {
+    if (!e.alive) return;
+    const rx = (e.mesh.position.x - player.position.x) * scale + cx;
+    const ry = (e.mesh.position.z - player.position.z) * scale + cy;
+    if (rx > 0 && rx < w && ry > 0 && ry < h) {
+      ctx.fillStyle = '#ff4444';
+      ctx.fillRect(rx - 2, ry - 2, 4, 4);
+    }
+  });
+
+  npcs.forEach(n => {
+    if (!n.mesh.visible) return;
+    const rx = (n.mesh.position.x - player.position.x) * scale + cx;
+    const ry = (n.mesh.position.z - player.position.z) * scale + cy;
+    if (rx > 0 && rx < w && ry > 0 && ry < h) {
+      ctx.fillStyle = '#ffaa44';
+      ctx.fillRect(rx - 2, ry - 2, 4, 4);
+    }
+  });
+
+  // Player arrow
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  const angle = -yaw;
+  ctx.moveTo(cx + Math.sin(angle) * 5, cy - Math.cos(angle) * 5);
+  ctx.lineTo(cx + Math.sin(angle + 2.5) * 3, cy - Math.cos(angle + 2.5) * 3);
+  ctx.lineTo(cx + Math.sin(angle - 2.5) * 3, cy - Math.cos(angle - 2.5) * 3);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// ===================== LEVELING =====================
+function checkLevelUp() {
+  while (state.xp >= state.xpNeeded) {
+    state.xp -= state.xpNeeded;
+    state.level++;
+    state.xpNeeded = Math.floor(state.xpNeeded * 1.5);
+    state.maxHp += 10;
+    state.hp = state.maxHp;
+    state.maxStamina += 5;
+    state.stamina = state.maxStamina;
+    state.attack += 2;
+    state.defense += 1;
+    notify(`⬆️ LEVEL UP! Now Level ${state.level}! HP+10, ATK+2, DEF+1`);
+    spawnParticles(player.position, 0xffd700, 20);
+  }
+}
+
+// ===================== GAME LOOP =====================
+function animate() {
+  requestAnimationFrame(animate);
+  if (paused) return;
+
+  const delta = clock.getDelta();
+
+  // Movement
+  const moveSpeed = state.speed * (state.sprinting ? sprintMult : 1) * (state.crouching ? 0.5 : 1);
+  const moveDir = new THREE.Vector3();
+
+  if (keys['w'] || keys['arrowup']) moveDir.z -= 1;
+  if (keys['s'] || keys['arrowdown']) moveDir.z += 1;
+  if (keys['a'] || keys['arrowleft']) moveDir.x -= 1;
+  if (keys['d'] || keys['arrowright']) moveDir.x += 1;
+
+  // Don't process 3D movement during bullet hell
+  if (!bulletHellActive) {
+    moveDir.normalize();
+    moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    velocity.x = moveDir.x * moveSpeed;
+    velocity.z = moveDir.z * moveSpeed;
+
+    // Sprint stamina
+    state.sprinting = keys['shift'] && state.stamina > 0 && moveDir.length() > 0;
+    if (state.sprinting) state.stamina = Math.max(0, state.stamina - 0.3);
+    else state.stamina = Math.min(state.maxStamina, state.stamina + 0.15);
+
+    // Crouch
+    state.crouching = !!keys['c'];
+
+    // Jump
+    if ((keys[' '] || keys['Space']) && onGround && !state.paragliding) {
+      velocity.y = jumpForce;
+      onGround = false;
+    }
+
+    // Gravity / Paraglide
+    if (state.paragliding) {
+      velocity.y = Math.max(velocity.y, -0.02); // Slow fall
+      state.stamina -= 0.2;
+      if (state.stamina <= 0 || onGround) {
+        state.paragliding = false;
+        if (state.stamina <= 0) notify('Stamina depleted! Paraglider closed.');
+      }
+    } else {
+      velocity.y += gravity;
+    }
+
+    // Apply velocity
+    player.position.x += velocity.x;
+    player.position.y += velocity.y;
+    player.position.z += velocity.z;
+
+    // Ground collision
+    const groundY = 1;
+    if (player.position.y <= groundY) {
+      player.position.y = groundY;
+      velocity.y = 0;
+      onGround = true;
+      state.paragliding = false;
+    }
+
+    // Boundary clamping
+    const zoneSize = ZONES[state.zone]?.size || 100;
+    player.position.x = Math.max(-zoneSize, Math.min(zoneSize, player.position.x));
+    player.position.z = Math.max(-zoneSize, Math.min(zoneSize, player.position.z));
+    if (player.position.y < -10) { player.position.y = 5; velocity.y = 0; }
+
+    // Platform collision
+    for (const e of entities) {
+      if (e.type === 'platform' || e.type === 'moving_platform') {
+        const m = e.mesh;
+        const box = new THREE.Box3().setFromObject(m);
+        const pPos = player.position;
+        if (pPos.x > box.min.x - 0.3 && pPos.x < box.max.x + 0.3 &&
+            pPos.z > box.min.z - 0.3 && pPos.z < box.max.z + 0.3) {
+          if (pPos.y >= box.max.y - 0.5 && pPos.y <= box.max.y + 1 && velocity.y <= 0) {
+            pPos.y = box.max.y + 1;
+            velocity.y = 0;
+            onGround = true;
+          }
+        }
+      }
+    }
+
+    // Player rotation
+    player.rotation.y = yaw;
+
+    // Camera follow (third person)
+    const camDist = state.crouching ? 3 : 5;
+    const camHeight = state.crouching ? 2 : 3;
+    const idealOffset = new THREE.Vector3(
+      Math.sin(yaw) * camDist,
+      camHeight + Math.sin(pitch) * 2,
+      Math.cos(yaw) * camDist
+    );
+    camera.position.lerp(player.position.clone().add(idealOffset), 0.1);
+    camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 1.5, 0)));
+  }
+
+  // Collectibles
+  for (const c of collectibles) {
+    if (c.collected) continue;
+    c.mesh.rotation.y += 0.02;
+
+    const dist = player.position.distanceTo(c.mesh.position);
+    if (dist < 1.5) {
+      if (c.type === 'coin') {
+        state.coins += c.value;
+        c.collected = true;
+        c.mesh.visible = false;
+        spawnParticles(c.mesh.position, 0xffd700, 5);
+      } else if (c.type === 'artifact') {
+        giveArtifact(c.name);
+        c.collected = true;
+        c.mesh.visible = false;
+        spawnParticles(c.mesh.position, c.color || 0xff44ff, 20);
+      } else if (c.type === 'item') {
+        if (addToInventory(c.name, c.emoji, c)) {
+          c.collected = true;
+          c.mesh.visible = false;
+          spawnParticles(c.mesh.position, 0x44ff44, 5);
+        }
+      }
+    }
+  }
+
+  // Enemy AI
+  for (const e of enemies) {
+    if (!e.alive) continue;
+
+    if (e.type === 'barrel') {
+      // Rolling barrel - DK style
+      e.mesh.position.z += e.speed * e.direction;
+      e.mesh.rotation.x += e.speed * 2;
+      if (Math.abs(e.mesh.position.z - 0) > e.range) e.direction *= -1;
+
+      const dist = player.position.distanceTo(e.mesh.position);
+      if (dist < 1.2 && damageCooldown <= 0) {
+        state.hp -= e.damage;
+        damageCooldown = 30;
+        notify(`🛢️ Hit by barrel! -${e.damage} HP`);
+        velocity.y = 0.15; // Knockback
+        updateHUD();
+      }
+    } else {
+      // Chase player
+      const dist = player.position.distanceTo(e.mesh.position);
+      if (dist < 20 && dist > 1.5) {
+        const dir = player.position.clone().sub(e.mesh.position).normalize();
+        e.mesh.position.add(dir.multiplyScalar(e.speed));
+        e.mesh.lookAt(player.position);
+      }
+
+      // Attack player
+      if (dist < 2 && damageCooldown <= 0 && !isDead) {
+        const dmg = Math.max(1, e.damage - state.defense);
+        state.hp -= dmg;
+        damageCooldown = 40;
+        notify(`💥 ${e.name} hit you! -${dmg} HP`);
+        spawnParticles(player.position, 0xff0000, 3);
+        updateHUD();
+      }
+    }
+
+    // Idle bob
+    e.mesh.position.y += Math.sin(clock.elapsedTime * 2 + e.mesh.position.x) * 0.002;
+  }
+
+  // Moving platforms
+  for (const e of entities) {
+    if (e.type === 'moving_platform') {
+      e.time += e.speed;
+      e.mesh.position.x = e.startX + Math.sin(e.time) * e.range;
+      e.mesh.position.z = e.startZ + Math.cos(e.time) * e.range * 0.5;
+    }
+  }
+
+  // Particles
+  particles = particles.filter(p => {
+    p.mesh.position.add(p.vel);
+    p.vel.y -= 0.002;
+    p.life--;
+    p.mesh.material.opacity = p.life / 30;
+    if (p.life <= 0) {
+      scene.remove(p.mesh);
+      return false;
+    }
+    return true;
+  });
+
+  // Interact proximity check
+  interactTarget = null;
+  let nearestDist = 3;
+
+  for (const p of portals) {
+    const d = player.position.distanceTo(p.mesh.position);
+    if (d < nearestDist) { nearestDist = d; interactTarget = { type: 'portal', label: p.label }; }
+  }
+  for (const n of npcs) {
+    if (!n.mesh.visible) continue;
+    const d = player.position.distanceTo(n.mesh.position);
+    if (d < nearestDist) { nearestDist = d; interactTarget = { type: 'npc', label: n.name }; }
+  }
+  for (const e of entities) {
+    if (e.type === 'cooking_pot' || e.type === 'telepad' || e.type === 'shrine') {
+      const d = player.position.distanceTo(e.mesh.position);
+      if (d < nearestDist) {
+        nearestDist = d;
+        interactTarget = { type: e.type, label: e.type === 'cooking_pot' ? 'Cooking Pot' : e.type === 'telepad' ? 'Teleport Pad' : 'Shrine' };
+      }
+    }
+  }
+
+  document.getElementById('interact-prompt').style.display = interactTarget ? 'block' : 'none';
+  if (interactTarget) {
+    document.getElementById('interact-prompt').textContent = `Press E - ${interactTarget.label}`;
+  }
+
+  // Cooldowns
+  if (attackCooldown > 0) attackCooldown--;
+  if (damageCooldown > 0) damageCooldown--;
+
+  // Death check
+    if (state.hp <= 0 && !isDead) {
+      state.hp = 0;
+      isDead = true;
+    document.exitPointerLock();
+  }
+
+  // Cape animation
+  if (player.children[3]) {
+    player.children[3].rotation.x = 0.15 + Math.sin(clock.elapsedTime * 3) * 0.1;
+  }
+
+  // Day/night cycle
+  state.dayTime += state.daySpeed;
+  if (state.dayTime > 1) state.dayTime = 0;
+  const sun = scene.getObjectByName('sun');
+  if (sun) {
+    const sunAngle = state.dayTime * Math.PI * 2;
+    sun.position.set(Math.cos(sunAngle) * 80, Math.sin(sunAngle) * 80 + 20, 30);
+    sun.intensity = Math.max(0.2, Math.sin(sunAngle) * 1.2);
+  }
+
+  // Fountain water animation
+  const waterFountain = scene.getObjectByName('water_fountain');
+  if (waterFountain) {
+    waterFountain.position.y = 1.05 + Math.sin(clock.elapsedTime * 2) * 0.05;
+  }
+
+  // Level up check
+  checkLevelUp();
+
+  // Update HUD
+  updateHUD();
+
+  // Update minimap
+  if (Math.floor(clock.elapsedTime * 5) % 2 === 0) updateMinimap();
+
+  // Render
+  renderer.render(scene, camera);
+}
+
+// ===================== START =====================
+window.startGame = function() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('loading').style.display = 'flex';
+
+  let progress = 0;
+  const loadTexts = ['Generating terrain...', 'Placing portals...', 'Spawning creatures...', 'Growing trees...', 'Scattering cookies...', 'Ready!'];
+  const loadInterval = setInterval(() => {
+    progress += 15 + Math.random() * 10;
+    if (progress > 100) progress = 100;
+    document.getElementById('loading-bar-inner').style.width = progress + '%';
+    document.getElementById('loading-text').textContent = loadTexts[Math.min(Math.floor(progress / 20), loadTexts.length - 1)];
+
+    if (progress >= 100) {
+      clearInterval(loadInterval);
+      setTimeout(() => {
+        document.getElementById('loading').style.display = 'none';
+        renderer.domElement.requestPointerLock();
+        notify('🌟 Welcome to Realm Runners! Explore the portals around you!');
+      }, 500);
+    }
+  }, 200);
+};
+
+// Init scene
+init();
+</script>
+</body>
+</html>
