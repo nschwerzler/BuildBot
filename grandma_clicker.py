@@ -996,24 +996,39 @@ class GameState:
 
     def click(self):
         amount = self.click_power * self.multiplier * self.rebirth_multiplier
+        if amount > 1e30:
+            amount = 1e30
         self.cookies += amount
         self.total_cookies += amount
         self.lifetime_cookies += amount
         self.total_clicks += 1
+        self._cap_values()
         return amount
 
     def get_rebirth_cost(self):
-        return int(1_000_000 * (2 ** self.rebirths))
+        try:
+            cost = int(1_000_000 * (2 ** min(self.rebirths, 1000)))
+        except (OverflowError, ValueError):
+            cost = int(1e30)
+        return min(cost, int(1e30))
 
     def can_rebirth(self):
         return self.cookies >= self.get_rebirth_cost()
+
+    def _cap_values(self):
+        """Prevent any value from becoming inf."""
+        cap = 1e30
+        self.cookies = min(self.cookies, cap)
+        self.total_cookies = min(self.total_cookies, cap)
+        self.lifetime_cookies = min(self.lifetime_cookies, cap)
+        self.rebirth_multiplier = min(self.rebirth_multiplier, 1e15)
 
     def rebirth(self):
         cost = self.get_rebirth_cost()
         if self.cookies < cost:
             return False
         self.rebirths += 1
-        self.rebirth_multiplier = 2.0 ** self.rebirths
+        self.rebirth_multiplier = min(2.0 ** min(self.rebirths, 1000), 1e15)
         # Reset progress but keep lifetime stats & rebirths
         self.cookies = 0.0
         self.total_cookies = 0.0
@@ -1035,9 +1050,12 @@ class GameState:
     def update(self, dt):
         # CPS
         earned = self.cps * self.multiplier * self.rebirth_multiplier * dt
+        if earned > 1e30:
+            earned = 1e30
         self.cookies += earned
         self.total_cookies += earned
         self.lifetime_cookies += earned
+        self._cap_values()
 
         # Cookie bounce animation
         if self.cookie_scale != self.cookie_target_scale:
@@ -1147,11 +1165,19 @@ class GameState:
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 def format_number(n):
-    if n >= 1_000_000_000:
+    if n != n or n == float('inf') or n == float('-inf'):
+        return "∞"  # handle inf/nan gracefully
+    if abs(n) >= 1e18:
+        return f"{n / 1e18:.1f}Qi"
+    elif abs(n) >= 1e15:
+        return f"{n / 1e15:.1f}Q"
+    elif abs(n) >= 1e12:
+        return f"{n / 1e12:.1f}T"
+    elif abs(n) >= 1_000_000_000:
         return f"{n / 1_000_000_000:.1f}B"
-    elif n >= 1_000_000:
+    elif abs(n) >= 1_000_000:
         return f"{n / 1_000_000:.1f}M"
-    elif n >= 1_000:
+    elif abs(n) >= 1_000:
         return f"{n / 1_000:.1f}K"
     else:
         return f"{int(n)}"
@@ -1698,8 +1724,8 @@ def handle_dev_action(gs, action):
         gs.notif_timer = 2.0
     elif action == "add_rebirths":
         gs.rebirths += 10
-        gs.rebirth_multiplier = 2.0 ** gs.rebirths
-        gs.notification = f"🔧 DEV: +10 rebirths! Now {gs.rebirth_multiplier}x"
+        gs.rebirth_multiplier = min(2.0 ** min(gs.rebirths, 1000), 1e15)
+        gs.notification = f"🔧 DEV: +10 rebirths! Now {format_number(gs.rebirth_multiplier)}x"
         gs.notif_timer = 2.0
     elif action == "big_mult":
         gs.multiplier = 100.0
