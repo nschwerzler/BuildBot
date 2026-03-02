@@ -1,7 +1,7 @@
 {
-  "cookies": 4637.43049995555,
-  "total_cookies": 4719.430499954126,
-  "total_clicks": 50,
+  "cookies": 4922.495499950474,
+  "total_cookies": 5004.495499949133,
+  "total_clicks": 45,
   "click_power": 3,
   "cps": 0.5,
   "owned": [
@@ -14,7 +14,7 @@
     0,
     0
   ],
-  "milestone_idx": 3,
+  "milestone_idx": 4,
   "multiplier": 1.0,
   "multiplier_timer": 0.0
 }

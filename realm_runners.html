@@ -68,11 +68,47 @@ canvas { display: block; }
 .inv-slot .count { position: absolute; bottom: 2px; right: 4px; font-size: 10px; color: #ffd700; }
 .inv-slot .item-name { position: absolute; bottom: -16px; font-size: 8px; color: #ccc; white-space: nowrap; }
 
-/* Bullet Hell Overlay */
+/* Encounter Overlay (Undertale / Shapes & Beats) */
+#encounter-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 500px; height: 420px;
+  background: #000; border: 3px solid #fff; border-radius: 4px; z-index: 380; display: none; flex-direction: column; overflow: hidden; }
+#encounter-overlay canvas { width: 100%; flex: 1; }
+#encounter-dialogue { color: #fff; font-size: 14px; padding: 8px 12px; text-align: center; min-height: 20px; }
+#encounter-info { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 13px; z-index: 2; text-shadow: 0 0 4px #000; }
+#encounter-buttons { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 2; }
+.enc-btn { background: #222; border: 2px solid #fff; color: #fff; padding: 6px 18px; border-radius: 4px;
+  cursor: pointer; font-size: 13px; font-weight: bold; text-transform: uppercase; transition: all 0.15s; }
+.enc-btn:hover { background: #444; }
+.enc-btn.fight { border-color: #ff4444; color: #ff4444; }
+.enc-btn.act { border-color: #ffaa00; color: #ffaa00; }
+.enc-btn.mercy { border-color: #44ff44; color: #44ff44; }
+.enc-btn.item { border-color: #44aaff; color: #44aaff; }
+#encounter-dialogue { position: absolute; top: 6px; left: 10px; right: 10px; color: #fff; font-size: 12px;
+  background: rgba(0,0,0,0.7); padding: 6px 10px; border-radius: 4px; z-index: 2; text-align: center; }
+
+/* Bullet Hell Overlay (legacy/shrine) */
 #bullet-hell { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 400px; height: 300px;
   background: rgba(0,0,0,0.95); border: 3px solid #ff6600; border-radius: 12px; z-index: 350; display: none; overflow: hidden; }
 #bullet-hell canvas { width: 100%; height: 100%; }
 #bh-info { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12px; }
+
+/* Mining Panel */
+#mining-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 440px;
+  background: rgba(10,5,0,0.95); border: 2px solid #cc8833; border-radius: 12px; padding: 20px; z-index: 400;
+  display: none; color: #fff; }
+#mining-title { color: #cc8833; font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 8px; }
+#mining-ore { display: flex; justify-content: center; align-items: center; margin: 12px 0; flex-direction: column; }
+#mining-ore .ore-block { width: 80px; height: 80px; border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; font-size: 40px; cursor: pointer; transition: transform 0.1s; border: 2px solid #886633; }
+#mining-ore .ore-block:hover { transform: scale(1.05); }
+#mining-ore .ore-block:active { transform: scale(0.92); }
+#mining-hp-bar { width: 200px; height: 10px; background: #333; border-radius: 5px; margin: 8px auto; }
+#mining-hp-fill { height: 100%; background: linear-gradient(90deg, #cc8833, #ffaa44); border-radius: 5px; transition: width 0.15s; }
+#mining-abilities { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+.mining-ability { background: rgba(100,60,20,0.5); border: 1px solid #cc8833; border-radius: 6px; padding: 6px 14px;
+  color: #ffcc66; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+.mining-ability:hover { background: rgba(100,60,20,0.8); }
+.mining-ability.on-cooldown { opacity: 0.4; cursor: not-allowed; }
+#mining-loot { text-align: center; margin-top: 8px; color: #ffd700; font-size: 13px; min-height: 18px; }
 
 /* Title Screen */
 #title-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0a0a2e, #1a0a3e, #0a2a2e);
@@ -134,7 +170,7 @@ canvas { display: block; }
   <h1>REALM RUNNERS</h1>
   <h2>The Ultimate Adventure</h2>
   <div class="subtitle">
-    A 3D adventure combining Portal puzzles, Undertale choices, Donkey Kong platforming,
+    A 3D adventure combining Portal puzzles, Undertale encounters, DK Bananza mining,
     Zelda exploration, Arena combat, Cookie collecting, Pet companions, Tower climbing,
     and so much more across 8 unique realms!
   </div>
@@ -189,6 +225,35 @@ canvas { display: block; }
   <canvas id="bh-canvas"></canvas>
 </div>
 
+<!-- Encounter Overlay (Undertale / Shapes & Beats style) -->
+<div id="encounter-overlay">
+  <div id="encounter-dialogue"></div>
+  <canvas id="encounter-canvas"></canvas>
+  <div id="encounter-info"></div>
+  <div id="encounter-buttons">
+    <button class="enc-btn fight" id="enc-fight" onclick="encounterFight()">FIGHT</button>
+    <button class="enc-btn act" id="enc-act" onclick="encounterAct()">ACT</button>
+    <button class="enc-btn item" id="enc-item" onclick="encounterItem()">ITEM</button>
+    <button class="enc-btn mercy" id="enc-mercy" onclick="encounterMercy()">MERCY</button>
+  </div>
+</div>
+
+<!-- Mining Panel -->
+<div id="mining-panel">
+  <div id="mining-title">⛏️ DK Bananza Mine</div>
+  <div id="mining-ore">
+    <div class="ore-block" id="mining-ore-block" onclick="mineHit()">🪨</div>
+  </div>
+  <div id="mining-hp-bar"><div id="mining-hp-fill" style="width:100%"></div></div>
+  <div id="mining-abilities">
+    <button class="mining-ability" onclick="miningAbility('groundpound')">💥 Ground Pound</button>
+    <button class="mining-ability" onclick="miningAbility('drill')">🔩 Drill Burst</button>
+    <button class="mining-ability" onclick="miningAbility('magnet')">🧲 Ore Magnet</button>
+  </div>
+  <div id="mining-loot"></div>
+  <button onclick="document.getElementById('mining-panel').style.display='none'" style="display:block;margin:8px auto 0;background:none;border:1px solid #666;color:#aaa;padding:4px 16px;border-radius:4px;cursor:pointer;">Close</button>
+</div>
+
 <!-- Cooking -->
 <div id="cooking-panel">
   <div id="cooking-title">🍳 Cooking Pot</div>
@@ -231,7 +296,10 @@ const state = {
   mercyKills: { mercy: 0, fight: 0 }, cookingSlots: [null, null, null],
   paragliding: false, crouching: false, sprinting: false,
   artifacts: [], totalArtifacts: 8, companions: [],
-  dayTime: 0.5, daySpeed: 0.0001
+  dayTime: 0.5, daySpeed: 0.0001,
+  mineDepth: 0, borgKongDepth: 0, oreCollected: 0, oreNeeded: 5,
+  miningCooldowns: { groundPound: 0, drillBurst: 0, oreMagnet: 0 },
+  currentOre: null
 };
 
 // ===================== GLOBALS =====================
@@ -259,6 +327,13 @@ let jumpForce = 0.25;
 let sprintMult = 1.8;
 let attackCooldown = 0;
 let damageCooldown = 0;
+let miningPanelOpen = false;
+let encounterActive = false;
+let encounterEnemy = null;
+let encounterBullets = [];
+let encounterTimer = 0;
+let encounterPlayerPos = { x: 150, y: 250 };
+let encounterPhase = 'menu'; // menu | dodge | act
 let minimapCtx;
 let zoneGroups = {};
 
@@ -267,7 +342,7 @@ const ZONES = {
   hub: { name: 'Dream Hub', color: 0x2a4a2a, skyColor: 0x1a2a4a, groundColor: 0x3a5a3a, size: 100, y: 0 },
   portal: { name: 'Portal Peaks', color: 0x3a3a5a, skyColor: 0x1a1a3a, groundColor: 0x4a4a6a, size: 80, y: 0 },
   undertale: { name: 'Mercy Meadows', color: 0x2a1a3a, skyColor: 0x0a0a1a, groundColor: 0x3a2a4a, size: 70, y: 0 },
-  dk: { name: 'Jungle Rush', color: 0x1a4a1a, skyColor: 0x0a3a2a, groundColor: 0x2a5a1a, size: 80, y: 0 },
+  dk: { name: 'DK Bananza Mine', color: 0x3a2a0a, skyColor: 0x1a1a0a, groundColor: 0x4a3a1a, size: 80, y: 0 },
   arena: { name: 'Battle Arena', color: 0x4a2a1a, skyColor: 0x2a1a0a, groundColor: 0x5a3a2a, size: 60, y: 0 },
   cookie: { name: 'Cookie Kingdom', color: 0x4a3a2a, skyColor: 0x3a2a1a, groundColor: 0x6a5a3a, size: 70, y: 0 },
   evolution: { name: 'Evolution Grove', color: 0x0a4a3a, skyColor: 0x0a2a2a, groundColor: 0x1a5a4a, size: 80, y: 0 },
@@ -482,7 +557,7 @@ function buildHub(group) {
   // Portal ring
   const portalZones = ['portal', 'undertale', 'dk', 'arena', 'cookie', 'evolution', 'tower', 'zelda'];
   const portalColors = [0x4466ff, 0xff66ff, 0x44ff44, 0xff4444, 0xffaa44, 0x44ffaa, 0x888888, 0x66ccff];
-  const portalNames = ['Portal Peaks', 'Mercy Meadows', 'Jungle Rush', 'Battle Arena', 'Cookie Kingdom', 'Evolution Grove', 'Tower of Trials', 'Hyrule Fields'];
+  const portalNames = ['Portal Peaks', 'Mercy Meadows', 'DK Bananza Mine', 'Battle Arena', 'Cookie Kingdom', 'Evolution Grove', 'Tower of Trials', 'Hyrule Fields'];
 
   portalZones.forEach((pz, i) => {
     const angle = (i / portalZones.length) * Math.PI * 2;
@@ -676,72 +751,316 @@ function buildMercyMeadows(group) {
   notify('💜 Mercy Meadows - Will you fight or show mercy?');
 }
 
-// ---- JUNGLE RUSH (DK) ----
+// ---- DK BANANZA MINE (dig deeper following Borg Kong) ----
 function buildJungleRush(group) {
-  scene.fog = new THREE.FogExp2(0x0a3a1a, 0.01);
+  scene.fog = new THREE.FogExp2(0x0a0a05, 0.012);
 
-  // Jungle trees
-  for (let i = 0; i < 40; i++) {
-    const x = (Math.random() - 0.5) * 120;
-    const z = (Math.random() - 0.5) * 120;
-    createPalmTree(group, x, 0, z);
-  }
+  // Mine state
+  state.mineDepth = state.mineDepth || 0;
+  state.oreCollected = state.oreCollected || 0;
+  state.oreNeeded = 5 + state.mineDepth * 3;
+  state.borgKongDepth = state.borgKongDepth || 0;
 
-  // Platforming course
-  const coursePoints = [];
-  for (let i = 0; i < 15; i++) {
-    const x = i * 6 - 30;
-    const y = Math.sin(i * 0.5) * 3 + i * 0.8;
-    const z = Math.cos(i * 0.7) * 8;
-    createPlatform(group, x, y, z, 3, 0.3, 3, 0x886633);
-    coursePoints.push({ x, y, z });
+  const depth = state.mineDepth;
+  const LAYER_HEIGHT = 8;
 
-    // Some have coins
-    if (i % 2 === 0) createCoin(group, x, y + 2, z);
-  }
+  // Mine entrance at surface
+  const entrance = new THREE.Mesh(
+    new THREE.BoxGeometry(6, 4, 1),
+    new THREE.MeshStandardMaterial({ color: 0x553311, roughness: 0.9 })
+  );
+  entrance.position.set(0, 2, 5);
+  entrance.castShadow = true;
+  group.add(entrance);
 
-  // Rolling barrels (DK-style)
-  for (let i = 0; i < 5; i++) {
-    const barrel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.5, 0.5, 0.8, 12),
-      new THREE.MeshStandardMaterial({ color: 0x884422, roughness: 0.8 })
+  // Entrance arch
+  const arch = new THREE.Mesh(
+    new THREE.TorusGeometry(3, 0.4, 8, 12, Math.PI),
+    new THREE.MeshStandardMaterial({ color: 0x664422 })
+  );
+  arch.position.set(0, 4, 5);
+  group.add(arch);
+
+  // Mine shaft walls (descending cylinder)
+  const shaftDepth = (depth + 2) * LAYER_HEIGHT;
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(12, 10, shaftDepth, 16, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x332211, roughness: 1, side: THREE.BackSide })
+  );
+  shaft.position.y = -shaftDepth / 2 + 2;
+  group.add(shaft);
+
+  // Layers/floors for each depth level
+  for (let d = 0; d <= depth + 1; d++) {
+    const y = -d * LAYER_HEIGHT;
+    const layerColors = [0x886644, 0x776633, 0x665522, 0x554411, 0x443300, 0x332200, 0x221100, 0x443355, 0x335544, 0x554433];
+    const layerColor = layerColors[d % layerColors.length];
+
+    // Ring platform at each depth
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(4, 11, 16),
+      new THREE.MeshStandardMaterial({ color: layerColor, roughness: 0.9, side: THREE.DoubleSide })
     );
-    barrel.rotation.z = Math.PI / 2;
-    barrel.position.set(-30 + i * 12, 3, Math.random() * 10 - 5);
-    barrel.castShadow = true;
-    group.add(barrel);
-    enemies.push({
-      mesh: barrel, type: 'barrel', hp: 999, maxHp: 999, name: 'Rolling Barrel',
-      speed: 0.08 + Math.random() * 0.05, damage: 15, startX: barrel.position.x,
-      direction: 1, range: 10
-    });
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = y;
+    ring.receiveShadow = true;
+    group.add(ring);
+    entities.push({ mesh: ring, type: 'platform' });
+
+    // Spiral ramp down to next level
+    if (d <= depth) {
+      for (let s = 0; s < 8; s++) {
+        const angle = (s / 8) * Math.PI * 2 + d * 0.5;
+        const rampY = y - (s / 8) * LAYER_HEIGHT;
+        const ramp = new THREE.Mesh(
+          new THREE.BoxGeometry(3, 0.3, 2),
+          new THREE.MeshStandardMaterial({ color: 0x665533, roughness: 0.8 })
+        );
+        ramp.position.set(Math.cos(angle) * 8, rampY, Math.sin(angle) * 8);
+        ramp.rotation.y = angle;
+        ramp.receiveShadow = true;
+        group.add(ramp);
+        entities.push({ mesh: ramp, type: 'platform' });
+      }
+    }
+
+    // Ore veins on this depth
+    const oreTypes = [
+      { emoji: '🪨', name: 'Stone', color: 0x888888, hp: 3, value: 1, minDepth: 0 },
+      { emoji: '🟫', name: 'Copper Ore', color: 0xcc7744, hp: 5, value: 2, minDepth: 0 },
+      { emoji: '⬜', name: 'Iron Ore', color: 0xcccccc, hp: 8, value: 4, minDepth: 1 },
+      { emoji: '🟡', name: 'Gold Ore', color: 0xffcc00, hp: 12, value: 8, minDepth: 2 },
+      { emoji: '💎', name: 'Diamond Ore', color: 0x44ddff, hp: 20, value: 15, minDepth: 3 },
+      { emoji: '💜', name: 'Amethyst Ore', color: 0xaa44ff, hp: 25, value: 20, minDepth: 4 },
+      { emoji: '🔴', name: 'Ruby Ore', color: 0xff2244, hp: 30, value: 30, minDepth: 5 },
+      { emoji: '🟢', name: 'Emerald Ore', color: 0x22ff44, hp: 35, value: 40, minDepth: 6 },
+      { emoji: '⭐', name: 'Star Fragment', color: 0xffffaa, hp: 50, value: 100, minDepth: 7 }
+    ];
+
+    // Place 4-6 ore veins per layer
+    const oreCount = 4 + Math.floor(Math.random() * 3);
+    for (let o = 0; o < oreCount; o++) {
+      const angle = (o / oreCount) * Math.PI * 2 + Math.random() * 0.5;
+      const dist = 5 + Math.random() * 4;
+      const ox = Math.cos(angle) * dist;
+      const oz = Math.sin(angle) * dist;
+
+      // Pick ore type based on depth
+      const available = oreTypes.filter(ot => ot.minDepth <= d);
+      // Weighted: deeper ores rarer
+      const weights = available.map((ot, i) => Math.max(1, available.length - i));
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
+      let pick = Math.random() * totalWeight;
+      let oreType = available[0];
+      for (let i = 0; i < available.length; i++) {
+        pick -= weights[i];
+        if (pick <= 0) { oreType = available[i]; break; }
+      }
+
+      const ore = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.6, 0),
+        new THREE.MeshStandardMaterial({ color: oreType.color, roughness: 0.6, metalness: 0.3 })
+      );
+      ore.position.set(ox, y + 0.6, oz);
+      ore.castShadow = true;
+      group.add(ore);
+
+      // Glow for rare ores
+      if (oreType.minDepth >= 3) {
+        const gl = new THREE.PointLight(oreType.color, 0.5, 4);
+        gl.position.copy(ore.position);
+        group.add(gl);
+      }
+
+      entities.push({
+        mesh: ore, type: 'ore_vein',
+        oreType: oreType.name, oreEmoji: oreType.emoji,
+        oreColor: oreType.color, oreHp: oreType.hp,
+        oreMaxHp: oreType.hp, oreValue: oreType.value,
+        mined: false
+      });
+    }
+
+    // Torches for lighting
+    for (let t = 0; t < 4; t++) {
+      const ta = (t / 4) * Math.PI * 2;
+      const torch = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 0.4, 6),
+        new THREE.MeshStandardMaterial({ color: 0x886633 })
+      );
+      torch.position.set(Math.cos(ta) * 10.5, y + 1.5, Math.sin(ta) * 10.5);
+      group.add(torch);
+      const flame = new THREE.PointLight(0xff8833, 0.6, 8);
+      flame.position.set(Math.cos(ta) * 10.5, y + 1.8, Math.sin(ta) * 10.5);
+      group.add(flame);
+    }
+
+    // Coins at depth
+    for (let c2 = 0; c2 < 2; c2++) {
+      const ca = Math.random() * Math.PI * 2;
+      createCoin(group, Math.cos(ca) * 6, y + 0.5, Math.sin(ca) * 6);
+    }
   }
 
-  // Vines (climbable)
-  for (let i = 0; i < 6; i++) {
-    const vine = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 8, 6),
-      new THREE.MeshStandardMaterial({ color: 0x228822 })
+  // Borg Kong (big gorilla NPC that goes deeper)
+  const borgY = -state.borgKongDepth * LAYER_HEIGHT;
+  const borgGroup = new THREE.Group();
+
+  // Body (big barrel-chested borg gorilla)
+  const borgBody = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.7, 1.2, 4, 8),
+    new THREE.MeshStandardMaterial({ color: 0x553322, roughness: 0.8 })
+  );
+  borgBody.position.y = 1.2;
+  borgBody.castShadow = true;
+  borgGroup.add(borgBody);
+
+  // Head
+  const borgHead = new THREE.Mesh(
+    new THREE.SphereGeometry(0.45, 8, 8),
+    new THREE.MeshStandardMaterial({ color: 0x664433 })
+  );
+  borgHead.position.y = 2.2;
+  borgGroup.add(borgHead);
+
+  // Glowing cyber eye (borg)
+  const cyberEye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.08, 6, 6),
+    new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 2 })
+  );
+  cyberEye.position.set(-0.15, 2.3, -0.38);
+  borgGroup.add(cyberEye);
+  const normalEye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 6, 6),
+    new THREE.MeshStandardMaterial({ color: 0x111111 })
+  );
+  normalEye.position.set(0.15, 2.3, -0.38);
+  borgGroup.add(normalEye);
+
+  // Cyber arm
+  const cyberArm = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.1, 1, 6),
+    new THREE.MeshStandardMaterial({ color: 0x888899, metalness: 0.8, roughness: 0.2 })
+  );
+  cyberArm.position.set(-0.6, 1.3, 0);
+  cyberArm.rotation.z = 0.3;
+  borgGroup.add(cyberArm);
+
+  // Pickaxe in hand
+  const pickHandle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 1.2, 6),
+    new THREE.MeshStandardMaterial({ color: 0x664422 })
+  );
+  pickHandle.position.set(0.6, 1.5, -0.3);
+  pickHandle.rotation.z = -0.8;
+  borgGroup.add(pickHandle);
+  const pickHead = new THREE.Mesh(
+    new THREE.BoxGeometry(0.6, 0.15, 0.1),
+    new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.7 })
+  );
+  pickHead.position.set(0.85, 2.0, -0.3);
+  borgGroup.add(pickHead);
+
+  // Borg glow
+  const borgGlow = new THREE.PointLight(0xff4400, 0.5, 6);
+  borgGlow.position.y = 2;
+  borgGroup.add(borgGlow);
+
+  borgGroup.position.set(0, borgY, 0);
+  group.add(borgGroup);
+
+  const oreNeededText = state.oreNeeded - state.oreCollected;
+  npcs.push({
+    mesh: borgGroup, name: 'Borg Kong',
+    dialogue: [{
+      text: `*GRUNT* Borg Kong dig deep! We at depth ${state.borgKongDepth}. Need ${Math.max(0, oreNeededText)} more ore to break through to next level! Mine ore veins nearby - press E on glowing rocks! Borg Kong's cyber-arm detect rare gems below...`,
+      choices: [
+        { label: "Let's dig deeper!", action: () => {
+          if (state.oreCollected >= state.oreNeeded) {
+            state.borgKongDepth++;
+            state.mineDepth = Math.max(state.mineDepth, state.borgKongDepth);
+            state.oreCollected = 0;
+            state.oreNeeded = 5 + state.mineDepth * 3;
+            state.xp += 50 + state.borgKongDepth * 20;
+            state.coins += 10 + state.borgKongDepth * 5;
+            notify(`⛏️ DEPTH ${state.borgKongDepth}! Borg Kong smashes through! +${50 + state.borgKongDepth * 20} XP`);
+            if (state.borgKongDepth >= 8) {
+              giveArtifact('Core Crystal');
+              notify('🏆 You reached the core! Core Crystal artifact earned!');
+            }
+            closeDialogue();
+            buildZone('dk');
+          } else {
+            notify(`Need ${state.oreNeeded - state.oreCollected} more ore! Mine the veins nearby.`);
+            closeDialogue();
+          }
+        }},
+        { label: "What abilities do I have?", next: 1 },
+        { label: "See ya!", next: -1 }
+      ]
+    }, {
+      text: "Borg Kong teach you! 💥 Ground Pound (G key) - smash nearby ore for 3x damage! 🔩 Drill Burst - hits ALL ore on this depth! 🧲 Ore Magnet - pulls ore drops to you! Use 'em wisely, they got cooldowns.",
+      choices: [
+        { label: "Awesome!", next: -1 }
+      ]
+    }],
+    currentNode: 0
+  });
+
+  // Depth sign
+  createNPC(group, 3, 0, 3, 'Mine Foreman', 0xcc8833, [{
+    text: `Welcome to the DK Bananza Mine! Current depth: Level ${state.borgKongDepth}. Ore collected: ${state.oreCollected}/${state.oreNeeded}. Walk to ore veins and press E to mine! Follow Borg Kong deeper to find rarer gems. Reach depth 8 to claim the Core Crystal!`,
+    choices: [{ label: "Got it!", next: -1 }]
+  }]);
+
+  // Some surface decoration
+  for (let i = 0; i < 8; i++) {
+    const rock = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.8, 0),
+      new THREE.MeshStandardMaterial({ color: 0x555544, roughness: 0.9 })
     );
-    vine.position.set(-20 + i * 10, 4, i % 2 === 0 ? 5 : -5);
-    group.add(vine);
-    entities.push({ mesh: vine, type: 'vine', climbable: true });
+    rock.position.set((Math.random() - 0.5) * 30, 0.3, (Math.random() - 0.5) * 30);
+    rock.castShadow = true;
+    group.add(rock);
   }
 
-  // Banana collectibles
-  for (let i = 0; i < 10; i++) {
-    createCollectible(group, (Math.random() - 0.5) * 60, 2 + Math.random() * 5, (Math.random() - 0.5) * 40, '🍌', 'Banana', 0xffdd00, { heal: 5 });
+  // Mine carts (decoration)
+  for (let i = 0; i < 3; i++) {
+    const cart = new THREE.Group();
+    const cartBody = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.6, 0.8),
+      new THREE.MeshStandardMaterial({ color: 0x666655, metalness: 0.4 })
+    );
+    cartBody.position.y = 0.5;
+    cart.add(cartBody);
+    for (let w = 0; w < 4; w++) {
+      const wheel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.15, 0.05, 8),
+        new THREE.MeshStandardMaterial({ color: 0x333333 })
+      );
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(w < 2 ? -0.4 : 0.4, 0.15, w % 2 === 0 ? 0.35 : -0.35);
+      cart.add(wheel);
+    }
+    cart.position.set(-8 + i * 8, 0, 8);
+    group.add(cart);
   }
 
-  // DK-style enemy (gorilla)
-  createEnemy(group, 40, 12, 0, 'Kong Guardian', 0x664422, 80, 20, 3);
+  // Rails
+  const rail1 = new THREE.Mesh(
+    new THREE.BoxGeometry(24, 0.05, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8 })
+  );
+  rail1.position.set(0, 0.02, 7.7);
+  group.add(rail1);
+  const rail2 = rail1.clone();
+  rail2.position.z = 8.3;
+  group.add(rail2);
 
-  // Artifact at end
-  createArtifact(group, 60, 15, 0, 'Jungle Crown', 0x44ff44);
+  createArtifact(group, 0, -8 * LAYER_HEIGHT + 2, 0, 'Core Crystal', 0xffaa33);
+  createPortal(group, 0, 0, 12, 'hub', 0xffffff, 'Return to Hub');
 
-  createPortal(group, 0, 0, -15, 'hub', 0xffffff, 'Return to Hub');
-
-  notify('🌴 Jungle Rush - Platform your way through! Watch for barrels!');
+  notify(`⛏️ DK Bananza Mine - Depth ${state.borgKongDepth} | Mine ore & follow Borg Kong deeper!`);
 }
 
 // ---- BATTLE ARENA ----
@@ -1480,34 +1799,20 @@ function createMercyEnemy(group, x, y, z, name, color, dialogue) {
     mesh: creatureGroup, name, isMercyCreature: true,
     dialogue: [
       { text: dialogue, choices: [
-        { label: "❤️ MERCY (Spare)", action: () => {
-          state.mercyKills.mercy++;
-          notify(`💛 You spared ${name}! (Mercy: ${state.mercyKills.mercy})`);
-          state.xp += 15;
-          creatureGroup.visible = false;
+        { label: "⚔️ ENCOUNTER!", action: () => {
+          closeDialogue();
+          const enemyObj = { mesh: creatureGroup, name, _encounterHp: 30 + state.level * 5, _actCount: 0, _canMercy: false };
+          startEncounter(enemyObj);
         }},
-        { label: "⚔️ FIGHT", action: () => {
-          state.mercyKills.fight++;
-          state.xp += 5;
-          state.coins += 3;
-          notify(`⚔️ You fought ${name}... (Fights: ${state.mercyKills.fight})`);
-          creatureGroup.visible = false;
-        }},
-        { label: "💬 ACT (Talk)", next: 1 }
+        { label: "💬 Talk first", next: 1 }
       ]},
-      { text: `You talk to ${name}. It seems to appreciate the company. Maybe showing mercy is the better path?`, choices: [
-        { label: "❤️ MERCY (Spare)", action: () => {
-          state.mercyKills.mercy++;
-          state.xp += 20;
-          notify(`💛 ${name} was touched by your kindness! (Mercy: ${state.mercyKills.mercy})`);
-          creatureGroup.visible = false;
+      { text: `You talk to ${name}. It seems curious but cautious. Press ENCOUNTER to begin the challenge - dodge attacks, then choose FIGHT, ACT, or MERCY!`, choices: [
+        { label: "⚔️ ENCOUNTER!", action: () => {
+          closeDialogue();
+          const enemyObj = { mesh: creatureGroup, name, _encounterHp: 30 + state.level * 5, _actCount: 1, _canMercy: false };
+          startEncounter(enemyObj);
         }},
-        { label: "⚔️ FIGHT anyway", action: () => {
-          state.mercyKills.fight++;
-          state.xp += 5;
-          notify(`💔 ${name} looked disappointed... (Fights: ${state.mercyKills.fight})`);
-          creatureGroup.visible = false;
-        }}
+        { label: "Walk away", next: -1 }
       ]}
     ],
     currentNode: 0
@@ -1686,6 +1991,301 @@ function giveArtifact(name) {
   }
 }
 
+// ===================== MINING SYSTEM =====================
+let activeOreEntity = null;
+
+window.mineHit = function() {
+  if (!activeOreEntity || activeOreEntity.mined) return;
+  const dmg = state.attack * 0.3 + 1;
+  activeOreEntity.oreHp -= dmg;
+  spawnParticles(activeOreEntity.mesh.position, activeOreEntity.oreColor, 3);
+
+  // Screen shake
+  const oreBlock = document.getElementById('ore-block');
+  oreBlock.style.transform = `translateX(${(Math.random()-0.5)*8}px)`;
+  setTimeout(() => oreBlock.style.transform = '', 100);
+
+  // Update HP bar
+  const pct = Math.max(0, activeOreEntity.oreHp / activeOreEntity.oreMaxHp * 100);
+  document.getElementById('ore-hp-fill').style.width = pct + '%';
+  document.getElementById('ore-name').textContent = `${activeOreEntity.oreEmoji} ${activeOreEntity.oreType} (${Math.ceil(activeOreEntity.oreHp)}/${activeOreEntity.oreMaxHp})`;
+
+  if (activeOreEntity.oreHp <= 0) {
+    activeOreEntity.mined = true;
+    activeOreEntity.mesh.visible = false;
+    state.oreCollected += activeOreEntity.oreValue;
+    state.xp += activeOreEntity.oreValue * 2;
+    state.coins += activeOreEntity.oreValue;
+    notify(`⛏️ Mined ${activeOreEntity.oreEmoji} ${activeOreEntity.oreType}! (+${activeOreEntity.oreValue} ore, +${activeOreEntity.oreValue*2} XP)`);
+    notify(`Ore: ${state.oreCollected}/${state.oreNeeded} for next depth`);
+    closeMiningPanel();
+    updateHUD();
+  }
+};
+
+window.miningAbility = function(ability) {
+  const now = Date.now();
+  const cooldowns = { groundPound: 8000, drillBurst: 15000, oreMagnet: 12000 };
+  if (state.miningCooldowns[ability] && now - state.miningCooldowns[ability] < cooldowns[ability]) {
+    const remaining = Math.ceil((cooldowns[ability] - (now - state.miningCooldowns[ability])) / 1000);
+    notify(`⏳ ${ability} on cooldown! ${remaining}s remaining`);
+    return;
+  }
+  state.miningCooldowns[ability] = now;
+
+  if (ability === 'groundPound') {
+    // 3x damage to current ore
+    if (activeOreEntity && !activeOreEntity.mined) {
+      const dmg = (state.attack * 0.3 + 1) * 3;
+      activeOreEntity.oreHp -= dmg;
+      spawnParticles(activeOreEntity.mesh.position, 0xffaa00, 10);
+      notify('💥 GROUND POUND! 3x damage!');
+      const pct = Math.max(0, activeOreEntity.oreHp / activeOreEntity.oreMaxHp * 100);
+      document.getElementById('ore-hp-fill').style.width = pct + '%';
+      if (activeOreEntity.oreHp <= 0) { window.mineHit(); }
+    }
+  } else if (ability === 'drillBurst') {
+    // Hits all ore on current platform
+    let count = 0;
+    for (const e of entities) {
+      if (e.type === 'ore_vein' && !e.mined) {
+        const dist = player.position.distanceTo(e.mesh.position);
+        if (dist < 15) {
+          e.oreHp -= state.attack * 0.5;
+          spawnParticles(e.mesh.position, e.oreColor, 3);
+          if (e.oreHp <= 0) {
+            e.mined = true;
+            e.mesh.visible = false;
+            state.oreCollected += e.oreValue;
+            state.xp += e.oreValue * 2;
+            state.coins += e.oreValue;
+            count++;
+          }
+        }
+      }
+    }
+    notify(`🔩 DRILL BURST! Hit all nearby ore!${count > 0 ? ` Mined ${count} veins!` : ''}`);
+    if (activeOreEntity?.mined) closeMiningPanel();
+    updateHUD();
+  } else if (ability === 'oreMagnet') {
+    // Pull all coins and ore drops towards player
+    for (const c of collectibles) {
+      if (!c.collected && c.type === 'coin') {
+        const dist = player.position.distanceTo(c.mesh.position);
+        if (dist < 25) {
+          c.mesh.position.lerp(player.position, 0.9);
+        }
+      }
+    }
+    notify('🧲 ORE MAGNET! Pulling treasures towards you!');
+  }
+};
+
+function openMiningPanel(oreEntity) {
+  activeOreEntity = oreEntity;
+  miningPanelOpen = true;
+  const panel = document.getElementById('mining-panel');
+  panel.style.display = 'block';
+  document.getElementById('ore-block').style.backgroundColor = '#' + oreEntity.oreColor.toString(16).padStart(6, '0');
+  document.getElementById('ore-name').textContent = `${oreEntity.oreEmoji} ${oreEntity.oreType} (${Math.ceil(oreEntity.oreHp)}/${oreEntity.oreMaxHp})`;
+  document.getElementById('ore-hp-fill').style.width = (oreEntity.oreHp / oreEntity.oreMaxHp * 100) + '%';
+  document.exitPointerLock();
+}
+
+function closeMiningPanel() {
+  miningPanelOpen = false;
+  activeOreEntity = null;
+  document.getElementById('mining-panel').style.display = 'none';
+}
+
+// ===================== ENCOUNTER SYSTEM (Undertale/Shapes&Beats) =====================
+function startEncounter(enemy) {
+  encounterActive = true;
+  encounterEnemy = enemy;
+  encounterBullets = [];
+  encounterTimer = 0;
+  encounterPhase = 'menu';
+  encounterPlayerPos = { x: 150, y: 250 };
+  document.getElementById('encounter-overlay').style.display = 'flex';
+  document.exitPointerLock();
+  const canvas = document.getElementById('encounter-canvas');
+  canvas.width = 300;
+  canvas.height = 300;
+}
+
+function endEncounter(mercied) {
+  encounterActive = false;
+  document.getElementById('encounter-overlay').style.display = 'none';
+  if (encounterEnemy) {
+    if (mercied) {
+      state.mercyKills.mercy++;
+      state.xp += 20;
+      notify(`💛 You spared ${encounterEnemy.name}! (Mercy: ${state.mercyKills.mercy})`);
+    } else {
+      state.mercyKills.fight++;
+      state.xp += 5;
+      state.coins += 3;
+      notify(`⚔️ You defeated ${encounterEnemy.name}! (Fights: ${state.mercyKills.fight})`);
+    }
+    encounterEnemy.mesh.visible = false;
+    encounterEnemy = null;
+  }
+  updateHUD();
+}
+
+function encounterDodgePhase() {
+  encounterPhase = 'dodge';
+  encounterBullets = [];
+  encounterTimer = 0;
+  const canvas = document.getElementById('encounter-canvas');
+  const ctx = canvas.getContext('2d');
+  encounterPlayerPos = { x: 150, y: 250 };
+
+  function animateEncounter() {
+    if (!encounterActive || encounterPhase !== 'dodge') return;
+    encounterTimer++;
+
+    // Spawn bullets in patterns
+    if (encounterTimer % 15 === 0) {
+      const pattern = Math.floor(Math.random() * 4);
+      if (pattern === 0) {
+        // Horizontal wave
+        for (let i = 0; i < 5; i++) {
+          encounterBullets.push({ x: -10, y: 30 + i * 55, vx: 2 + Math.random(), vy: 0, r: 5, color: '#ff6644' });
+        }
+      } else if (pattern === 1) {
+        // Spiral
+        const angle = encounterTimer * 0.1;
+        encounterBullets.push({ x: 150 + Math.cos(angle) * 100, y: 150 + Math.sin(angle) * 100, vx: -Math.cos(angle) * 1.5, vy: -Math.sin(angle) * 1.5, r: 4, color: '#44aaff' });
+      } else if (pattern === 2) {
+        // Rain
+        encounterBullets.push({ x: Math.random() * 300, y: -10, vx: 0, vy: 2 + Math.random() * 2, r: 4, color: '#ffaa22' });
+        encounterBullets.push({ x: Math.random() * 300, y: -10, vx: 0, vy: 2 + Math.random() * 2, r: 4, color: '#ffaa22' });
+      } else {
+        // Aimed
+        const dx = encounterPlayerPos.x - 150;
+        const dy = encounterPlayerPos.y - 150;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        encounterBullets.push({ x: 150, y: 150, vx: dx / dist * 2.5, vy: dy / dist * 2.5, r: 6, color: '#ff44ff' });
+      }
+    }
+
+    // Move bullets
+    for (const b of encounterBullets) {
+      b.x += b.vx;
+      b.y += b.vy;
+    }
+    // Remove off-screen
+    encounterBullets = encounterBullets.filter(b => b.x > -20 && b.x < 320 && b.y > -20 && b.y < 320);
+
+    // Player movement (WASD)
+    const spd = 3;
+    if (keys['w'] || keys['arrowup']) encounterPlayerPos.y -= spd;
+    if (keys['s'] || keys['arrowdown']) encounterPlayerPos.y += spd;
+    if (keys['a'] || keys['arrowleft']) encounterPlayerPos.x -= spd;
+    if (keys['d'] || keys['arrowright']) encounterPlayerPos.x += spd;
+    encounterPlayerPos.x = Math.max(10, Math.min(290, encounterPlayerPos.x));
+    encounterPlayerPos.y = Math.max(10, Math.min(290, encounterPlayerPos.y));
+
+    // Collision
+    for (const b of encounterBullets) {
+      const dx = b.x - encounterPlayerPos.x;
+      const dy = b.y - encounterPlayerPos.y;
+      if (Math.sqrt(dx * dx + dy * dy) < b.r + 6) {
+        state.hp -= 5;
+        updateHUD();
+        b.x = -999; // Remove
+        if (state.hp <= 0) {
+          endEncounter(false);
+          playerDeath();
+          return;
+        }
+      }
+    }
+
+    // Draw
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 300, 300);
+    ctx.strokeStyle = '#fff';
+    ctx.strokeRect(5, 5, 290, 290);
+
+    // Draw bullets
+    for (const b of encounterBullets) {
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Draw player heart
+    ctx.fillStyle = '#ff2222';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('❤️', encounterPlayerPos.x - 8, encounterPlayerPos.y + 5);
+
+    // Timer
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px monospace';
+    ctx.fillText(`Dodge! ${Math.max(0, Math.ceil((180 - encounterTimer) / 60))}s`, 10, 20);
+    ctx.fillText(`HP: ${state.hp}/${state.maxHp}`, 220, 20);
+
+    if (encounterTimer >= 180) { // 3 seconds of dodging
+      encounterPhase = 'menu';
+      notify('💛 You survived! Choose your action.');
+      return;
+    }
+
+    requestAnimationFrame(animateEncounter);
+  }
+  animateEncounter();
+}
+
+// Encounter button handlers
+window.encounterFight = function() {
+  if (encounterPhase !== 'menu') return;
+  // Attack animation - deal damage then dodge phase
+  const dmg = state.attack + Math.floor(Math.random() * 5);
+  notify(`⚔️ You attack for ${dmg} damage!`);
+  encounterEnemy._encounterHp = (encounterEnemy._encounterHp || 30) - dmg;
+  if (encounterEnemy._encounterHp <= 0) {
+    endEncounter(false);
+  } else {
+    encounterDodgePhase();
+  }
+};
+
+window.encounterAct = function() {
+  if (encounterPhase !== 'menu') return;
+  const acts = ['You compliment the creature.', 'You do a silly dance.', 'You tell a joke.', 'You share your snack.'];
+  notify(`💬 ${acts[Math.floor(Math.random() * acts.length)]} It warms up to you!`);
+  encounterEnemy._actCount = (encounterEnemy._actCount || 0) + 1;
+  if (encounterEnemy._actCount >= 3) {
+    notify('💛 The creature is fully charmed! You can now MERCY it!');
+    encounterEnemy._canMercy = true;
+  }
+  encounterDodgePhase();
+};
+
+window.encounterMercy = function() {
+  if (encounterPhase !== 'menu') return;
+  if (encounterEnemy?._canMercy) {
+    endEncounter(true);
+  } else {
+    notify('The creature is not ready to be spared yet. Try ACT first!');
+  }
+};
+
+window.encounterItem = function() {
+  if (encounterPhase !== 'menu') return;
+  // Use first healing item in inventory
+  const healItem = state.inventory.findIndex(i => i.heal);
+  if (healItem !== -1) {
+    useItem(healItem);
+  } else {
+    notify('No items to use!');
+  }
+  encounterDodgePhase();
+};
+
 // ===================== COOKING =====================
 window.cookItems = function() {
   const foodItems = state.inventory.filter(i => i.food);
@@ -1861,6 +2461,11 @@ function setupEvents() {
     if (e.key.toLowerCase() === 'i') toggleInventory();
     if (e.key.toLowerCase() === 'f') playerAttack();
     if (e.key.toLowerCase() === 'q') toggleParaGlide();
+    if (e.key.toLowerCase() === 'g' && state.zone === 'dk') window.miningAbility('groundPound');
+
+    // Close mining panel on Escape
+    if (e.key === 'Escape' && miningPanelOpen) { closeMiningPanel(); return; }
+    if (e.key === 'Escape' && encounterActive) { /* can't escape encounters */ return; }
   });
 
   document.addEventListener('keyup', e => {
@@ -1947,6 +2552,17 @@ function tryInteract() {
         e.activated = true;
         notify('🔮 Shrine activated! A bullet-hell challenge begins!');
         startBulletHell();
+        return;
+      }
+    }
+  }
+
+  // Check ore veins (mining)
+  for (const e of entities) {
+    if (e.type === 'ore_vein' && !e.mined) {
+      const dist = player.position.distanceTo(e.mesh.position);
+      if (dist < 2.5) {
+        openMiningPanel(e);
         return;
       }
     }
@@ -2300,8 +2916,8 @@ function animate() {
   if (keys['a'] || keys['arrowleft']) moveDir.x -= 1;
   if (keys['d'] || keys['arrowright']) moveDir.x += 1;
 
-  // Don't process 3D movement during bullet hell
-  if (!bulletHellActive) {
+  // Don't process 3D movement during bullet hell, encounters, or mining
+  if (!bulletHellActive && !encounterActive && !miningPanelOpen) {
     moveDir.normalize();
     moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     velocity.x = moveDir.x * moveSpeed;
@@ -2338,8 +2954,13 @@ function animate() {
     player.position.y += velocity.y;
     player.position.z += velocity.z;
 
-    // Ground collision
-    const groundY = 1;
+    // Ground collision - mine allows going deeper
+    let groundY = 0.05;
+    if (state.zone === 'dk') {
+      // In the mine, ground level depends on how deep you can go
+      const maxDepth = -(state.mineDepth + 2) * 8;
+      groundY = maxDepth;
+    }
     if (player.position.y <= groundY) {
       player.position.y = groundY;
       velocity.y = 0;
@@ -2351,7 +2972,11 @@ function animate() {
     const zoneSize = ZONES[state.zone]?.size || 100;
     player.position.x = Math.max(-zoneSize, Math.min(zoneSize, player.position.x));
     player.position.z = Math.max(-zoneSize, Math.min(zoneSize, player.position.z));
-    if (player.position.y < -10) { player.position.y = 5; velocity.y = 0; }
+    if (state.zone === 'dk') {
+      if (player.position.y < -(state.mineDepth + 3) * 8) { player.position.y = 0.5; velocity.y = 0; }
+    } else {
+      if (player.position.y < -10) { player.position.y = 5; velocity.y = 0; }
+    }
 
     // Platform collision
     for (const e of entities) {
