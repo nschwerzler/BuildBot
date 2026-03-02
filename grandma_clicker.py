@@ -1170,8 +1170,14 @@ class GameState:
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────
-# Number suffixes that scale practically to infinity
+# Number suffixes up to 1e+100 and beyond
 _SUFFIXES = [
+    (1e303, "Centillion"),
+    (1e100, "Googol"),
+    (1e93, "Trigintillion"), (1e90, "Novemvigintillion"), (1e87, "Octovigintillion"),
+    (1e84, "Septenvigintillion"), (1e81, "Sexvigintillion"), (1e78, "Quinvigintillion"),
+    (1e75, "Quattuorvigintillion"), (1e72, "Trevigintillion"), (1e69, "Duovigintillion"),
+    (1e66, "Unvigintillion"),
     (1e63, "Vigintillion"), (1e60, "Novemdecillion"), (1e57, "Octodecillion"),
     (1e54, "Septendecillion"), (1e51, "Sexdecillion"), (1e48, "Quindecillion"),
     (1e45, "Quattuordecillion"), (1e42, "Tredecillion"), (1e39, "Duodecillion"),
