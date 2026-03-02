@@ -1166,19 +1166,20 @@ class GameState:
 # ── Helpers ─────────────────────────────────────────────────────────────
 def format_number(n):
     if n != n or n == float('inf') or n == float('-inf'):
-        return "∞"  # handle inf/nan gracefully
+        return "∞"
+    n = float(n)
     if abs(n) >= 1e18:
-        return f"{n / 1e18:.1f}Qi"
+        return f"{n / 1e18:.1f} Quintillion"
     elif abs(n) >= 1e15:
-        return f"{n / 1e15:.1f}Q"
+        return f"{n / 1e15:.1f} Quadrillion"
     elif abs(n) >= 1e12:
-        return f"{n / 1e12:.1f}T"
-    elif abs(n) >= 1_000_000_000:
-        return f"{n / 1_000_000_000:.1f}B"
-    elif abs(n) >= 1_000_000:
-        return f"{n / 1_000_000:.1f}M"
-    elif abs(n) >= 1_000:
-        return f"{n / 1_000:.1f}K"
+        return f"{n / 1e12:.1f} Trillion"
+    elif abs(n) >= 1e9:
+        return f"{n / 1e9:.1f} Billion"
+    elif abs(n) >= 1e6:
+        return f"{n / 1e6:.1f} Million"
+    elif abs(n) >= 1e3:
+        return f"{n / 1e3:.1f}K"
     else:
         return f"{int(n)}"
 
