@@ -1,0 +1,22 @@
+{
+  "name": "Star Kid",
+  "level": 1,
+  "xp": 0,
+  "xp_next": 20,
+  "max_hp": 50,
+  "hp": 50,
+  "atk": 8,
+  "defense": 2,
+  "gold": 0,
+  "inventory": [
+    "Star Cookie",
+    "Star Cookie",
+    "Remedy Wrap"
+  ],
+  "friends_made": 0,
+  "monsters_fought": 0,
+  "zone_index": 0,
+  "zone_encounters_left": 3,
+  "x": 4,
+  "y": 4
+}

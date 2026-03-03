@@ -1,11 +1,10 @@
 """
-STARLIGHT QUEST — A Kid-Friendly RPG with Undertale-Style Battles!
-Ages 4+ and 7+ | No scary content, just silly fun!
+STARLIGHT QUEST — An RPG with Undertale-Style Battles!
 
-You are a brave little Star Kid on a quest to bring back
-the stolen Rainbow Crystal from the silly Grumble King!
-Travel through cute biomes, meet wacky monsters,
-and choose to FIGHT or make FRIENDS!
+You are Star Kid on a quest to recover
+the stolen Rainbow Crystal from the Grumble King!
+Explore biomes, battle monsters,
+and choose to FIGHT or show MERCY!
 
 Controls:
   Arrow Keys / WASD — Move (overworld & dodge attacks)
@@ -13,7 +12,7 @@ Controls:
   X / ESC — Cancel / Back
   ENTER — Skip dialogue
 
-Every monster can be befriended with ACT + MERCY!
+Every monster can be spared with ACT + MERCY!
 """
 
 import pygame
@@ -38,7 +37,7 @@ pygame.display.set_caption("⭐ Starlight Quest ⭐")
 clock = pygame.time.Clock()
 FPS = 60
 
-SAVE_FILE = "kid_rpg_save.json"
+SAVE_FILE = "starlight_quest_save.json"
 
 # ── Colours ────────────────────────────────────────────────────────────
 BLACK       = (0, 0, 0)
@@ -200,14 +199,14 @@ SFX_SPARKLE   = sfx_sparkle()
 
 # ── Items ──────────────────────────────────────────────────────────────
 ITEMS = {
-    "Star Cookie":    {"type": "heal", "value": 15, "desc": "A cookie shaped like a star! Heals 15 HP.", "color": STAR_YELLOW},
-    "Rainbow Juice":  {"type": "heal", "value": 30, "desc": "Sparkly juice! Heals 30 HP.", "color": MAGIC_PURPLE},
-    "Moon Candy":     {"type": "heal", "value": 50, "desc": "Glowing candy from the moon! Heals 50 HP.", "color": ICE_BLUE},
-    "Hug Bandage":    {"type": "heal", "value": 20, "desc": "A warm hug in bandage form! Heals 20 HP.", "color": PINK},
-    "Golden Apple":   {"type": "heal", "value": 80, "desc": "A legendary golden apple! Heals 80 HP.", "color": GOLD},
-    "Silly Hat":      {"type": "act_boost", "value": 1, "desc": "Monsters find it hilarious!", "color": ORANGE},
-    "Friendship Bracelet": {"type": "act_boost", "value": 2, "desc": "Shows you want to be friends!", "color": CYAN},
-    "Power Star":     {"type": "atk_boost", "value": 5, "desc": "Boosts ATK by 5 for this fight!", "color": YELLOW},
+    "Star Cookie":    {"type": "heal", "value": 15, "desc": "A star-shaped cookie. Heals 15 HP.", "color": STAR_YELLOW},
+    "Arcane Elixir":  {"type": "heal", "value": 30, "desc": "Glowing liquid. Heals 30 HP.", "color": MAGIC_PURPLE},
+    "Moonstone Shard":{"type": "heal", "value": 50, "desc": "Fragment of pure moonlight. Heals 50 HP.", "color": ICE_BLUE},
+    "Remedy Wrap":    {"type": "heal", "value": 20, "desc": "Enchanted bandage. Heals 20 HP.", "color": PINK},
+    "Golden Apple":   {"type": "heal", "value": 80, "desc": "Legendary golden apple. Heals 80 HP.", "color": GOLD},
+    "Goofy Mask":     {"type": "act_boost", "value": 1, "desc": "Monsters can't help but stare.", "color": ORANGE},
+    "Peace Charm":    {"type": "act_boost", "value": 2, "desc": "Radiates a calming aura.", "color": CYAN},
+    "Power Star":     {"type": "atk_boost", "value": 5, "desc": "Boosts ATK by 5 for this fight.", "color": YELLOW},
 }
 
 # ── Monster definitions ────────────────────────────────────────────────
@@ -230,7 +229,7 @@ class MonsterDef:
 
 # ── Sprite drawing helpers ─────────────────────────────────────────────
 def draw_slime(surf, x, y, color, t):
-    """Cute bouncing slime"""
+    """Bouncing slime"""
     bounce = math.sin(t * 3) * 5
     # Body
     pygame.draw.ellipse(surf, color, (x - 30, y - 25 + bounce, 60, 50))
@@ -246,7 +245,7 @@ def draw_slime(surf, x, y, color, t):
     pygame.draw.arc(surf, BLACK, (x - 8, int(ey + 5), 16, 10), 3.14, 6.28, 2)
 
 def draw_mushroom(surf, x, y, color, t):
-    """Cute mushroom creature"""
+    """Mushroom creature"""
     sway = math.sin(t * 2) * 3
     # Stem
     pygame.draw.rect(surf, (220, 200, 170), (x - 12 + sway, y - 5, 24, 30))
@@ -263,7 +262,7 @@ def draw_mushroom(surf, x, y, color, t):
     pygame.draw.arc(surf, BLACK, (x - 6 + sway, ey + 2, 12, 8), 3.14, 6.28, 2)
 
 def draw_cloud(surf, x, y, color, t):
-    """Fluffy cloud monster"""
+    """Cloud monster"""
     bob = math.sin(t * 1.5) * 8
     cy = y + bob
     for ox, oy, r in [(-18, 0, 20), (0, -8, 25), (18, 0, 20), (0, 8, 18)]:
@@ -274,7 +273,7 @@ def draw_cloud(surf, x, y, color, t):
     pygame.draw.ellipse(surf, BLACK, (x - 5, int(cy + 5), 10, 6))
 
 def draw_flower(surf, x, y, color, t):
-    """Happy flower"""
+    """Animated flower"""
     sway = math.sin(t * 2.5) * 4
     # Stem
     pygame.draw.line(surf, DARK_GREEN, (x + sway, y + 25), (x, y + 55), 4)
@@ -294,7 +293,7 @@ def draw_flower(surf, x, y, color, t):
     pygame.draw.arc(surf, BLACK, (x - 5 + sway, y - 4, 10, 8), 3.14, 6.28, 2)
 
 def draw_snowman(surf, x, y, color, t):
-    """Cute snowman"""
+    """Snowman"""
     wobble = math.sin(t * 2) * 2
     # Body
     pygame.draw.circle(surf, color, (x + wobble, y + 15), 22)
@@ -313,7 +312,7 @@ def draw_snowman(surf, x, y, color, t):
         pygame.draw.circle(surf, BLACK, (x + wobble, by), 3)
 
 def draw_ghost(surf, x, y, color, t):
-    """Friendly ghost"""
+    """Ghost"""
     bob = math.sin(t * 2) * 6
     cy = y + bob
     # Body
@@ -332,7 +331,7 @@ def draw_ghost(surf, x, y, color, t):
     pygame.draw.ellipse(surf, BLACK, (x - 4, int(cy), 8, 6))
 
 def draw_dragon(surf, x, y, color, t):
-    """Cute baby dragon"""
+    """Young dragon"""
     bob = math.sin(t * 1.8) * 4
     cy = y + bob
     # Body
@@ -360,7 +359,7 @@ def draw_dragon(surf, x, y, color, t):
     pygame.draw.line(surf, color, (x + 22, int(cy + 10)), (x + 40, int(cy + 5 + tail_wag)), 4)
 
 def draw_grumble_king(surf, x, y, color, t):
-    """The final boss — Grumble King (a big grumpy but cute creature)"""
+    """The final boss — Grumble King"""
     bob = math.sin(t * 1.2) * 3
     cy = y + bob
     # Big body
@@ -394,7 +393,7 @@ def draw_grumble_king(surf, x, y, color, t):
     pygame.draw.ellipse(surf, (*[max(0, c - 30) for c in color],), (x + 5, int(cy + 30), 25, 12))
 
 def draw_bunny(surf, x, y, color, t):
-    """Cute bunny"""
+    """Bunny"""
     hop = abs(math.sin(t * 3)) * 8
     cy = y - hop
     # Body
@@ -416,7 +415,7 @@ def draw_bunny(surf, x, y, color, t):
     pygame.draw.circle(surf, WHITE, (x + 16, int(cy + 10)), 6)
 
 def draw_robot(surf, x, y, color, t):
-    """Cute robot"""
+    """Robot"""
     jitter = math.sin(t * 8) * 1
     # Body
     pygame.draw.rect(surf, color, (x - 20, int(y - 10 + jitter), 40, 35))
@@ -443,76 +442,76 @@ def draw_robot(surf, x, y, color, t):
 # ── Monster definitions for each biome ─────────────────────────────────
 MONSTERS_BY_ZONE = {
     "Sunny Meadow": [
-        MonsterDef("Wobble Slime", 28, 4, 1, 8, 5, GREEN,
-                   "* A cute green slime wobbles toward you!",
-                   [("Poke", "You poke the slime. It giggles!", 35),
-                    ("Dance", "You do a silly dance. The slime bounces along!", 50),
-                    ("Compliment", "\"You're the wobbliest!\" The slime blushes.", 40)],
+        MonsterDef("Gel Slime", 28, 4, 1, 8, 5, GREEN,
+                   "* A green slime oozes toward you!",
+                   [("Poke", "You poke the slime. It wobbles.", 35),
+                    ("Dance", "You bust a move. The slime bounces along.", 50),
+                    ("Compliment", "\"Nice wobble.\" The slime turns a deeper green.", 40)],
                    80, ["slow_bounce", "zigzag"], draw_slime),
-        MonsterDef("Giggly Flower", 22, 3, 0, 6, 4, PINK,
-                   "* A flower pops up and waves its petals!",
-                   [("Smell", "You sniff the flower. Ahh, nice!", 35),
-                    ("Water", "You give it water. It grows happy!", 50),
-                    ("Sing", "You sing a song. Its petals sway!", 40)],
+        MonsterDef("Petal Trap", 22, 3, 0, 6, 4, PINK,
+                   "* A flower springs up and waves its petals!",
+                   [("Smell", "You lean in for a sniff. Smells... decent.", 35),
+                    ("Water", "You water it. It perks up noticeably.", 50),
+                    ("Whistle", "You whistle a tune. Its petals sway.", 40)],
                    80, ["petal_toss", "spiral"], draw_flower),
-        MonsterDef("Fluff Bunny", 25, 5, 1, 10, 6, (240, 200, 220),
-                   "* A fluffy bunny hops into your path!",
-                   [("Pet", "You pet the bunny. So soft!", 40),
-                    ("Carrot", "You offer a carrot. It's delighted!", 50),
-                    ("Hop", "You hop together! How fun!", 35)],
+        MonsterDef("Dust Bunny", 25, 5, 1, 10, 6, (240, 200, 220),
+                   "* A bunny hops into your path!",
+                   [("Pet", "You reach out. It lets you pet it.", 40),
+                    ("Carrot", "You toss a carrot. Direct hit... on its appetite.", 50),
+                    ("Hop", "You hop along with it. Surprisingly fun.", 35)],
                    80, ["hop_attack", "carrot_rain"], draw_bunny),
     ],
     "Mushroom Forest": [
         MonsterDef("Sporeling", 35, 6, 2, 14, 8, (180, 120, 70),
-                   "* A little mushroom waddles up to you!",
-                   [("Hat", "You admire its cap. It blushes!", 30),
-                    ("Share", "You share a snack. It's grateful!", 45),
-                    ("Umbrella", "You use it as an umbrella. It giggles!", 50)],
+                   "* A mushroom waddles toward you.",
+                   [("Inspect", "You admire its cap. It seems flattered.", 30),
+                    ("Share", "You offer a snack. It accepts.", 45),
+                    ("Umbrella", "You pretend to use it as an umbrella. It doesn't mind.", 50)],
                    85, ["spore_cloud", "bouncing_caps"], draw_mushroom),
-        MonsterDef("Mist Ghost", 30, 7, 1, 16, 10, (200, 200, 240),
-                   "* A friendly ghost says \"Boo!\" then giggles!",
-                   [("Wave", "You wave. The ghost waves back!", 35),
-                    ("Peek-a-boo", "You play peek-a-boo! It loves it!", 50),
-                    ("Story", "You tell a story. It listens intently!", 40)],
+        MonsterDef("Wraith", 30, 7, 1, 16, 10, (200, 200, 240),
+                   "* A ghost phases in and stares at you.",
+                   [("Wave", "You wave. The ghost hesitates, then waves back.", 35),
+                    ("Joke", "You tell a bad joke. It laughs despite itself.", 50),
+                    ("Story", "You tell a story. It listens intently.", 40)],
                    85, ["ghost_spiral", "fade_chase"], draw_ghost),
     ],
     "Snowy Peaks": [
-        MonsterDef("Snowpal", 40, 7, 3, 18, 12, SNOW_WHITE,
-                   "* A little snowman slides up to you!",
-                   [("Scarf", "You offer a scarf. It's warm now!", 35),
-                    ("Snowball", "You have a snowball fight! Fun!", 45),
-                    ("Hug", "You give a warm hug. It doesn't melt!", 50)],
+        MonsterDef("Frostguard", 40, 7, 3, 18, 12, SNOW_WHITE,
+                   "* A snowman blocks the path. Its eyes glow.",
+                   [("Scarf", "You toss it a scarf. It wraps up tight.", 35),
+                    ("Snowball", "You nail it with a snowball. It retaliates. Fair.", 45),
+                    ("Warm Up", "You share some warmth. It seems confused but grateful.", 50)],
                    85, ["snowball_barrage", "icicle_drop"], draw_snowman),
         MonsterDef("Frost Cloud", 35, 8, 2, 20, 14, ICE_BLUE,
-                   "* A chilly cloud drifts by and notices you!",
-                   [("Blow", "You blow warm air. It likes the warmth!", 40),
-                    ("Catch", "You catch snowflakes it makes! Pretty!", 45),
-                    ("Draw", "You draw a picture of it. Adorable!", 40)],
+                   "* A freezing cloud drifts toward you.",
+                   [("Blow", "You blow warm air at it. It seems to relax.", 40),
+                    ("Catch", "You catch the snowflakes it drops. Not bad.", 45),
+                    ("Sketch", "You sketch it mid-float. It holds still for you.", 40)],
                    85, ["snow_spiral", "freeze_wave"], draw_cloud),
     ],
     "Robot Factory": [
-        MonsterDef("Beep Bot", 45, 9, 4, 24, 16, CYAN,
-                   "* A little robot rolls up! Beep boop!",
-                   [("Fix", "You tighten a loose screw. Thanks!", 35),
-                    ("Dance", "You do the robot dance! It copies you!", 50),
-                    ("Charge", "You share your battery pack. Bzzz!", 40)],
+        MonsterDef("MK-7 Unit", 45, 9, 4, 24, 16, CYAN,
+                   "* A robot rolls up. Its visor flickers.",
+                   [("Fix", "You tighten a loose bolt. It beeps in thanks.", 35),
+                    ("Dance", "You do the robot. It mirrors your moves perfectly.", 50),
+                    ("Charge", "You offer a battery. Its eyes light up.", 40)],
                    90, ["laser_grid", "gear_spin"], draw_robot),
     ],
     "Dragon's Roost": [
-        MonsterDef("Baby Dragon", 55, 10, 3, 30, 20, (240, 120, 60),
-                   "* A baby dragon flaps its tiny wings at you!",
-                   [("Tickle", "You tickle its belly! It purrs!", 30),
-                    ("Toy", "You share a toy. It plays happily!", 40),
-                    ("Fly", "You pretend to fly together! Wheee!", 55)],
+        MonsterDef("Ember Drake", 55, 10, 3, 30, 20, (240, 120, 60),
+                   "* A young dragon flares its wings at you.",
+                   [("Scratch", "You scratch under its chin. It rumbles.", 30),
+                    ("Offer", "You hold out something shiny. It's interested.", 40),
+                    ("Fly", "You spread your arms and \"fly.\" It joins in.", 55)],
                    90, ["fire_breath", "wing_gust"], draw_dragon),
     ],
     "Grumble Castle": [
         MonsterDef("Grumble King", 120, 12, 5, 100, 50, PURPLE,
-                   "* The Grumble King blocks your path!\n* \"Nobody takes MY Rainbow Crystal!\"",
-                   [("Joke", "You tell a joke. He almost smiles!", 15),
-                    ("Compliment", "\"Nice crown!\" He looks proud!", 20),
-                    ("Gift", "You offer a friendship bracelet!", 25),
-                    ("Hug", "You try to hug him. He's confused!", 30)],
+                   "* The Grumble King blocks your path.\n* \"Nobody takes MY Rainbow Crystal.\"",
+                   [("Joke", "You crack a joke. His lip twitches.", 15),
+                    ("Compliment", "\"Nice crown.\" He adjusts it proudly.", 20),
+                    ("Gift", "You offer a peace charm. He eyes it.", 25),
+                    ("Challenge", "You challenge his resolve. He hesitates.", 30)],
                    100, ["crown_toss", "grumble_slam", "rainbow_chaos"], draw_grumble_king, boss=True),
     ],
 }
@@ -520,22 +519,22 @@ MONSTERS_BY_ZONE = {
 # ── Zone / Map definitions ─────────────────────────────────────────────
 ZONES = [
     {"name": "Sunny Meadow", "bg": GRASS_GREEN, "tile": (100, 200, 100), "tile2": (90, 180, 90),
-     "desc": "A bright, happy meadow full of flowers!", "encounters": 3,
-     "items": ["Star Cookie", "Star Cookie", "Hug Bandage"]},
+     "desc": "An open meadow. Monsters lurk in the tall grass.", "encounters": 3,
+     "items": ["Star Cookie", "Star Cookie", "Remedy Wrap"]},
     {"name": "Mushroom Forest", "bg": (60, 80, 50), "tile": (80, 100, 60), "tile2": (70, 90, 55),
-     "desc": "A misty forest with giant mushrooms!", "encounters": 3,
-     "items": ["Star Cookie", "Rainbow Juice", "Silly Hat"]},
+     "desc": "A dense forest. Spores drift through the mist.", "encounters": 3,
+     "items": ["Star Cookie", "Arcane Elixir", "Goofy Mask"]},
     {"name": "Snowy Peaks", "bg": (180, 210, 240), "tile": (210, 225, 240), "tile2": (195, 215, 235),
-     "desc": "Frosty mountains sparkling with snow!", "encounters": 3,
-     "items": ["Rainbow Juice", "Hug Bandage", "Friendship Bracelet"]},
+     "desc": "Frozen mountains. The wind cuts deep.", "encounters": 3,
+     "items": ["Arcane Elixir", "Remedy Wrap", "Peace Charm"]},
     {"name": "Robot Factory", "bg": (50, 55, 65), "tile": (70, 75, 85), "tile2": (60, 65, 75),
-     "desc": "A friendly robot factory! Beep boop!", "encounters": 3,
-     "items": ["Moon Candy", "Power Star", "Rainbow Juice"]},
+     "desc": "An abandoned factory. Machines still hum.", "encounters": 3,
+     "items": ["Moonstone Shard", "Power Star", "Arcane Elixir"]},
     {"name": "Dragon's Roost", "bg": (100, 60, 40), "tile": (120, 80, 55), "tile2": (110, 70, 50),
-     "desc": "A warm cave with a sleepy baby dragon!", "encounters": 2,
-     "items": ["Moon Candy", "Golden Apple"]},
+     "desc": "A volcanic cavern. Something stirs within.", "encounters": 2,
+     "items": ["Moonstone Shard", "Golden Apple"]},
     {"name": "Grumble Castle", "bg": (40, 30, 55), "tile": (60, 50, 75), "tile2": (55, 45, 70),
-     "desc": "The Grumble King's castle! The final challenge!", "encounters": 1,
+     "desc": "The Grumble King's fortress. The final challenge.", "encounters": 1,
      "items": ["Golden Apple"]},
 ]
 
@@ -806,7 +805,7 @@ class Player:
         self.atk = 8
         self.defense = 2
         self.gold = 0
-        self.inventory = ["Star Cookie", "Star Cookie", "Star Cookie"]
+        self.inventory = ["Star Cookie", "Star Cookie", "Remedy Wrap"]
         self.max_inventory = 12
         self.friends_made = 0
         self.monsters_fought = 0
@@ -1188,12 +1187,12 @@ class Battle:
                         self.player.gold += self.mdef.gold
                         SFX_MERCY.play()
                         name = self.mdef.name
-                        self.queue_text(f"* You spared {name}!")
-                        self.queue_text(f"* {name} is now your friend!")
-                        self.queue_text(f"* You got {self.mdef.gold} gold!")
+                        self.queue_text(f"* You spared {name}.")
+                        self.queue_text(f"* {name} backs away peacefully.")
+                        self.queue_text(f"* Got {self.mdef.gold} gold.")
                     else:
-                        self.queue_text(f"* {self.mdef.name} isn't ready to be friends yet.")
-                        self.queue_text("* Try using ACT to get closer!")
+                        self.queue_text(f"* {self.mdef.name} isn't ready to back down.")
+                        self.queue_text("* Try using ACT first.")
                         self.turn = "text"
 
         elif self.turn == "fight_anim":
@@ -1225,7 +1224,7 @@ class Battle:
                 SFX_CONFIRM.play()
                 self.queue_text(act_text)
                 if self.mercy >= self.mdef.spare_threshold:
-                    self.queue_text(f"* {self.mdef.name} looks like it wants to be friends!")
+                    self.queue_text(f"* {self.mdef.name} seems ready to stand down.")
                 self._start_dodge_phase()
             if keys_just.get(pygame.K_x) or keys_just.get(pygame.K_ESCAPE):
                 SFX_CANCEL.play()
@@ -1326,8 +1325,8 @@ class Battle:
             if self.player.hp <= 0:
                 self.player.hp = 0
                 self.result = "lose"
-                self.queue_text("* Oh no! You got bonked too much!")
-                self.queue_text("* Don't worry, you can try again!")
+                self.queue_text("* You took too much damage...")
+                self.queue_text("* But the journey isn't over yet.")
                 self.turn = "text"
 
             # End dodge phase
@@ -1354,14 +1353,14 @@ class Battle:
             self.result = "win"
             leveled = self.player.gain_xp(self.mdef.xp)
             self.player.gold += self.mdef.gold
-            self.queue_text(f"* You defeated {self.mdef.name}!")
-            self.queue_text(f"* Got {self.mdef.xp} XP and {self.mdef.gold} gold!")
+            self.queue_text(f"* You defeated {self.mdef.name}.")
+            self.queue_text(f"* Got {self.mdef.xp} XP and {self.mdef.gold} gold.")
             if leveled:
                 SFX_LEVEL_UP.play()
-                self.queue_text(f"* LEVEL UP! You're now level {self.player.level}!")
-                self.queue_text(f"* HP, ATK, and DEF increased!")
+                self.queue_text(f"* LEVEL UP! Now level {self.player.level}.")
+                self.queue_text(f"* HP, ATK, and DEF increased.")
         else:
-            quality = "Amazing!" if accuracy > 85 else "Good!" if accuracy > 50 else "OK hit."
+            quality = "Critical!" if accuracy > 85 else "Solid." if accuracy > 50 else "Weak hit."
             self.queue_text(f"* {quality} {dmg} damage!")
             self._start_dodge_phase()
 
@@ -1716,7 +1715,7 @@ def main():
                 if title_selection == 0:
                     start_new_game()
                     state = STATE_OVERWORLD
-                    show_dialogue("Welcome to Starlight Quest!\nYou are Star Kid, on a mission to\nrecover the Rainbow Crystal from\nthe silly Grumble King!\n\nExplore each zone, meet creatures,\nand choose to FIGHT or make FRIENDS!\n\n(Press Z / SPACE to continue)",
+                    show_dialogue("Welcome to Starlight Quest.\nYou are Star Kid. Your mission:\nrecover the Rainbow Crystal from\nthe Grumble King.\n\nExplore each zone, battle monsters,\nor find a way to spare them.\n\n(Press Z / SPACE to continue)",
                                   lambda: None)
                 elif title_selection == 1 and has_save:
                     loaded = load_game()
@@ -1745,10 +1744,10 @@ def main():
             screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 140))
 
             # Subtitle
-            sub = font_md.render("A Kid-Friendly RPG Adventure!", True, CYAN)
+            sub = font_md.render("An RPG Adventure", True, CYAN)
             screen.blit(sub, (WIDTH // 2 - sub.get_width() // 2, 210))
 
-            # Cute star character
+            # Star character
             cx, cy = WIDTH // 2, 320
             bob = math.sin(game_time * 2) * 10
             r = 35
@@ -1783,9 +1782,6 @@ def main():
                 txt = font_lg.render(f"{prefix}{opt}", True, col)
                 screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, 430 + i * 50))
 
-            # Age rating
-            age_txt = font_xs.render("Ages 4+ and 7+ | No scary content!", True, GREEN)
-            screen.blit(age_txt, (WIDTH // 2 - age_txt.get_width() // 2, HEIGHT - 50))
             ctrl = font_xs.render("Arrow Keys: Navigate | Z/Space: Select", True, GRAY)
             screen.blit(ctrl, (WIDTH // 2 - ctrl.get_width() // 2, HEIGHT - 30))
 
@@ -1963,9 +1959,9 @@ def main():
                             if player.zone_encounters_left <= 0:
                                 load_zone(next_idx)
                                 save_game(player)
-                                show_dialogue(f"Welcome to {ZONES[next_idx]['name']}!\n{ZONES[next_idx]['desc']}")
+                                show_dialogue(f"Entering {ZONES[next_idx]['name']}.\n{ZONES[next_idx]['desc']}")
                             else:
-                                show_dialogue(f"There are still {player.zone_encounters_left} creature(s)\nto meet in this zone! Look for the\nsparkly tiles!")
+                                show_dialogue(f"There are still {player.zone_encounters_left} encounter(s)\nremaining in this zone. Look for the\nglowing markers.")
 
             # Open inventory
             if keys_just.get(pygame.K_x) or keys_just.get(pygame.K_ESCAPE):
@@ -2027,14 +2023,14 @@ def main():
             pygame.draw.circle(screen, BLACK, (int(cx + 10), int(cy - 5 + bob)), 4)
             pygame.draw.arc(screen, BLACK, (int(cx - 8), int(cy + 5 + bob), 16, 10), 0, 3.14, 2)  # frown
 
-            title = font_xl.render("Oh no!", True, RED)
+            title = font_xl.render("Defeated", True, RED)
             screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 100))
-            sub = font_md.render("You got bonked too much!", True, PINK)
+            sub = font_md.render("You took too much damage.", True, PINK)
             screen.blit(sub, (WIDTH // 2 - sub.get_width() // 2, 340))
-            sub2 = font_md.render("Don't worry, you can try again!", True, WHITE)
+            sub2 = font_md.render("But the journey isn't over yet.", True, WHITE)
             screen.blit(sub2, (WIDTH // 2 - sub2.get_width() // 2, 375))
 
-            options = ["Try Again (heal up!)", "Return to Title"]
+            options = ["Try Again", "Return to Title"]
             for i, opt in enumerate(options):
                 selected = (i == title_selection)
                 col = STAR_YELLOW if selected else LIGHT_GRAY
@@ -2111,9 +2107,9 @@ def main():
             pygame.draw.circle(screen, BLACK, (int(cx + 10), int(cy - 5 + bob)), 5)
             pygame.draw.arc(screen, BLACK, (int(cx - 10), int(cy + 3 + bob), 20, 12), 3.14, 6.28, 3)
 
-            sub1 = font_lg.render("You got the Rainbow Crystal back!", True, CYAN)
+            sub1 = font_lg.render("The Rainbow Crystal is yours again.", True, CYAN)
             screen.blit(sub1, (WIDTH // 2 - sub1.get_width() // 2, 320))
-            sub2 = font_md.render("The Grumble King isn't grumpy anymore!", True, PINK)
+            sub2 = font_md.render("The Grumble King has been defeated.", True, PINK)
             screen.blit(sub2, (WIDTH // 2 - sub2.get_width() // 2, 365))
 
             # Stats
@@ -2127,7 +2123,7 @@ def main():
                 txt = font_md.render(line, True, WHITE)
                 screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, 420 + i * 35))
 
-            hint = font_sm.render("Press Z to return to title!", True, STAR_YELLOW)
+            hint = font_sm.render("Press Z to return to title", True, STAR_YELLOW)
             screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT - 50))
 
             if keys_just.get(pygame.K_z) or keys_just.get(pygame.K_SPACE):
