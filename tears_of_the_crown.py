@@ -4432,9 +4432,12 @@ class Game:
                 play_sfx('jump')
                 self.hud.add_notification("Ascend!")
             else:
-                p.vy = JUMP_VEL * 2.5
+                # Overworld ascend - powerful upward launch, no green spots
+                p.vy = JUMP_VEL * 3.0
                 p.on_ground = False
-                self.particles.emit(p.x, p.y, p.z, 12, (180, 255, 180), spread=1, speed=5)
+                # Use white/gold upward particles instead of green ground particles
+                self.particles.emit(p.x, p.y + 1, p.z, 15, (255, 255, 200), spread=0.5, speed=8)
+                self.particles.emit(p.x, p.y + 2, p.z, 8, (255, 220, 100), spread=0.3, speed=6)
                 play_sfx('jump')
                 self.hud.add_notification("Ascend!")
 
