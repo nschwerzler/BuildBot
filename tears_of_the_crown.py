@@ -107,6 +107,7 @@ class GameState(Enum):
     GAME_OVER = "game_over"
     VICTORY = "victory"
     LOADOUT_EDIT = "loadout_edit"
+    COOKIE_SHOP = "cookie_shop"
 
 class Biome(Enum):
     DEEP_WATER = 0
@@ -675,8 +676,10 @@ BOSS_SPAWNS = [
     (BossType.HIVE_MATRIARCH, 30, 170),  # Southwest - forest
     (BossType.CORRUPTED_AUTOMATON, 100, 190),  # South - ruins
     (BossType.DARK_SOVEREIGN, 100, 10),  # North - dark castle
-    (BossType.COOKIE_MONSTER, 60, 100),   # West - cookie cave
 ]
+
+# Cookie Monster NPC location (friendly vendor)
+COOKIE_MONSTER_POS = (60, 100)  # West - cookie cave
 
 # ════════════════════════════════════════════════════════════
 # ENTITY CLASSES
@@ -992,6 +995,75 @@ class Boss(Entity):
 
 
 # ════════════════════════════════════════════════════════════
+# COOKIE MONSTER NPC (friendly vendor)
+# ════════════════════════════════════════════════════════════
+class CookieMonsterNPC(Entity):
+    """Friendly Cookie Monster NPC that trades cookies for stat upgrades."""
+    def __init__(self, x, y, z):
+        super().__init__(x, y, z)
+        self.color = (80, 140, 200)
+        self.size = 2.0
+        self.anim_time = 0.0
+
+    def update(self, dt, player_x, player_z):
+        self.anim_time += dt
+        # Face the player when nearby
+        dist = dist2d(self.x, self.z, player_x, player_z)
+        if dist < INTERACT_RANGE * 2:
+            dx, dz = normalize2d(player_x - self.x, player_z - self.z)
+            self.facing = math.degrees(math.atan2(-dx, -dz))
+
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(self.x, self.y, self.z)
+        glRotatef(self.facing, 0, 1, 0)
+
+        sz = self.size
+        bob = math.sin(self.anim_time * 1.5) * 0.15
+        color = self.color
+
+        # Furry blue body
+        draw_cube(0, sz * 0.6 + bob, 0, sz * 0.5, sz * 0.5, sz * 0.4, color)
+        # Head
+        head_color = tuple(min(255, c + 20) for c in color)
+        draw_sphere(0, sz * 1.3 + bob, 0, sz * 0.4, head_color)
+        # Friendly eyes (white + pupils)
+        draw_sphere(sz * 0.15, sz * 1.4 + bob, sz * 0.35, sz * 0.12, (255, 255, 255))
+        draw_sphere(-sz * 0.15, sz * 1.4 + bob, sz * 0.35, sz * 0.12, (255, 255, 255))
+        draw_sphere(sz * 0.15, sz * 1.4 + bob, sz * 0.42, sz * 0.06, (20, 20, 20))
+        draw_sphere(-sz * 0.15, sz * 1.4 + bob, sz * 0.42, sz * 0.06, (20, 20, 20))
+        # Big open mouth (cookie eating!)
+        draw_sphere(0, sz * 1.1 + bob, sz * 0.35, sz * 0.15, (180, 50, 50))
+        # Arms waving gently
+        arm_wave = math.sin(self.anim_time * 1.2) * 15
+        for side in (1, -1):
+            glPushMatrix()
+            glTranslatef(side * sz * 0.6, sz * 0.6 + bob, 0)
+            glRotatef(arm_wave * side + 20, 1, 0, 0)
+            draw_cube(0, -sz * 0.25, 0, sz * 0.15, sz * 0.3, sz * 0.15, color)
+            glPopMatrix()
+        # Legs
+        for side in (1, -1):
+            draw_cube(side * sz * 0.2, sz * 0.05, 0, sz * 0.15, sz * 0.2, sz * 0.15, tuple(max(0, c-30) for c in color))
+        # Cookie floating above head (shop indicator)
+        cookie_bob = math.sin(self.anim_time * 2) * 0.3
+        cookie_y = sz * 2.0 + bob + cookie_bob
+        draw_sphere(0, cookie_y, 0, 0.3, (210, 170, 80))  # cookie
+        draw_sphere(0.1, cookie_y + 0.05, 0.1, 0.08, (140, 90, 40))  # chip
+        draw_sphere(-0.12, cookie_y - 0.05, 0.08, 0.07, (140, 90, 40))  # chip
+
+        glPopMatrix()
+        draw_shadow_circle(self.x, self.y + 0.01, self.z, sz * 0.8)
+
+    def draw_name(self):
+        """Draw name tag above Cookie Monster."""
+        glDisable(GL_LIGHTING)
+        bar_y = self.y + self.size * 2.5
+        draw_cube(self.x, bar_y, self.z, 1.5, 0.1, 0.03, (210, 170, 80))
+        glEnable(GL_LIGHTING)
+
+
+# ════════════════════════════════════════════════════════════
 # SHRINE INSTANCE
 # ════════════════════════════════════════════════════════════
 class Shrine:
@@ -1024,50 +1096,105 @@ class Shrine:
         self.goal_reached = False
         self.timer = 0.0
 
-        if self.shrine_type == ShrineType.TRIAL_OF_MIGHT:
-            # Combat trial - spawn waves of enemies
+        st = self.shrine_type
+        if st == ShrineType.TRIAL_OF_MIGHT:
+            # Hard combat - 5 mixed enemies in a ring
             for i in range(5):
                 angle = i / 5 * math.pi * 2
                 mob = Mob(random.choice([MobType.GRUNKLE, MobType.SKARVYN, MobType.CAVE_FIEND]),
                          math.cos(angle) * 8, 0, math.sin(angle) * 8)
                 self.enemies.append(mob)
-        elif self.shrine_type == ShrineType.ANCIENT_GIFT:
+        elif st == ShrineType.ANCIENT_GIFT:
             self.goal_reached = True  # Free reward!
+        elif st == ShrineType.GRASP_TRIAL:
+            # Telekinesis puzzle - push 3 blocks onto 3 switches, no enemies
+            for i in range(3):
+                self.blocks.append({'x': random.uniform(-4, 4), 'z': random.uniform(2, 6), 'on_switch': False})
+            self.switches.append({'x': -4, 'z': -8, 'activated': False})
+            self.switches.append({'x': 0, 'z': -8, 'activated': False})
+            self.switches.append({'x': 4, 'z': -8, 'activated': False})
+        elif st == ShrineType.RISING_TRIAL:
+            # Vertical climb - kill enemies on platforms
+            for i in range(4):
+                mob = Mob(MobType.SKARVYN, (i - 1.5) * 4, 0, -2 - i * 2)
+                self.enemies.append(mob)
+        elif st == ShrineType.TIMEFLOW_TRIAL:
+            # Time puzzle - kill enemies in order (toughest first)
+            types = [MobType.STONEBEAST, MobType.THUGNOK, MobType.GRUNKLE]
+            for i, mt in enumerate(types):
+                mob = Mob(mt, (i - 1) * 5, 0, -4)
+                self.enemies.append(mob)
+        elif st == ShrineType.FORGE_TRIAL:
+            # Forge trial - push block to switch then kill guardian
+            self.blocks.append({'x': 5, 'z': 5, 'on_switch': False})
+            self.switches.append({'x': 0, 'z': -8, 'activated': False})
+            mob = Mob(MobType.CAVE_FIEND, 0, 0, 0)
+            self.enemies.append(mob)
+        elif st == ShrineType.WIND_TRIAL:
+            # Wind trial - fast enemies that run around
+            for i in range(4):
+                angle = i / 4 * math.pi * 2
+                mob = Mob(MobType.HUSK_CRAWLER, math.cos(angle) * 7, 0, math.sin(angle) * 7)
+                self.enemies.append(mob)
+        elif st == ShrineType.FIRE_TRIAL:
+            # Fire gauntlet - tough fire enemies
+            for i in range(3):
+                mob = Mob(MobType.DOOM_GRASP, (i - 1) * 5, 0, -3 - i * 2)
+                self.enemies.append(mob)
+        elif st == ShrineType.ICE_TRIAL:
+            # Ice puzzle - blocks and enemies on slippery floor
+            for i in range(2):
+                mob = Mob(MobType.GULPWORM, random.uniform(-6, 6), 0, random.uniform(-6, 6))
+                self.enemies.append(mob)
+            for i in range(3):
+                self.blocks.append({'x': random.uniform(-5, 5), 'z': random.uniform(0, 6), 'on_switch': False})
+            self.switches.append({'x': -5, 'z': -8, 'activated': False})
+            self.switches.append({'x': 5, 'z': -8, 'activated': False})
+        elif st == ShrineType.LIGHTNING_TRIAL:
+            # Lightning - many fast weak enemies
+            for i in range(6):
+                angle = i / 6 * math.pi * 2
+                mob = Mob(MobType.GRUNKLE, math.cos(angle) * 7, 0, math.sin(angle) * 7)
+                self.enemies.append(mob)
+        elif st == ShrineType.SHADOW_TRIAL:
+            # Shadow - strong enemies in darkness
+            for i in range(2):
+                mob = Mob(MobType.THUNDERMANE, (i * 2 - 1) * 4, 0, -5)
+                self.enemies.append(mob)
+        elif st == ShrineType.WATER_TRIAL:
+            # Water trial - blocks across water gaps
+            for i in range(4):
+                self.blocks.append({'x': random.uniform(-6, 6), 'z': random.uniform(-2, 6), 'on_switch': False})
+            self.switches.append({'x': -3, 'z': -8, 'activated': False})
+            self.switches.append({'x': 3, 'z': -8, 'activated': False})
+            mob = Mob(MobType.GULPWORM, 0, 0, 3)
+            self.enemies.append(mob)
         else:
-            # Generic puzzle - kill some enemies and reach goal area
+            # Fallback generic
             for i in range(3):
                 angle = i / 3 * math.pi * 2
-                mob = Mob(MobType.GRUNKLE,
-                         math.cos(angle) * 6, 0, math.sin(angle) * 6)
+                mob = Mob(MobType.GRUNKLE, math.cos(angle) * 6, 0, math.sin(angle) * 6)
                 self.enemies.append(mob)
-            # Blocks to push
-            for i in range(2):
-                self.blocks.append({
-                    'x': random.uniform(-5, 5),
-                    'z': random.uniform(-5, 5),
-                    'on_switch': False
-                })
-            self.switches.append({'x': 0, 'z': -8, 'activated': False})
 
     def check_completion(self):
         if self.completed:
             return True
         if self.shrine_type == ShrineType.ANCIENT_GIFT:
             return True
-        if self.shrine_type == ShrineType.TRIAL_OF_MIGHT:
-            return all(not e.alive for e in self.enemies)
-        # Generic: kill enemies and get blocks on switches
-        enemies_dead = all(not e.alive for e in self.enemies)
-        if enemies_dead and not self.switches:
-            return True
-        if enemies_dead:
-            # Check if any block is near any switch
+        # Check enemies dead
+        enemies_dead = len(self.enemies) == 0 or all(not e.alive for e in self.enemies)
+        # Pure block puzzles (GRASP, WATER, ICE) - blocks on switches
+        if self.switches:
             for sw in self.switches:
+                sw['activated'] = False
                 for bl in self.blocks:
                     if dist2d(bl['x'], bl['z'], sw['x'], sw['z']) < 1.5:
                         sw['activated'] = True
-            return all(sw['activated'] for sw in self.switches)
-        return False
+                        break
+            switches_done = all(sw['activated'] for sw in self.switches)
+            return enemies_dead and switches_done
+        # Pure combat shrines
+        return enemies_dead
 
     def draw_exterior(self, seed=42):
         """Draw shrine marker in the overworld."""
@@ -1091,19 +1218,38 @@ class Shrine:
         if not self.completed:
             draw_cone(self.wx, y + 2.2, self.wz, 0.3, 0.6, color)
 
+    def _get_theme_colors(self):
+        """Return floor/wall/accent colors based on shrine type."""
+        st = self.shrine_type
+        if st == ShrineType.FIRE_TRIAL:
+            return (0.4, 0.15, 0.1), (0.35, 0.12, 0.08), (140, 50, 30), (255, 120, 30)
+        elif st == ShrineType.ICE_TRIAL:
+            return (0.3, 0.38, 0.45), (0.25, 0.33, 0.42), (120, 150, 180), (150, 220, 255)
+        elif st == ShrineType.LIGHTNING_TRIAL:
+            return (0.35, 0.35, 0.2), (0.3, 0.3, 0.18), (130, 130, 70), (255, 255, 80)
+        elif st == ShrineType.SHADOW_TRIAL:
+            return (0.12, 0.1, 0.15), (0.1, 0.08, 0.12), (40, 30, 50), (160, 80, 200)
+        elif st == ShrineType.WATER_TRIAL:
+            return (0.15, 0.25, 0.4), (0.12, 0.22, 0.35), (60, 100, 150), (80, 180, 255)
+        elif st == ShrineType.WIND_TRIAL:
+            return (0.3, 0.4, 0.3), (0.25, 0.35, 0.25), (100, 140, 100), (180, 255, 180)
+        elif st == ShrineType.ANCIENT_GIFT:
+            return (0.4, 0.35, 0.2), (0.35, 0.3, 0.18), (160, 140, 80), (255, 220, 100)
+        else:
+            return (0.3, 0.35, 0.4), (0.28, 0.32, 0.38), (80, 90, 100), (255, 220, 50)
+
     def draw_interior(self):
         """Draw shrine interior (when player is inside)."""
+        floor1, floor2, wall_color, accent = self._get_theme_colors()
+
         # Floor
         glBegin(GL_QUADS)
-        glColor3f(0.3, 0.35, 0.4)
         glNormal3f(0, 1, 0)
         for x in range(-12, 13, 2):
             for z in range(-12, 13, 2):
                 checker = ((x + z) // 2) % 2
-                if checker:
-                    glColor3f(0.28, 0.32, 0.38)
-                else:
-                    glColor3f(0.35, 0.38, 0.42)
+                c = floor1 if checker else floor2
+                glColor3f(*c)
                 glVertex3f(x - 1, 0, z - 1)
                 glVertex3f(x + 1, 0, z - 1)
                 glVertex3f(x + 1, 0, z + 1)
@@ -1111,19 +1257,69 @@ class Shrine:
         glEnd()
 
         # Walls
-        wall_color = (80, 90, 100)
         for x in range(-12, 13, 2):
             draw_cube(x, 2, -12, 1, 2, 0.3, wall_color)
             draw_cube(x, 2, 12, 1, 2, 0.3, wall_color)
             draw_cube(-12, 2, x, 0.3, 2, 1, wall_color)
             draw_cube(12, 2, x, 0.3, 2, 1, wall_color)
 
-        # Goal marker
-        if not self.goal_reached:
-            draw_sphere(0, 1.5, -9, 0.5, (255, 220, 50))
-            draw_cone(0, 0, -9, 0.8, 0.3, (200, 180, 40))
-        else:
-            draw_sphere(0, 1.5 + math.sin(time.time() * 3) * 0.3, -9, 0.6, (100, 255, 100))
+        # Shrine-specific decorations
+        st = self.shrine_type
+        t = time.time()
+        if st == ShrineType.FIRE_TRIAL:
+            for i in range(6):
+                fx = math.sin(t * 2 + i) * 8
+                fz = math.cos(t * 1.5 + i * 1.1) * 8
+                draw_sphere(fx, 0.5 + math.sin(t * 3 + i) * 0.3, fz, 0.3, (255, 100 + int(math.sin(t + i) * 50), 20))
+        elif st == ShrineType.ICE_TRIAL:
+            for i in range(4):
+                ix = (i - 1.5) * 5
+                draw_cube(ix, 1.5, 8, 0.8, 1.5, 0.8, (180, 210, 240))
+        elif st == ShrineType.LIGHTNING_TRIAL:
+            for i in range(3):
+                lx = (i - 1) * 6
+                draw_cylinder(lx, 0, -6, 0.15, 4, (200, 200, 60))
+                if int(t * 5) % 3 == i:
+                    draw_sphere(lx, 4, -6, 0.5, (255, 255, 100))
+        elif st == ShrineType.SHADOW_TRIAL:
+            for i in range(8):
+                sx = math.sin(i * 0.8 + t * 0.5) * 9
+                sz = math.cos(i * 0.8 + t * 0.5) * 9
+                draw_sphere(sx, 1, sz, 0.4, (60, 20, 80))
+        elif st == ShrineType.WATER_TRIAL:
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glColor4f(0.1, 0.3, 0.6, 0.4)
+            glBegin(GL_QUADS)
+            glNormal3f(0, 1, 0)
+            glVertex3f(-12, 0.15, -4)
+            glVertex3f(12, 0.15, -4)
+            glVertex3f(12, 0.15, 4)
+            glVertex3f(-12, 0.15, 4)
+            glEnd()
+            glDisable(GL_BLEND)
+        elif st == ShrineType.WIND_TRIAL:
+            for i in range(5):
+                wy = 1 + math.sin(t * 4 + i * 1.3) * 0.5
+                wx = math.sin(t * 2 + i * 1.5) * 10
+                wz = math.cos(t * 2 + i * 1.5) * 10
+                draw_sphere(wx, wy, wz, 0.2, (200, 255, 200))
+        elif st == ShrineType.ANCIENT_GIFT:
+            draw_sphere(0, 2 + math.sin(t * 2) * 0.5, 0, 1.0, (255, 220, 80))
+            for i in range(4):
+                angle = t + i * math.pi / 2
+                draw_sphere(math.cos(angle) * 3, 1.5, math.sin(angle) * 3, 0.3, (255, 200, 50))
+
+        # Goal marker (cookie!)
+        if self.check_completion() and not self.completed:
+            bob = math.sin(t * 3) * 0.3
+            draw_sphere(0, 1.5 + bob, -9, 0.5, (210, 170, 80))  # Cookie color
+            draw_sphere(0.15, 1.6 + bob, -8.8, 0.08, (120, 80, 30))  # Choc chips
+            draw_sphere(-0.1, 1.4 + bob, -8.85, 0.07, (120, 80, 30))
+            draw_sphere(0.05, 1.35 + bob, -8.82, 0.06, (120, 80, 30))
+        elif not self.completed:
+            draw_sphere(0, 1.5, -9, 0.5, accent)
+            draw_cone(0, 0, -9, 0.8, 0.3, accent)
 
         # Blocks
         for bl in self.blocks:
@@ -1131,7 +1327,7 @@ class Shrine:
 
         # Switches
         for sw in self.switches:
-            c = (100, 255, 100) if sw['activated'] else (255, 100, 100)
+            c = (100, 255, 100) if sw.get('activated') else (255, 100, 100)
             draw_cube(sw['x'], 0.05, sw['z'], 0.7, 0.05, 0.7, c)
 
         # Enemies
@@ -1682,6 +1878,7 @@ class World:
         self.mobs: List[Mob] = []
         self.bosses: List[Boss] = []
         self.shrines: List[Shrine] = []
+        self.cookie_monster: CookieMonsterNPC = None
         self.trees = []  # (x, z, type, height)
         self.rocks = []  # (x, z, size)
         self.pickups = []  # (x, y, z, type, collected)
@@ -1700,6 +1897,14 @@ class World:
             if wy is None:
                 wy = 0
             self.bosses.append(Boss(btype, bx * TILE_SIZE, wy, bz * TILE_SIZE))
+
+        # Spawn Cookie Monster NPC (friendly vendor)
+        cm_x = COOKIE_MONSTER_POS[0] * TILE_SIZE
+        cm_z = COOKIE_MONSTER_POS[1] * TILE_SIZE
+        cm_y = walkable_y(cm_x, cm_z, self.seed)
+        if cm_y is None:
+            cm_y = 0
+        self.cookie_monster = CookieMonsterNPC(cm_x, cm_y, cm_z)
 
         # Generate mob camps (keep spawn area clear: 90-110 range)
         random.seed(self.seed)
@@ -1914,6 +2119,10 @@ class World:
                         dmg = boss.do_attack()
                         player.take_damage(dmg)
 
+        # Update Cookie Monster NPC
+        if self.cookie_monster:
+            self.cookie_monster.update(dt, player.x, player.z)
+
         # Arrow collision with mobs/bosses
         for arrow in player.projectiles:
             if not arrow.alive:
@@ -1961,6 +2170,11 @@ class World:
         for boss in self.bosses:
             if boss.alive and dist2d(boss.x, boss.z, player_x, player_z) < VIEW_DIST:
                 boss.draw()
+
+    def draw_cookie_monster(self, player_x, player_z):
+        if self.cookie_monster and dist2d(self.cookie_monster.x, self.cookie_monster.z, player_x, player_z) < VIEW_DIST:
+            self.cookie_monster.draw()
+            self.cookie_monster.draw_name()
 
 
 # ════════════════════════════════════════════════════════════
@@ -2061,6 +2275,12 @@ class HUD:
             alpha = min(255, int(timer * 255))
             self._draw_text(text, SCREEN_W // 2 - 150, 160 + i * 30, self.font_med, (255, 255, 220, alpha))
 
+        # Interaction prompts
+        if world and world.cookie_monster:
+            cm = world.cookie_monster
+            if dist2d(player.x, player.z, cm.x, cm.z) < INTERACT_RANGE:
+                self._draw_text_centered("[E] Talk to Cookie Monster", SCREEN_H // 2 + 60, self.font_med, (210, 170, 80))
+
         # Controls hint
         self._draw_text("WASD:Move  L/R Click:Attack/Defend  Scroll:Loadout  E:Interact  Tab:Inventory  MMB:Look",
                        10, SCREEN_H - 25, self.font_small, (150, 150, 160))
@@ -2095,6 +2315,14 @@ class HUD:
                     bz = mm_y + mm_size // 2 + int((boss.z - cz) * scale)
                     if mm_x < bx < mm_x + mm_size and mm_y < bz < mm_y + mm_size:
                         pygame.draw.circle(self.surface, (255, 50, 50), (bx, bz), 4)
+
+            # Draw Cookie Monster NPC
+            if world.cookie_monster:
+                cm = world.cookie_monster
+                cmx = mm_x + mm_size // 2 + int((cm.x - cx) * scale)
+                cmz = mm_y + mm_size // 2 + int((cm.z - cz) * scale)
+                if mm_x < cmx < mm_x + mm_size and mm_y < cmz < mm_y + mm_size:
+                    pygame.draw.circle(self.surface, (210, 170, 80), (cmx, cmz), 4)
 
         # Player dot
         pygame.draw.circle(self.surface, (255, 255, 100), (mm_x + mm_size // 2, mm_y + mm_size // 2), 3)
@@ -2180,25 +2408,64 @@ class HUD:
         self._draw_text(f"  Arrows: {player.arrows}", 500, 185, self.font_small, (200, 170, 100))
         self._draw_text(f"  XP: {player.xp}/{player.level * 100}", 500, 210, self.font_small, (200, 180, 50))
 
-        # Cookie Stat Upgrades
-        self._draw_text("═══ Stat Upgrades (press key) ═══", 500, 250, self.font_med, (210, 170, 80))
+        # Stat levels (view only - upgrade at Cookie Monster)
+        self._draw_text("═══ Stat Levels ═══", 500, 250, self.font_med, (180, 180, 200))
+        stat_names = ['attack', 'defense', 'speed', 'stamina']
+        for i, stat in enumerate(stat_names):
+            lvl = player.stat_levels[stat]
+            bars = '█' * lvl + '░' * (player.max_stat_level - lvl)
+            color = (100, 255, 100) if lvl == player.max_stat_level else (200, 200, 220)
+            self._draw_text(f"  {stat.title()} [{bars}] Lv.{lvl}", 500, 280 + i * 28, self.font_small, color)
+        self._draw_text("  Visit Cookie Monster to upgrade!", 500, 280 + 4 * 28, self.font_small, (210, 170, 80))
+
+        # Abilities
+        self._draw_text("═══ Abilities ═══", 500, 420, self.font_med, (180, 180, 200))
+        for i, ability in enumerate(player.abilities):
+            self._draw_text(f"  [{i+1}] {ability.value}", 500, 450 + i * 25, self.font_small, (200, 200, 220))
+
+        self._render_to_gl()
+
+    def draw_cookie_shop(self, player):
+        """Draw Cookie Monster stat shop overlay."""
+        self.surface.fill((0, 0, 0, 0))
+
+        # Semi-transparent background
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((20, 10, 5, 180))
+        self.surface.blit(overlay, (0, 0))
+
+        # Title
+        self._draw_text_centered("Cookie Monster's Shop", 40, self.font_title, (210, 170, 80))
+        self._draw_text_centered("\"ME WANT COOKIES! Give cookies, me make you STRONG!\"", 110, self.font_small, (80, 180, 255))
+        self._draw_text_centered(f"Your Cookies: {player.cookies}", 150, self.font_med, (255, 220, 100))
+
+        # Stat upgrades
+        self._draw_text_centered("═══ Trade Cookies for Power ═══", 200, self.font_med, (210, 170, 80))
         stat_keys = {'attack': 'F1', 'defense': 'F2', 'speed': 'F3', 'stamina': 'F4'}
-        for i, (stat, key) in enumerate(stat_keys.items()):
+        stat_desc = {
+            'attack': '+5 weapon damage',
+            'defense': '+20 max HP',
+            'speed': '+1 move speed',
+            'stamina': '+25 max stamina',
+        }
+        y = 240
+        for stat, key in stat_keys.items():
             lvl = player.stat_levels[stat]
             cost = lvl + 1 if lvl < player.max_stat_level else '-'
             bars = '█' * lvl + '░' * (player.max_stat_level - lvl)
-            color = (100, 255, 100) if lvl == player.max_stat_level else (200, 200, 220)
-            label = f"  {key}: {stat.title()} [{bars}] Lv.{lvl}"
-            if lvl < player.max_stat_level:
-                label += f" (cost: {cost} cookie{'s' if cost > 1 else ''})"
+            if lvl >= player.max_stat_level:
+                color = (100, 255, 100)
+                label = f"  [{key}] {stat.title()} [{bars}] — MAX"
+            elif player.cookies >= (lvl + 1):
+                color = (255, 255, 200)
+                label = f"  [{key}] {stat.title()} [{bars}] — {cost} cookie{'s' if cost > 1 else ''} → {stat_desc[stat]}"
             else:
-                label += " MAX"
-            self._draw_text(label, 500, 280 + i * 28, self.font_small, color)
+                color = (120, 120, 120)
+                label = f"  [{key}] {stat.title()} [{bars}] — {cost} cookie{'s' if cost > 1 else ''} (not enough!)"
+            self._draw_text_centered(label, y, self.font_small, color)
+            y += 35
 
-        # Abilities
-        self._draw_text("═══ Abilities ═══", 500, 400, self.font_med, (180, 180, 200))
-        for i, ability in enumerate(player.abilities):
-            self._draw_text(f"  [{i+1}] {ability.value}", 500, 430 + i * 25, self.font_small, (200, 200, 220))
+        self._draw_text_centered("[ESC] or [TAB] to leave", y + 30, self.font_small, (150, 150, 150))
 
         self._render_to_gl()
 
@@ -2492,6 +2759,8 @@ class Game:
                 if idx < len(self.player.abilities):
                     self.player.selected_ability = idx
                     self.hud.add_notification(f"Ability: {self.player.abilities[idx].value}")
+            elif event.key == pygame.K_f:
+                self._use_ability()
 
         elif self.state == GameState.SHRINE:
             if event.key == pygame.K_ESCAPE:
@@ -2504,6 +2773,8 @@ class Game:
             elif event.key == pygame.K_TAB:
                 self.state = GameState.INVENTORY
                 self.selected_weapon_index = -1
+            elif event.key == pygame.K_f:
+                self._use_ability()
 
         elif self.state == GameState.PAUSE:
             if event.key == pygame.K_ESCAPE:
@@ -2542,7 +2813,13 @@ class Game:
                     self.player.loadout2.right = wtype
                     self.hud.add_notification(f"Loadout 2 RIGHT: {WEAPON_DATA[wtype]['name']}")
                     play_sfx('loadout')
-            # F1-F4: upgrade stats with cookies
+
+        elif self.state == GameState.COOKIE_SHOP:
+            if event.key in (pygame.K_TAB, pygame.K_ESCAPE):
+                self.state = GameState.PLAYING
+                pygame.event.set_grab(True)
+                pygame.mouse.set_visible(False)
+                play_sfx('menu')
             elif event.key == pygame.K_F1:
                 self._upgrade_stat('attack')
             elif event.key == pygame.K_F2:
@@ -2600,6 +2877,13 @@ class Game:
                 self._enter_shrine(shrine)
                 return
 
+        # Check for Cookie Monster NPC
+        cm = self.world.cookie_monster
+        if cm and dist2d(self.player.x, self.player.z, cm.x, cm.z) < INTERACT_RANGE:
+            self.state = GameState.COOKIE_SHOP
+            play_sfx('shrine_enter')
+            return
+
     def _enter_shrine(self, shrine):
         """Enter a shrine."""
         self.active_shrine = shrine
@@ -2636,7 +2920,7 @@ class Game:
             self.player.cookies += 1
             play_sfx('shrine_complete')
             self.hud.add_notification(f"Cookie obtained! ({self.player.cookies} total)")
-            self.hud.add_notification("Use cookies in Inventory (Tab) to upgrade stats!")
+            self.hud.add_notification("Visit Cookie Monster (West) to trade cookies for stats!")
 
             # Unlock abilities based on shrine count
             if self.player.crown_shards == 2 and AbilityType.FORGE_BOND not in self.player.abilities:
@@ -2678,6 +2962,183 @@ class Game:
             p.max_stamina += 25
             p.stamina = p.max_stamina
             self.hud.add_notification(f"Stamina upgraded to Lv.{current+1}! (+25 max stamina)")
+
+    def _use_ability(self):
+        \"\"\"Activate the currently selected ability with F key.\"\"\"
+        if not self.player.abilities:
+            self.hud.add_notification("No abilities unlocked!")
+            return
+        ability = self.player.abilities[self.player.selected_ability]
+        p = self.player
+
+        if ability == AbilityType.TELEKINESIS:
+            # Pull nearest block or push nearest enemy away
+            if self.state == GameState.SHRINE and self.active_shrine:
+                # In shrine: move closest block toward player
+                best_bl = None
+                best_d = 999
+                for bl in self.active_shrine.blocks:
+                    d = dist2d(p.x, p.z, bl['x'], bl['z'])
+                    if d < best_d:
+                        best_d = d
+                        best_bl = bl
+                if best_bl and best_d < 10:
+                    dx, dz = normalize2d(p.x - best_bl['x'], p.z - best_bl['z'])
+                    best_bl['x'] += dx * 2
+                    best_bl['z'] += dz * 2
+                    best_bl['x'] = max(-10, min(10, best_bl['x']))
+                    best_bl['z'] = max(-10, min(10, best_bl['z']))
+                    play_sfx('hit')
+                    self.hud.add_notification("Telekinesis!")
+                else:
+                    self.hud.add_notification("No block in range!")
+            else:
+                # Overworld: push nearest mob away
+                targets = self.world.mobs + self.world.bosses
+                best_e = None
+                best_d = 999
+                for e in targets:
+                    if not e.alive:
+                        continue
+                    d = dist2d(p.x, p.z, e.x, e.z)
+                    if d < best_d and d < 12:
+                        best_d = d
+                        best_e = e
+                if best_e:
+                    dx, dz = normalize2d(best_e.x - p.x, best_e.z - p.z)
+                    best_e.x += dx * 5
+                    best_e.z += dz * 5
+                    self.particles.emit(best_e.x, best_e.y + 1, best_e.z, 8, (100, 180, 255), spread=1, speed=3)
+                    play_sfx('hit')
+                    self.hud.add_notification("Telekinesis!")
+                else:
+                    self.hud.add_notification("No target in range!")
+
+        elif ability == AbilityType.FORGE_BOND:
+            # Forge Bond: temporary damage boost (double damage for 5 seconds)
+            p.invincible_timer = max(p.invincible_timer, 5.0)
+            self.particles.emit(p.x, p.y + 1, p.z, 15, (255, 200, 50), spread=1.5, speed=4)
+            play_sfx('shrine_complete')
+            self.hud.add_notification("Forge Bond! Invincible for 5 seconds!")
+
+        elif ability == AbilityType.PHASE_RISE:
+            # Phase Rise: launch upward (super jump)
+            p.vy = JUMP_VEL * 2.5
+            p.on_ground = False
+            self.particles.emit(p.x, p.y, p.z, 12, (180, 255, 180), spread=1, speed=5)
+            play_sfx('jump')
+            self.hud.add_notification("Phase Rise!")
+
+        elif ability == AbilityType.TIME_REWIND:
+            # Time Rewind: heal to full and reset cooldowns
+            p.hp = p.max_hp
+            p.stamina = p.max_stamina
+            p.left_cooldown = 0
+            p.right_cooldown = 0
+            self.particles.emit(p.x, p.y + 1, p.z, 20, (150, 100, 255), spread=2, speed=3)
+            play_sfx('shrine_complete')
+            self.hud.add_notification("Time Rewind! Fully restored!")
+
+    def _render_castle(self):
+        \"\"\"Render underground castle spawn room.\"\"\"
+        glClearColor(0.05, 0.04, 0.08, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        self.camera.apply(self.player)
+
+        glLightfv(GL_LIGHT0, GL_POSITION, [0.0, 1.0, 0.0, 0.0])
+        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.15, 0.12, 0.18, 1.0])
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.5, 0.4, 0.3, 1.0])
+
+        t = time.time()
+
+        # Stone floor
+        glBegin(GL_QUADS)
+        glNormal3f(0, 1, 0)
+        for x in range(-10, 11, 2):
+            for z in range(-10, 11, 2):
+                checker = ((x + z) // 2) % 2
+                if checker:
+                    glColor3f(0.2, 0.18, 0.22)
+                else:
+                    glColor3f(0.25, 0.22, 0.26)
+                glVertex3f(x - 1, 0, z - 1)
+                glVertex3f(x + 1, 0, z - 1)
+                glVertex3f(x + 1, 0, z + 1)
+                glVertex3f(x - 1, 0, z + 1)
+        glEnd()
+
+        # Ceiling
+        glBegin(GL_QUADS)
+        glColor3f(0.1, 0.08, 0.12)
+        glNormal3f(0, -1, 0)
+        glVertex3f(-10, 6, -10)
+        glVertex3f(10, 6, -10)
+        glVertex3f(10, 6, 10)
+        glVertex3f(-10, 6, 10)
+        glEnd()
+
+        # Stone walls
+        wall_c = (60, 55, 70)
+        for x in range(-10, 11, 2):
+            draw_cube(x, 3, -10, 1, 3, 0.5, wall_c)
+            draw_cube(-10, 3, x, 0.5, 3, 1, wall_c)
+            draw_cube(10, 3, x, 0.5, 3, 1, wall_c)
+        # Back wall with door opening
+        for x in range(-10, 11, 2):
+            if -2 <= x <= 2:
+                draw_cube(x, 5, 10, 1, 1, 0.5, wall_c)  # Above door
+            else:
+                draw_cube(x, 3, 10, 1, 3, 0.5, wall_c)
+
+        # Door frame (glowing exit)
+        glow = 0.5 + 0.5 * math.sin(t * 2)
+        door_c = (int(80 + glow * 80), int(160 + glow * 60), int(80 + glow * 80))
+        draw_cube(-2, 2, 10, 0.2, 2, 0.3, door_c)
+        draw_cube(2, 2, 10, 0.2, 2, 0.3, door_c)
+        draw_cube(0, 4, 10, 2.2, 0.2, 0.3, door_c)
+
+        # Pillars
+        for px, pz in [(-6, -6), (6, -6), (-6, 6), (6, 6)]:
+            draw_cylinder(px, 0, pz, 0.5, 6, (80, 75, 90))
+            draw_cube(px, 6, pz, 0.7, 0.2, 0.7, (90, 85, 100))
+
+        # Throne at center-back
+        draw_cube(0, 0.75, -6, 1.5, 0.75, 1, (100, 80, 60))
+        draw_cube(0, 2.5, -7, 1.5, 1.0, 0.3, (100, 80, 60))
+        draw_cube(-1.5, 1.5, -6.5, 0.2, 0.8, 0.5, (100, 80, 60))
+        draw_cube(1.5, 1.5, -6.5, 0.2, 0.8, 0.5, (100, 80, 60))
+
+        # Weapon rack with "Sword of He Not Da Man" on throne
+        draw_cube(0, 1.8, -5.8, 0.05, 0.6, 0.05, C_SWORD_SILVER)
+        draw_cube(0, 2.5, -5.8, 0.1, 0.1, 0.1, (200, 170, 50))
+
+        # Torches on walls
+        for tx, tz in [(-8, -5), (8, -5), (-8, 5), (8, 5)]:
+            draw_cylinder(tx, 2.5, tz, 0.1, 1, (100, 80, 40))
+            flicker = 0.8 + 0.2 * math.sin(t * 8 + tx)
+            draw_sphere(tx, 3.7, tz, 0.25, (int(255 * flicker), int(180 * flicker), 40))
+
+        # Banner on back wall
+        draw_cube(-7, 3.5, -9.5, 0.8, 1.5, 0.05, (120, 30, 30))
+        draw_cube(7, 3.5, -9.5, 0.8, 1.5, 0.05, (30, 30, 120))
+
+        # "Press E to exit" hint near door
+        if self.player.z > 4:
+            # Draw a glowing arrow pointing at the door
+            draw_sphere(0, 2 + math.sin(t * 3) * 0.3, 9, 0.3, (100, 255, 100))
+
+        self.player.draw()
+        self.particles.draw()
+
+        # Reset lighting
+        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3, 0.3, 0.35, 1.0])
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.9, 0.85, 0.8, 1.0])
+        glClearColor(*C_SKY, 1.0)
+
+        self.hud.draw_game_hud(self.player, self.camera, self.state, self.world)
 
     def _respawn(self):
         """Respawn player after death."""
@@ -2886,6 +3347,7 @@ class Game:
         self.world.draw_shrines(self.player.x, self.player.z)
         self.world.draw_mobs(self.player.x, self.player.z)
         self.world.draw_bosses(self.player.x, self.player.z)
+        self.world.draw_cookie_monster(self.player.x, self.player.z)
 
         # Draw player
         self.player.draw()
@@ -2899,6 +3361,8 @@ class Game:
             self.hud.draw_pause_screen()
         elif self.state == GameState.INVENTORY:
             self.hud.draw_inventory(self.player)
+        elif self.state == GameState.COOKIE_SHOP:
+            self.hud.draw_cookie_shop(self.player)
         elif self.state == GameState.GAME_OVER:
             self.hud.draw_game_over()
         elif self.state == GameState.VICTORY:
