@@ -3158,7 +3158,7 @@ class Game:
         self._init_gl()
 
         # Game objects - player spawns in underground castle
-        self.player = Player(100 * TILE_SIZE, -5.0, 100 * TILE_SIZE)
+        self.player = Player(0, 0.5, 5)  # Castle-local coords: near the door
         self.camera = Camera()
         self.world = World(seed=42)
         self.particles = ParticleSystem()
@@ -3182,8 +3182,8 @@ class Game:
         self.cutscene_phase = 'none'  # 'none', 'gardon_talk', 'fight', 'sword_break', 'princess_fall', 'sky_teleport'
 
         # Castle intro state (TotK-style)
-        self.princess_x = 0.0   # Princess companion position in castle
-        self.princess_z = -2.0
+        self.princess_x = 1.5    # Princess companion position in castle
+        self.princess_z = 4.0    # Near the player's starting position
         self.princess_alive = True
         self.gardon_mok = None           # Boss entity, spawns when player reaches throne
         self.gardon_mok_triggered = False # Has Gardon Mok awakened?
@@ -3665,6 +3665,10 @@ class Game:
         for mob in self.castle_mobs:
             if mob.alive:
                 mob.update(self.dt, p.x, p.y, p.z)
+                mob.y = 0  # Castle floor is at y=0
+                # Keep mobs inside castle bounds
+                mob.x = max(-9, min(9, mob.x))
+                mob.z = max(-9, min(9, mob.z))
                 if mob.can_attack() and dist2d(mob.x, mob.z, p.x, p.z) < ATTACK_RANGE * 1.5:
                     dmg = mob.do_attack()
                     p.take_damage(dmg)
@@ -3709,6 +3713,9 @@ class Game:
         if self.cutscene_phase == 'fight' and self.gardon_mok and self.gardon_mok.alive:
             gm = self.gardon_mok
             gm.update(self.dt, p.x, p.y, p.z)
+            gm.y = 0  # Castle floor
+            gm.x = max(-9, min(9, gm.x))
+            gm.z = max(-9, min(9, gm.z))
             if gm.can_attack() and dist2d(gm.x, gm.z, p.x, p.z) < ATTACK_RANGE * 2:
                 dmg = gm.do_attack()
                 p.take_damage(dmg)
@@ -4252,8 +4259,16 @@ class Game:
             self._update_movement()
             self.player.update(self.dt, self.world.seed if not self.in_castle else 42)
 
+            # Castle: clamp player to castle floor
+            if self.in_castle:
+                if self.player.y < 0:
+                    self.player.y = 0
+                    self.player.vy = 0
+                    self.player.on_ground = True
+                    self.player.jump_count = 0
+
             # Sky island: clamp player to island platform
-            if self.on_sky_island:
+            elif self.on_sky_island:
                 sky_cx = 100 * TILE_SIZE
                 sky_cz = 100 * TILE_SIZE
                 sky_r = 25.0
