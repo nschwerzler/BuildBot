@@ -108,6 +108,11 @@ class GameState(Enum):
     VICTORY = "victory"
     LOADOUT_EDIT = "loadout_edit"
     COOKIE_SHOP = "cookie_shop"
+    GRANDMA_KITCHEN = "grandma_kitchen"
+    EVIL_GRANDMA = "evil_grandma"
+    ANVIL_CRAFT = "anvil_craft"
+    CUTSCENE = "cutscene"
+    HOUSE = "house"
 
 class Biome(Enum):
     DEEP_WATER = 0
@@ -126,12 +131,16 @@ class WeaponType(Enum):
     SPEAR = "Storm Spear"
     FIRE_ROD = "Flame Rod"
     BOMBS = "Ancient Bombs"
+    LANTERN = "Ancient Lantern"
+    GREAT_SWORD = "Titan Cleaver"
+    SHADOW_BOW = "Shadow Stalker Bow"
+    INSANE_BLADE = "Blade of Infinite Edge"
 
 class AbilityType(Enum):
-    TELEKINESIS = "Telekinesis"       # Ultrahand
-    FORGE_BOND = "Forge Bond"         # Fuse
-    PHASE_RISE = "Phase Rise"         # Ascend
-    TIME_REWIND = "Time Rewind"       # Recall
+    ULTRAHAND = "Ultrahand"           # Grab & move objects
+    FUSE = "Fuse"                     # Attach items together
+    ASCEND = "Ascend"                 # Rise through ceilings
+    RECALL = "Recall"                 # Reverse time on objects
 
 class MobType(Enum):
     GRUNKLE = "Grunkle"
@@ -144,6 +153,7 @@ class MobType(Enum):
     STONEBEAST = "Stonebeast"
     DOOM_GRASP = "Doom Grasp"
     THUNDERMANE = "Thundermane"
+    LINUS = "Linus"
 
 class BossType(Enum):
     FROST_SERPENT = "Frost Serpent"
@@ -543,6 +553,22 @@ WEAPON_DATA = {
         'name': 'Ancient Bombs', 'damage': 30, 'range': 8.0,
         'cooldown': 2.0, 'type': 'explosive', 'color': (100, 100, 120)
     },
+    WeaponType.LANTERN: {
+        'name': 'Ancient Lantern', 'damage': 8, 'range': 6.0,
+        'cooldown': 0.6, 'type': 'magic', 'color': (255, 200, 80)
+    },
+    WeaponType.GREAT_SWORD: {
+        'name': 'Titan Cleaver', 'damage': 35, 'range': 3.5,
+        'cooldown': 1.0, 'type': 'melee', 'color': (160, 150, 170)
+    },
+    WeaponType.SHADOW_BOW: {
+        'name': 'Shadow Stalker Bow', 'damage': 25, 'range': 40.0,
+        'cooldown': 0.6, 'type': 'ranged', 'color': (50, 20, 80)
+    },
+    WeaponType.INSANE_BLADE: {
+        'name': 'Blade of Infinite Edge', 'damage': 50, 'range': 4.0,
+        'cooldown': 0.3, 'type': 'melee', 'color': (255, 50, 255)
+    },
 }
 
 @dataclass
@@ -603,6 +629,11 @@ MOB_DATA = {
         'hp': 200, 'damage': 30, 'speed': 5.0, 'xp': 120,
         'color': (200, 200, 220), 'size': 1.6, 'aggro_range': 20.0,
         'desc': 'Fearsome centaur beast'
+    },
+    MobType.LINUS: {
+        'hp': 80, 'damage': 12, 'speed': 3.5, 'xp': 50,
+        'color': (200, 180, 100), 'size': 0.9, 'aggro_range': 15.0,
+        'desc': 'Blanket-wielding wanderer who steals your warmth'
     },
 }
 
@@ -680,6 +711,31 @@ BOSS_SPAWNS = [
 
 # Cookie Monster NPC location (friendly vendor)
 COOKIE_MONSTER_POS = (60, 100)  # West - cookie cave
+
+# Grandma NPC locations
+GRANDMA_POS = (120, 160)      # Southeast - Grandma's cottage (good)
+EVIL_GRANDMA_POS = (170, 80)  # East - Evil Grandma's hut
+
+# House data
+HOUSE_COST = 50  # Rupees to buy a house
+HOUSE_POS = (95, 105)  # Near spawn
+
+# Anvil crafting recipes
+ANVIL_RECIPES = [
+    {'weapon': WeaponType.LANTERN, 'cost': 15, 'desc': '5 iron + 3 glass'},
+    {'weapon': WeaponType.GREAT_SWORD, 'cost': 40, 'desc': '10 iron + 5 diamond'},
+    {'weapon': WeaponType.SHADOW_BOW, 'cost': 35, 'desc': '8 shadow + 4 string'},
+    {'weapon': WeaponType.SPEAR, 'cost': 20, 'desc': '6 iron + 2 wood'},
+    {'weapon': WeaponType.INSANE_BLADE, 'cost': 100, 'desc': '20 diamond + 10 shadow + SOUL'},
+]
+
+# Grandma recipes (3 cookies to access kitchen, makes one)
+GRANDMA_RECIPES = [
+    {'name': 'Cookie Cake', 'desc': 'Restores full HP + 20 bonus', 'effect': 'heal', 'value': 999},
+    {'name': 'Power Cookie', 'desc': '+10 attack for 60 seconds', 'effect': 'attack_boost', 'value': 60},
+    {'name': 'Speed Cookie', 'desc': 'Fully restores stamina', 'effect': 'speed_boost', 'value': 60},
+    {'name': 'Shield Cookie', 'desc': '10 seconds invincibility + 30 HP', 'effect': 'shield', 'value': 30},
+]
 
 # ════════════════════════════════════════════════════════════
 # ENTITY CLASSES
@@ -995,19 +1051,102 @@ class Boss(Entity):
 
 
 # ════════════════════════════════════════════════════════════
-# COOKIE MONSTER NPC (friendly vendor)
+# COOKIE MONSTER NPC (giant creature made of cookies!)
 # ════════════════════════════════════════════════════════════
 class CookieMonsterNPC(Entity):
-    """Friendly Cookie Monster NPC that trades cookies for stat upgrades."""
+    """Giant Cookie Monster made entirely of cookies. Friendly shop vendor."""
     def __init__(self, x, y, z):
         super().__init__(x, y, z)
-        self.color = (80, 140, 200)
-        self.size = 2.0
+        self.size = 4.0  # GIANT
         self.anim_time = 0.0
 
     def update(self, dt, player_x, player_z):
         self.anim_time += dt
-        # Face the player when nearby
+        dist = dist2d(self.x, self.z, player_x, player_z)
+        if dist < INTERACT_RANGE * 3:
+            dx, dz = normalize2d(player_x - self.x, player_z - self.z)
+            self.facing = math.degrees(math.atan2(-dx, -dz))
+
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(self.x, self.y, self.z)
+        glRotatef(self.facing, 0, 1, 0)
+        sz = self.size
+        t = self.anim_time
+        bob = math.sin(t * 1.2) * 0.2
+        cookie_c = (210, 170, 80)
+        chip_c = (140, 90, 40)
+        dark_c = (180, 140, 60)
+
+        # Giant cookie body (main sphere made of cookie dough)
+        draw_sphere(0, sz * 0.8 + bob, 0, sz * 0.6, cookie_c)
+        # Chocolate chips all over body
+        for i in range(12):
+            a = i * 0.52 + t * 0.1
+            cx = math.cos(a) * sz * 0.55
+            cy = sz * 0.8 + bob + math.sin(a * 1.3) * sz * 0.4
+            cz = math.sin(a) * sz * 0.55
+            draw_sphere(cx, cy, cz, sz * 0.08, chip_c)
+
+        # Cookie head (big round cookie)
+        draw_sphere(0, sz * 1.6 + bob, 0, sz * 0.4, cookie_c)
+        # Chocolate chip eyes
+        draw_sphere(sz * 0.15, sz * 1.7 + bob, sz * 0.35, sz * 0.1, chip_c)
+        draw_sphere(-sz * 0.15, sz * 1.7 + bob, sz * 0.35, sz * 0.1, chip_c)
+        # White pupils (friendly!)
+        draw_sphere(sz * 0.15, sz * 1.72 + bob, sz * 0.42, sz * 0.04, (255, 255, 255))
+        draw_sphere(-sz * 0.15, sz * 1.72 + bob, sz * 0.42, sz * 0.04, (255, 255, 255))
+        # Giant cookie mouth smile
+        draw_sphere(0, sz * 1.45 + bob, sz * 0.35, sz * 0.12, dark_c)
+
+        # Cookie arms (stacked cookie cylinders)
+        arm_wave = math.sin(t * 1.5) * 20
+        for side in (1, -1):
+            glPushMatrix()
+            glTranslatef(side * sz * 0.65, sz * 0.9 + bob, 0)
+            glRotatef(arm_wave * side + 15, 1, 0, 0)
+            draw_sphere(0, 0, 0, sz * 0.15, cookie_c)
+            draw_sphere(0, -sz * 0.25, 0, sz * 0.13, cookie_c)
+            draw_sphere(0, -sz * 0.45, 0, sz * 0.12, cookie_c)
+            # Cookie hand
+            draw_sphere(0, -sz * 0.6, 0, sz * 0.14, dark_c)
+            glPopMatrix()
+
+        # Cookie legs
+        for side in (1, -1):
+            draw_sphere(side * sz * 0.25, sz * 0.15, 0, sz * 0.18, dark_c)
+            draw_sphere(side * sz * 0.25, -sz * 0.05, 0, sz * 0.15, cookie_c)
+
+        # Floating cookies orbiting (shop indicator)
+        for i in range(3):
+            a = t * 1.5 + i * 2.094
+            ox = math.cos(a) * sz * 0.9
+            oz = math.sin(a) * sz * 0.9
+            oy = sz * 2.2 + math.sin(t * 2 + i) * 0.3
+            draw_sphere(ox, oy, oz, 0.35, cookie_c)
+            draw_sphere(ox + 0.1, oy + 0.05, oz, 0.08, chip_c)
+
+        glPopMatrix()
+        draw_shadow_circle(self.x, self.y + 0.01, self.z, sz)
+
+    def draw_name(self):
+        glDisable(GL_LIGHTING)
+        draw_cube(self.x, self.y + self.size * 2.6, self.z, 2.0, 0.12, 0.04, (210, 170, 80))
+        glEnable(GL_LIGHTING)
+
+
+# ════════════════════════════════════════════════════════════
+# GRANDMA NPCs
+# ════════════════════════════════════════════════════════════
+class GrandmaNPC(Entity):
+    """Good Grandma - use her kitchen for 3 cookies to make recipes."""
+    def __init__(self, x, y, z):
+        super().__init__(x, y, z)
+        self.size = 1.2
+        self.anim_time = 0.0
+
+    def update(self, dt, player_x, player_z):
+        self.anim_time += dt
         dist = dist2d(self.x, self.z, player_x, player_z)
         if dist < INTERACT_RANGE * 2:
             dx, dz = normalize2d(player_x - self.x, player_z - self.z)
@@ -1017,49 +1156,87 @@ class CookieMonsterNPC(Entity):
         glPushMatrix()
         glTranslatef(self.x, self.y, self.z)
         glRotatef(self.facing, 0, 1, 0)
-
         sz = self.size
-        bob = math.sin(self.anim_time * 1.5) * 0.15
-        color = self.color
-
-        # Furry blue body
-        draw_cube(0, sz * 0.6 + bob, 0, sz * 0.5, sz * 0.5, sz * 0.4, color)
+        bob = math.sin(self.anim_time * 1.0) * 0.05
+        # Grandma body (purple dress)
+        draw_cube(0, sz * 0.5 + bob, 0, sz * 0.3, sz * 0.4, sz * 0.25, (140, 80, 160))
         # Head
-        head_color = tuple(min(255, c + 20) for c in color)
-        draw_sphere(0, sz * 1.3 + bob, 0, sz * 0.4, head_color)
-        # Friendly eyes (white + pupils)
-        draw_sphere(sz * 0.15, sz * 1.4 + bob, sz * 0.35, sz * 0.12, (255, 255, 255))
-        draw_sphere(-sz * 0.15, sz * 1.4 + bob, sz * 0.35, sz * 0.12, (255, 255, 255))
-        draw_sphere(sz * 0.15, sz * 1.4 + bob, sz * 0.42, sz * 0.06, (20, 20, 20))
-        draw_sphere(-sz * 0.15, sz * 1.4 + bob, sz * 0.42, sz * 0.06, (20, 20, 20))
-        # Big open mouth (cookie eating!)
-        draw_sphere(0, sz * 1.1 + bob, sz * 0.35, sz * 0.15, (180, 50, 50))
-        # Arms waving gently
-        arm_wave = math.sin(self.anim_time * 1.2) * 15
-        for side in (1, -1):
-            glPushMatrix()
-            glTranslatef(side * sz * 0.6, sz * 0.6 + bob, 0)
-            glRotatef(arm_wave * side + 20, 1, 0, 0)
-            draw_cube(0, -sz * 0.25, 0, sz * 0.15, sz * 0.3, sz * 0.15, color)
-            glPopMatrix()
-        # Legs
-        for side in (1, -1):
-            draw_cube(side * sz * 0.2, sz * 0.05, 0, sz * 0.15, sz * 0.2, sz * 0.15, tuple(max(0, c-30) for c in color))
-        # Cookie floating above head (shop indicator)
-        cookie_bob = math.sin(self.anim_time * 2) * 0.3
-        cookie_y = sz * 2.0 + bob + cookie_bob
-        draw_sphere(0, cookie_y, 0, 0.3, (210, 170, 80))  # cookie
-        draw_sphere(0.1, cookie_y + 0.05, 0.1, 0.08, (140, 90, 40))  # chip
-        draw_sphere(-0.12, cookie_y - 0.05, 0.08, 0.07, (140, 90, 40))  # chip
-
+        draw_sphere(0, sz * 1.1 + bob, 0, sz * 0.25, (230, 190, 155))
+        # White hair bun
+        draw_sphere(0, sz * 1.35 + bob, -sz * 0.05, sz * 0.18, (220, 220, 230))
+        # Glasses (small circles)
+        draw_sphere(sz * 0.1, sz * 1.15 + bob, sz * 0.22, sz * 0.06, (200, 200, 220))
+        draw_sphere(-sz * 0.1, sz * 1.15 + bob, sz * 0.22, sz * 0.06, (200, 200, 220))
+        # Apron
+        draw_cube(0, sz * 0.5 + bob, sz * 0.2, sz * 0.22, sz * 0.3, sz * 0.05, (255, 255, 240))
+        # Rolling pin in hand
+        arm_wave = math.sin(self.anim_time * 0.8) * 10
+        glPushMatrix()
+        glTranslatef(sz * 0.35, sz * 0.5 + bob, 0)
+        glRotatef(arm_wave, 1, 0, 0)
+        draw_cube(0, -sz * 0.15, sz * 0.15, sz * 0.04, sz * 0.2, sz * 0.04, (180, 140, 80))
         glPopMatrix()
-        draw_shadow_circle(self.x, self.y + 0.01, self.z, sz * 0.8)
+        glPopMatrix()
+        draw_shadow_circle(self.x, self.y + 0.01, self.z, sz * 0.5)
 
     def draw_name(self):
-        """Draw name tag above Cookie Monster."""
         glDisable(GL_LIGHTING)
-        bar_y = self.y + self.size * 2.5
-        draw_cube(self.x, bar_y, self.z, 1.5, 0.1, 0.03, (210, 170, 80))
+        draw_cube(self.x, self.y + self.size * 1.8, self.z, 1.0, 0.1, 0.03, (140, 80, 160))
+        glEnable(GL_LIGHTING)
+
+
+class EvilGrandmaNPC(Entity):
+    """Evil Grandma - takes your stats and gives cookies back."""
+    def __init__(self, x, y, z):
+        super().__init__(x, y, z)
+        self.size = 1.3
+        self.anim_time = 0.0
+
+    def update(self, dt, player_x, player_z):
+        self.anim_time += dt
+        dist = dist2d(self.x, self.z, player_x, player_z)
+        if dist < INTERACT_RANGE * 2:
+            dx, dz = normalize2d(player_x - self.x, player_z - self.z)
+            self.facing = math.degrees(math.atan2(-dx, -dz))
+
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(self.x, self.y, self.z)
+        glRotatef(self.facing, 0, 1, 0)
+        sz = self.size
+        t = self.anim_time
+        bob = math.sin(t * 1.3) * 0.08
+        # Evil grandma body (dark green/black dress)
+        draw_cube(0, sz * 0.5 + bob, 0, sz * 0.3, sz * 0.4, sz * 0.25, (40, 60, 30))
+        # Hunched back
+        draw_sphere(0, sz * 0.9 + bob, -sz * 0.15, sz * 0.2, (40, 60, 30))
+        # Head (paler skin)
+        draw_sphere(0, sz * 1.1 + bob, 0, sz * 0.22, (200, 180, 160))
+        # Pointy witch hat
+        draw_cone(0, sz * 1.35 + bob, 0, sz * 0.25, sz * 0.5, (20, 20, 30))
+        # Glowing red eyes
+        draw_sphere(sz * 0.08, sz * 1.15 + bob, sz * 0.2, sz * 0.04, (255, 50, 50))
+        draw_sphere(-sz * 0.08, sz * 1.15 + bob, sz * 0.2, sz * 0.04, (255, 50, 50))
+        # Crooked nose
+        draw_sphere(0, sz * 1.05 + bob, sz * 0.22, sz * 0.04, (180, 160, 140))
+        # Gnarled walking stick
+        glPushMatrix()
+        glTranslatef(sz * 0.4, sz * 0.1, 0)
+        draw_cylinder(0, 0, 0, sz * 0.03, sz * 1.0, (80, 60, 40))
+        # Crystal on top
+        draw_sphere(0, sz * 1.0, 0, sz * 0.06, (180 + int(math.sin(t * 3) * 75), 50, 200))
+        glPopMatrix()
+        # Evil aura particles
+        if int(t * 4) % 2 == 0:
+            for i in range(2):
+                a = t * 2 + i * 3.14
+                draw_sphere(math.cos(a) * sz * 0.5, sz * 0.3 + math.sin(t * 3 + i) * 0.3, math.sin(a) * sz * 0.5, 0.1, (100, 0, 150))
+        glPopMatrix()
+        draw_shadow_circle(self.x, self.y + 0.01, self.z, sz * 0.5)
+
+    def draw_name(self):
+        glDisable(GL_LIGHTING)
+        draw_cube(self.x, self.y + self.size * 2.0, self.z, 1.0, 0.1, 0.03, (180, 50, 50))
         glEnable(GL_LIGHTING)
 
 
@@ -1395,9 +1572,14 @@ class Player(Entity):
         self.level = 1
         self.crown_shards = 0
         self.cookies = 0  # Shrine rewards
+        self.rupees = 0   # Currency for house/anvil
         # Stats: each level costs more cookies. Lvl1=1 cookie, Lvl2=2, Lvl3(max)=3
         self.stat_levels = {'attack': 0, 'defense': 0, 'speed': 0, 'stamina': 0}
         self.max_stat_level = 3
+        # House
+        self.has_house = False
+        self.house_items = []  # list of item names placed in house
+        self.has_anvil = False
 
         # Loadouts
         self.loadout1 = Loadout(WeaponType.SWORD, WeaponType.SHIELD)
@@ -1420,7 +1602,7 @@ class Player(Entity):
         self.jump_count = 0
 
         # Abilities
-        self.abilities = [AbilityType.TELEKINESIS]
+        self.abilities = [AbilityType.ULTRAHAND]
         self.selected_ability = 0
 
         # Inventory
@@ -1517,6 +1699,7 @@ class Player(Entity):
                 play_sfx('hit')
                 if not e.alive:
                     self.xp += e.xp
+                    self.rupees += random.randint(1, 5)
                     particles.emit_death(e.x, e.y, e.z, e.color)
 
     def _ranged_attack(self, data):
@@ -1544,6 +1727,7 @@ class Player(Entity):
                     particles.emit_hit(e.x, e.y + e.size * 0.5, e.z)
                     if not e.alive:
                         self.xp += e.xp
+                        self.rupees += random.randint(1, 5)
                         particles.emit_death(e.x, e.y, e.z, e.color)
 
     def _explosive_attack(self, data, mobs, bosses, particles, in_shrine, shrine):
@@ -1559,6 +1743,7 @@ class Player(Entity):
                 e.take_damage(data['damage'])
                 if not e.alive:
                     self.xp += e.xp
+                    self.rupees += random.randint(1, 5)
                     particles.emit_death(e.x, e.y, e.z, e.color)
 
     def take_damage(self, amount):
@@ -1787,7 +1972,11 @@ class Player(Entity):
             'available_weapons': [w.name for w in self.available_weapons],
             'abilities': [a.name for a in self.abilities],
             'cookies': self.cookies,
+            'rupees': self.rupees,
             'stat_levels': self.stat_levels,
+            'has_house': self.has_house,
+            'house_items': self.house_items,
+            'has_anvil': self.has_anvil,
         }
 
     def load_save_data(self, data):
@@ -1818,10 +2007,14 @@ class Player(Entity):
         except (KeyError, ValueError):
             pass
         self.cookies = data.get('cookies', 0)
+        self.rupees = data.get('rupees', 0)
         sl = data.get('stat_levels', {})
         for k in ('attack', 'defense', 'speed', 'stamina'):
             if k in sl:
                 self.stat_levels[k] = sl[k]
+        self.has_house = data.get('has_house', False)
+        self.house_items = data.get('house_items', [])
+        self.has_anvil = data.get('has_anvil', False)
 
 # ════════════════════════════════════════════════════════════
 # CAMERA
@@ -1879,6 +2072,8 @@ class World:
         self.bosses: List[Boss] = []
         self.shrines: List[Shrine] = []
         self.cookie_monster: CookieMonsterNPC = None
+        self.grandma: GrandmaNPC = None
+        self.evil_grandma: EvilGrandmaNPC = None
         self.trees = []  # (x, z, type, height)
         self.rocks = []  # (x, z, size)
         self.pickups = []  # (x, y, z, type, collected)
@@ -1905,6 +2100,22 @@ class World:
         if cm_y is None:
             cm_y = 0
         self.cookie_monster = CookieMonsterNPC(cm_x, cm_y, cm_z)
+
+        # Spawn Grandma NPC
+        gm_x = GRANDMA_POS[0] * TILE_SIZE
+        gm_z = GRANDMA_POS[1] * TILE_SIZE
+        gm_y = walkable_y(gm_x, gm_z, self.seed)
+        if gm_y is None:
+            gm_y = 0
+        self.grandma = GrandmaNPC(gm_x, gm_y, gm_z)
+
+        # Spawn Evil Grandma NPC
+        eg_x = EVIL_GRANDMA_POS[0] * TILE_SIZE
+        eg_z = EVIL_GRANDMA_POS[1] * TILE_SIZE
+        eg_y = walkable_y(eg_x, eg_z, self.seed)
+        if eg_y is None:
+            eg_y = 0
+        self.evil_grandma = EvilGrandmaNPC(eg_x, eg_y, eg_z)
 
         # Generate mob camps (keep spawn area clear: 90-110 range)
         random.seed(self.seed)
@@ -1953,6 +2164,14 @@ class World:
             ty = walkable_y(tx, tz, self.seed)
             if ty is not None:
                 self.mobs.append(Mob(MobType.THUNDERMANE, tx, ty, tz))
+
+        # Spawn Linus mobs (wanders everywhere)
+        for _ in range(6):
+            lx = random.randint(20, 180) * TILE_SIZE
+            lz = random.randint(20, 180) * TILE_SIZE
+            ly = walkable_y(lx, lz, self.seed)
+            if ly is not None:
+                self.mobs.append(Mob(MobType.LINUS, lx, ly, lz))
 
         # Generate trees
         for _ in range(400):
@@ -2122,6 +2341,11 @@ class World:
         # Update Cookie Monster NPC
         if self.cookie_monster:
             self.cookie_monster.update(dt, player.x, player.z)
+        # Update Grandma NPCs
+        if self.grandma:
+            self.grandma.update(dt, player.x, player.z)
+        if self.evil_grandma:
+            self.evil_grandma.update(dt, player.x, player.z)
 
         # Arrow collision with mobs/bosses
         for arrow in player.projectiles:
@@ -2175,6 +2399,66 @@ class World:
         if self.cookie_monster and dist2d(self.cookie_monster.x, self.cookie_monster.z, player_x, player_z) < VIEW_DIST:
             self.cookie_monster.draw()
             self.cookie_monster.draw_name()
+
+    def draw_npcs(self, player_x, player_z):
+        for npc in (self.grandma, self.evil_grandma):
+            if npc and dist2d(npc.x, npc.z, player_x, player_z) < VIEW_DIST:
+                npc.draw()
+                npc.draw_name()
+
+    def draw_house(self, player_x, player_z):
+        """Draw the player's house in the world."""
+        hx, hz = HOUSE_POS[0] * TILE_SIZE, HOUSE_POS[1] * TILE_SIZE
+        if dist2d(hx, hz, player_x, player_z) > VIEW_DIST:
+            return
+        hy = walkable_y(hx, hz, self.seed)
+        if hy is None:
+            hy = 0
+        glPushMatrix()
+        glTranslatef(hx, hy, hz)
+        # House base (wooden walls)
+        glColor3f(0.6, 0.4, 0.2)
+        glBegin(GL_QUADS)
+        s = 2.0  # house half-size
+        h = 3.0  # house height
+        # Front
+        glVertex3f(-s, 0, s); glVertex3f(s, 0, s); glVertex3f(s, h, s); glVertex3f(-s, h, s)
+        # Back
+        glVertex3f(-s, 0, -s); glVertex3f(-s, h, -s); glVertex3f(s, h, -s); glVertex3f(s, 0, -s)
+        # Left
+        glVertex3f(-s, 0, -s); glVertex3f(-s, 0, s); glVertex3f(-s, h, s); glVertex3f(-s, h, -s)
+        # Right
+        glVertex3f(s, 0, -s); glVertex3f(s, h, -s); glVertex3f(s, h, s); glVertex3f(s, 0, s)
+        glEnd()
+        # Roof (red triangle)
+        glColor3f(0.7, 0.15, 0.1)
+        glBegin(GL_TRIANGLES)
+        # Front roof
+        glVertex3f(-s - 0.3, h, s + 0.3); glVertex3f(s + 0.3, h, s + 0.3); glVertex3f(0, h + 2, 0)
+        # Back roof
+        glVertex3f(-s - 0.3, h, -s - 0.3); glVertex3f(0, h + 2, 0); glVertex3f(s + 0.3, h, -s - 0.3)
+        # Left roof
+        glVertex3f(-s - 0.3, h, -s - 0.3); glVertex3f(-s - 0.3, h, s + 0.3); glVertex3f(0, h + 2, 0)
+        # Right roof
+        glVertex3f(s + 0.3, h, s + 0.3); glVertex3f(s + 0.3, h, -s - 0.3); glVertex3f(0, h + 2, 0)
+        glEnd()
+        # Door
+        glColor3f(0.35, 0.2, 0.1)
+        glBegin(GL_QUADS)
+        glVertex3f(-0.5, 0, s + 0.01); glVertex3f(0.5, 0, s + 0.01)
+        glVertex3f(0.5, 1.8, s + 0.01); glVertex3f(-0.5, 1.8, s + 0.01)
+        glEnd()
+        # Windows
+        glColor3f(0.5, 0.7, 0.9)
+        glBegin(GL_QUADS)
+        # Left window
+        glVertex3f(-1.5, 1.5, s + 0.01); glVertex3f(-0.8, 1.5, s + 0.01)
+        glVertex3f(-0.8, 2.3, s + 0.01); glVertex3f(-1.5, 2.3, s + 0.01)
+        # Right window
+        glVertex3f(0.8, 1.5, s + 0.01); glVertex3f(1.5, 1.5, s + 0.01)
+        glVertex3f(1.5, 2.3, s + 0.01); glVertex3f(0.8, 2.3, s + 0.01)
+        glEnd()
+        glPopMatrix()
 
 
 # ════════════════════════════════════════════════════════════
@@ -2262,6 +2546,12 @@ class HUD:
         # Arrows
         self._draw_text(f"Arrows: {player.arrows}", 20, 135, self.font_small, (200, 170, 100))
 
+        # Rupees
+        self._draw_text(f"Rupees: {player.rupees}", 20, 155, self.font_small, (100, 255, 100))
+
+        # Cookies
+        self._draw_text(f"Cookies: {player.cookies}", 20, 175, self.font_small, (255, 220, 100))
+
         # Minimap
         self._draw_minimap(player, world)
 
@@ -2280,6 +2570,18 @@ class HUD:
             cm = world.cookie_monster
             if dist2d(player.x, player.z, cm.x, cm.z) < INTERACT_RANGE:
                 self._draw_text_centered("[E] Talk to Cookie Monster", SCREEN_H // 2 + 60, self.font_med, (210, 170, 80))
+        if world and world.grandma:
+            gm = world.grandma
+            if dist2d(player.x, player.z, gm.x, gm.z) < INTERACT_RANGE:
+                self._draw_text_centered("[E] Visit Grandma's Kitchen", SCREEN_H // 2 + 60, self.font_med, (255, 200, 150))
+        if world and world.evil_grandma:
+            eg = world.evil_grandma
+            if dist2d(player.x, player.z, eg.x, eg.z) < INTERACT_RANGE:
+                self._draw_text_centered("[E] Talk to Evil Grandma", SCREEN_H // 2 + 60, self.font_med, (150, 255, 100))
+        if player.has_house:
+            hx, hz = HOUSE_POS[0] * TILE_SIZE, HOUSE_POS[1] * TILE_SIZE
+            if dist2d(player.x, player.z, hx, hz) < INTERACT_RANGE:
+                self._draw_text_centered("[E] Enter Your House", SCREEN_H // 2 + 60, self.font_med, (255, 220, 150))
 
         # Controls hint
         self._draw_text("WASD:Move  L/R Click:Attack/Defend  Scroll:Loadout  E:Interact  Tab:Inventory  MMB:Look",
@@ -2323,6 +2625,29 @@ class HUD:
                 cmz = mm_y + mm_size // 2 + int((cm.z - cz) * scale)
                 if mm_x < cmx < mm_x + mm_size and mm_y < cmz < mm_y + mm_size:
                     pygame.draw.circle(self.surface, (210, 170, 80), (cmx, cmz), 4)
+
+            # Draw Grandma NPC
+            if world.grandma:
+                gm = world.grandma
+                gmx = mm_x + mm_size // 2 + int((gm.x - cx) * scale)
+                gmz = mm_y + mm_size // 2 + int((gm.z - cz) * scale)
+                if mm_x < gmx < mm_x + mm_size and mm_y < gmz < mm_y + mm_size:
+                    pygame.draw.circle(self.surface, (200, 100, 200), (gmx, gmz), 4)
+
+            # Draw Evil Grandma NPC
+            if world.evil_grandma:
+                eg = world.evil_grandma
+                egx = mm_x + mm_size // 2 + int((eg.x - cx) * scale)
+                egz = mm_y + mm_size // 2 + int((eg.z - cz) * scale)
+                if mm_x < egx < mm_x + mm_size and mm_y < egz < mm_y + mm_size:
+                    pygame.draw.circle(self.surface, (100, 200, 80), (egx, egz), 4)
+
+            # Draw House
+            hx_w, hz_w = HOUSE_POS[0] * TILE_SIZE, HOUSE_POS[1] * TILE_SIZE
+            hsx = mm_x + mm_size // 2 + int((hx_w - cx) * scale)
+            hsz = mm_y + mm_size // 2 + int((hz_w - cz) * scale)
+            if mm_x < hsx < mm_x + mm_size and mm_y < hsz < mm_y + mm_size:
+                pygame.draw.rect(self.surface, (200, 180, 100), (hsx - 3, hsz - 3, 6, 6))
 
         # Player dot
         pygame.draw.circle(self.surface, (255, 255, 100), (mm_x + mm_size // 2, mm_y + mm_size // 2), 3)
@@ -2465,11 +2790,205 @@ class HUD:
             self._draw_text_centered(label, y, self.font_small, color)
             y += 35
 
-        self._draw_text_centered("[ESC] or [TAB] to leave", y + 30, self.font_small, (150, 150, 150))
+        # House and Anvil shop section
+        y += 10
+        self._draw_text_centered("═══ Real Estate & Tools ═══", y, self.font_med, (210, 170, 80))
+        y += 35
+        if not player.has_house:
+            color = (255, 255, 200) if player.rupees >= HOUSE_COST else (120, 120, 120)
+            self._draw_text_centered(f"  [F5] Buy House — {HOUSE_COST} rupees (have {player.rupees})", y, self.font_small, color)
+        else:
+            self._draw_text_centered("  [F5] House — OWNED", y, self.font_small, (100, 255, 100))
+        y += 30
+        if player.has_house and not player.has_anvil:
+            color = (255, 255, 200) if player.rupees >= 30 else (120, 120, 120)
+            self._draw_text_centered(f"  [F6] Buy Anvil — 30 rupees (have {player.rupees})", y, self.font_small, color)
+        elif player.has_anvil:
+            self._draw_text_centered("  [F6] Anvil — OWNED", y, self.font_small, (100, 255, 100))
+        else:
+            self._draw_text_centered("  [F6] Anvil — Need house first", y, self.font_small, (120, 120, 120))
+        y += 40
+
+        self._draw_text_centered("[ESC] or [TAB] to leave", y, self.font_small, (150, 150, 150))
 
         self._render_to_gl()
 
-    def draw_shrine_hud(self, shrine, player):
+    def draw_grandma_kitchen(self, player):
+        """Draw Grandma's Kitchen cooking overlay."""
+        self.surface.fill((0, 0, 0, 0))
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((30, 15, 5, 180))
+        self.surface.blit(overlay, (0, 0))
+
+        self._draw_text_centered("Grandma's Kitchen", 40, self.font_title, (255, 200, 150))
+        self._draw_text_centered("\"Come in dear! Let grandma cook something nice for you!\"", 110, self.font_small, (255, 220, 180))
+        self._draw_text_centered(f"Your Cookies: {player.cookies}  (each recipe costs 3 cookies)", 150, self.font_med, (255, 220, 100))
+
+        self._draw_text_centered("═══ Recipes ═══", 200, self.font_med, (255, 200, 150))
+        y = 240
+        for i, recipe in enumerate(GRANDMA_RECIPES):
+            key = f"F{i+1}"
+            can_afford = player.cookies >= 3
+            color = (255, 255, 200) if can_afford else (120, 120, 120)
+            self._draw_text_centered(f"  [{key}] {recipe['name']} — {recipe['desc']}", y, self.font_small, color)
+            y += 35
+
+        self._draw_text_centered("[ESC] or [TAB] to leave", y + 30, self.font_small, (150, 150, 150))
+        self._render_to_gl()
+
+    def draw_evil_grandma(self, player):
+        """Draw Evil Grandma's stat drain overlay."""
+        self.surface.fill((0, 0, 0, 0))
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((10, 20, 10, 200))
+        self.surface.blit(overlay, (0, 0))
+
+        self._draw_text_centered("The Evil Grandma", 40, self.font_title, (150, 255, 100))
+        self._draw_text_centered("\"Hehehehe... Let me take those pesky upgrades off your hands...\"", 110, self.font_small, (180, 255, 150))
+        self._draw_text_centered(f"Your Cookies: {player.cookies}", 150, self.font_med, (255, 220, 100))
+
+        self._draw_text_centered("═══ Drain Stats (get cookies back) ═══", 200, self.font_med, (150, 255, 100))
+        stat_keys = {'attack': 'F1', 'defense': 'F2', 'speed': 'F3', 'stamina': 'F4'}
+        y = 240
+        for stat, key in stat_keys.items():
+            lvl = player.stat_levels[stat]
+            bars = '█' * lvl + '░' * (player.max_stat_level - lvl)
+            if lvl > 0:
+                refund = lvl
+                color = (255, 200, 200)
+                label = f"  [{key}] Drain {stat.title()} [{bars}] — get {refund} cookie{'s' if refund > 1 else ''} back"
+            else:
+                color = (120, 120, 120)
+                label = f"  [{key}] {stat.title()} [{bars}] — nothing to drain"
+            self._draw_text_centered(label, y, self.font_small, color)
+            y += 35
+
+        self._draw_text_centered("[ESC] or [TAB] to leave", y + 30, self.font_small, (150, 150, 150))
+        self._render_to_gl()
+
+    def draw_anvil_craft(self, player):
+        """Draw Anvil crafting overlay."""
+        self.surface.fill((0, 0, 0, 0))
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((15, 15, 25, 200))
+        self.surface.blit(overlay, (0, 0))
+
+        self._draw_text_centered("The Anvil", 40, self.font_title, (200, 200, 255))
+        self._draw_text_centered("\"Forge powerful weapons with rupees!\"", 110, self.font_small, (180, 200, 255))
+        self._draw_text_centered(f"Your Rupees: {player.rupees}", 150, self.font_med, (100, 255, 100))
+
+        self._draw_text_centered("═══ Forge Weapons ═══", 200, self.font_med, (200, 200, 255))
+        y = 240
+        for i, recipe in enumerate(ANVIL_RECIPES):
+            key = f"F{i+1}"
+            wtype = recipe['weapon']
+            wname = WEAPON_DATA[wtype]['name']
+            cost = recipe['cost']
+            owned = wtype in player.available_weapons
+            if owned:
+                color = (100, 255, 100)
+                label = f"  [{key}] {wname} — OWNED"
+            elif player.rupees >= cost:
+                color = (255, 255, 200)
+                label = f"  [{key}] {wname} (dmg:{WEAPON_DATA[wtype]['damage']}) — {cost} rupees"
+            else:
+                color = (120, 120, 120)
+                label = f"  [{key}] {wname} (dmg:{WEAPON_DATA[wtype]['damage']}) — {cost} rupees (not enough!)"
+            self._draw_text_centered(label, y, self.font_small, color)
+            y += 35
+
+        self._draw_text_centered("[ESC] or [TAB] to go back", y + 30, self.font_small, (150, 150, 150))
+        self._render_to_gl()
+
+    def draw_house(self, player):
+        """Draw house interior view."""
+        self.surface.fill((0, 0, 0, 0))
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        overlay.fill((25, 20, 15, 200))
+        self.surface.blit(overlay, (0, 0))
+
+        self._draw_text_centered("Your House", 40, self.font_title, (255, 220, 150))
+        self._draw_text_centered("\"Home sweet home!\"", 110, self.font_small, (255, 220, 180))
+
+        y = 180
+        self._draw_text_centered("═══ Your Items ═══", y, self.font_med, (255, 220, 150))
+        y += 40
+        if player.has_anvil:
+            self._draw_text_centered("[F1] Use Anvil — forge weapons", y, self.font_small, (200, 200, 255))
+            y += 35
+        else:
+            self._draw_text_centered("No anvil yet — buy one from Cookie Monster!", y, self.font_small, (150, 150, 150))
+            y += 35
+
+        # Show owned weapons
+        y += 20
+        self._draw_text_centered("═══ Weapon Collection ═══", y, self.font_med, (255, 220, 150))
+        y += 35
+        for wtype in player.available_weapons:
+            wdata = WEAPON_DATA[wtype]
+            self._draw_text_centered(f"• {wdata['name']} (dmg:{wdata['damage']}, range:{wdata['range']})", y, self.font_small, (200, 200, 200))
+            y += 25
+
+        self._draw_text_centered("[ESC] or [TAB] to leave", SCREEN_H - 40, self.font_small, (150, 150, 150))
+        self._render_to_gl()
+
+    def draw_cutscene(self, timer):
+        """Draw sword breaking intro cutscene."""
+        self.surface.fill((0, 0, 0, 0))
+        overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+
+        progress = min(timer / 8.0, 1.0)  # 8 second cutscene
+
+        if progress < 0.3:
+            # Phase 1: Dark screen, text appears
+            overlay.fill((0, 0, 0, 240))
+            self.surface.blit(overlay, (0, 0))
+            alpha = int(min(progress / 0.1, 1.0) * 255)
+            self._draw_text_centered("The kingdom was at peace...", SCREEN_H // 2 - 60, self.font_title, (200, 200, 220, alpha))
+            self._draw_text_centered("Until the darkness returned.", SCREEN_H // 2, self.font_large, (200, 150, 150, alpha))
+        elif progress < 0.6:
+            # Phase 2: Sword appears then cracks
+            overlay.fill((5, 0, 0, 220))
+            self.surface.blit(overlay, (0, 0))
+            self._draw_text_centered("The Hero drew his sword...", SCREEN_H // 2 - 80, self.font_large, (220, 220, 255))
+            # Draw sword ASCII art
+            sword_lines = [
+                "        /\\",
+                "       /  \\",
+                "      /    \\",
+                "     /      \\",
+                "    /   ||   \\",
+                "        ||",
+                "        ||",
+                "      ══██══",
+                "        ██",
+            ]
+            sy = SCREEN_H // 2 - 20
+            for line in sword_lines:
+                self._draw_text_centered(line, sy, self.font_small, (180, 180, 220))
+                sy += 18
+        elif progress < 0.85:
+            # Phase 3: Sword shatters
+            overlay.fill((20, 0, 0, 200))
+            self.surface.blit(overlay, (0, 0))
+            self._draw_text_centered("*CRACK*", SCREEN_H // 2 - 60, self.font_title, (255, 80, 80))
+            self._draw_text_centered("The ancient blade... SHATTERED!", SCREEN_H // 2 + 20, self.font_large, (255, 150, 100))
+            # Scattered pieces
+            shards = ["  /", "\\", "  |", " /\\", "\\  /", "═", "█"]
+            sx = SCREEN_W // 2 - 100
+            for i, shard in enumerate(shards):
+                ox = sx + (i * 35) + int(math.sin(timer * 3 + i) * 10)
+                oy = SCREEN_H // 2 + 80 + int(math.cos(timer * 2 + i) * 15)
+                self._draw_text(shard, ox, oy, self.font_med, (180, 120, 80))
+        else:
+            # Phase 4: Darkness fades, new quest begins
+            overlay.fill((0, 0, 0, 240))
+            self.surface.blit(overlay, (0, 0))
+            self._draw_text_centered("He is not the man of the sword...", SCREEN_H // 2 - 40, self.font_large, (200, 180, 255))
+            self._draw_text_centered("But perhaps, of the CROWN.", SCREEN_H // 2 + 20, self.font_title, (255, 220, 100))
+
+        self._draw_text_centered("[ENTER/ESC/SPACE] Skip", SCREEN_H - 30, self.font_small, (100, 100, 100))
+        self._render_to_gl()
         """Draw HUD when inside a shrine."""
         self.surface.fill((0, 0, 0, 0))
 
@@ -2622,6 +3141,10 @@ class Game:
         # Inventory UI state
         self.selected_weapon_index = -1
 
+        # Cutscene
+        self.cutscene_timer = 0.0
+        self.cutscene_done = False
+
         # Initialize sounds
         init_sounds()
 
@@ -2711,7 +3234,12 @@ class Game:
     def _handle_keydown(self, event):
         if self.state == GameState.TITLE:
             if event.key == pygame.K_RETURN:
-                self.state = GameState.PLAYING
+                if not self.cutscene_done:
+                    self.state = GameState.CUTSCENE
+                    self.cutscene_timer = 0.0
+                    self.cutscene_done = True
+                else:
+                    self.state = GameState.PLAYING
                 self.hud.add_notification("Welcome to the Underground Castle!")
                 self.hud.add_notification("Press E near the exit to leave the castle.")
                 play_sfx('menu')
@@ -2828,6 +3356,71 @@ class Game:
                 self._upgrade_stat('speed')
             elif event.key == pygame.K_F4:
                 self._upgrade_stat('stamina')
+            elif event.key == pygame.K_F5:
+                self._buy_house_item('furniture')
+            elif event.key == pygame.K_F6:
+                self._buy_anvil()
+
+        elif self.state == GameState.GRANDMA_KITCHEN:
+            if event.key in (pygame.K_TAB, pygame.K_ESCAPE):
+                self.state = GameState.PLAYING
+                pygame.event.set_grab(True)
+                pygame.mouse.set_visible(False)
+                play_sfx('menu')
+            elif event.key == pygame.K_F1:
+                self._grandma_cook(0)
+            elif event.key == pygame.K_F2:
+                self._grandma_cook(1)
+            elif event.key == pygame.K_F3:
+                self._grandma_cook(2)
+            elif event.key == pygame.K_F4:
+                self._grandma_cook(3)
+
+        elif self.state == GameState.EVIL_GRANDMA:
+            if event.key in (pygame.K_TAB, pygame.K_ESCAPE):
+                self.state = GameState.PLAYING
+                pygame.event.set_grab(True)
+                pygame.mouse.set_visible(False)
+                play_sfx('menu')
+            elif event.key == pygame.K_F1:
+                self._evil_grandma_drain('attack')
+            elif event.key == pygame.K_F2:
+                self._evil_grandma_drain('defense')
+            elif event.key == pygame.K_F3:
+                self._evil_grandma_drain('speed')
+            elif event.key == pygame.K_F4:
+                self._evil_grandma_drain('stamina')
+
+        elif self.state == GameState.ANVIL_CRAFT:
+            if event.key in (pygame.K_TAB, pygame.K_ESCAPE):
+                self.state = GameState.HOUSE
+                play_sfx('menu')
+            elif event.key == pygame.K_F1:
+                self._anvil_craft(0)
+            elif event.key == pygame.K_F2:
+                self._anvil_craft(1)
+            elif event.key == pygame.K_F3:
+                self._anvil_craft(2)
+            elif event.key == pygame.K_F4:
+                self._anvil_craft(3)
+            elif event.key == pygame.K_F5:
+                self._anvil_craft(4)
+
+        elif self.state == GameState.HOUSE:
+            if event.key in (pygame.K_TAB, pygame.K_ESCAPE):
+                self.state = GameState.PLAYING
+                pygame.event.set_grab(True)
+                pygame.mouse.set_visible(False)
+                play_sfx('menu')
+            elif event.key == pygame.K_F1 and self.player.has_anvil:
+                self.state = GameState.ANVIL_CRAFT
+                play_sfx('menu')
+
+        elif self.state == GameState.CUTSCENE:
+            if event.key in (pygame.K_RETURN, pygame.K_ESCAPE, pygame.K_SPACE):
+                self.cutscene_timer = 0
+                self.state = GameState.PLAYING
+                play_sfx('menu')
 
         elif self.state == GameState.GAME_OVER:
             if event.key == pygame.K_r:
@@ -2884,6 +3477,27 @@ class Game:
             play_sfx('shrine_enter')
             return
 
+        # Check for Grandma NPC
+        gm = self.world.grandma
+        if gm and dist2d(self.player.x, self.player.z, gm.x, gm.z) < INTERACT_RANGE:
+            self.state = GameState.GRANDMA_KITCHEN
+            play_sfx('shrine_enter')
+            return
+
+        # Check for Evil Grandma NPC
+        eg = self.world.evil_grandma
+        if eg and dist2d(self.player.x, self.player.z, eg.x, eg.z) < INTERACT_RANGE:
+            self.state = GameState.EVIL_GRANDMA
+            play_sfx('shrine_enter')
+            return
+
+        # Check for House interaction
+        hx, hz = HOUSE_POS[0] * TILE_SIZE, HOUSE_POS[1] * TILE_SIZE
+        if self.player.has_house and dist2d(self.player.x, self.player.z, hx, hz) < INTERACT_RANGE:
+            self.state = GameState.HOUSE
+            play_sfx('shrine_enter')
+            return
+
     def _enter_shrine(self, shrine):
         """Enter a shrine."""
         self.active_shrine = shrine
@@ -2923,15 +3537,15 @@ class Game:
             self.hud.add_notification("Visit Cookie Monster (West) to trade cookies for stats!")
 
             # Unlock abilities based on shrine count
-            if self.player.crown_shards == 2 and AbilityType.FORGE_BOND not in self.player.abilities:
-                self.player.abilities.append(AbilityType.FORGE_BOND)
-                self.hud.add_notification("Ability unlocked: Forge Bond!")
-            elif self.player.crown_shards == 4 and AbilityType.PHASE_RISE not in self.player.abilities:
-                self.player.abilities.append(AbilityType.PHASE_RISE)
-                self.hud.add_notification("Ability unlocked: Phase Rise!")
-            elif self.player.crown_shards == 8 and AbilityType.TIME_REWIND not in self.player.abilities:
-                self.player.abilities.append(AbilityType.TIME_REWIND)
-                self.hud.add_notification("Ability unlocked: Time Rewind!")
+            if self.player.crown_shards == 2 and AbilityType.FUSE not in self.player.abilities:
+                self.player.abilities.append(AbilityType.FUSE)
+                self.hud.add_notification("Ability unlocked: Fuse!")
+            elif self.player.crown_shards == 4 and AbilityType.ASCEND not in self.player.abilities:
+                self.player.abilities.append(AbilityType.ASCEND)
+                self.hud.add_notification("Ability unlocked: Ascend!")
+            elif self.player.crown_shards == 8 and AbilityType.RECALL not in self.player.abilities:
+                self.player.abilities.append(AbilityType.RECALL)
+                self.hud.add_notification("Ability unlocked: Recall!")
 
             self._exit_shrine()
 
@@ -2963,18 +3577,114 @@ class Game:
             p.stamina = p.max_stamina
             self.hud.add_notification(f"Stamina upgraded to Lv.{current+1}! (+25 max stamina)")
 
+    def _grandma_cook(self, recipe_index):
+        """Cook a recipe at Grandma's kitchen for 3 cookies."""
+        if recipe_index >= len(GRANDMA_RECIPES):
+            return
+        recipe = GRANDMA_RECIPES[recipe_index]
+        p = self.player
+        if p.cookies < 3:
+            self.hud.add_notification(f"Need 3 cookies! (have {p.cookies})")
+            return
+        p.cookies -= 3
+        play_sfx('shrine_complete')
+        name = recipe['name']
+        if recipe['effect'] == 'heal':
+            p.hp = min(p.hp + recipe['value'], p.max_hp)
+            self.hud.add_notification(f"Grandma made {name}! Healed {recipe['value']} HP!")
+        elif recipe['effect'] == 'attack_boost':
+            p.invincible_timer = max(p.invincible_timer, recipe['value'])
+            self.hud.add_notification(f"Grandma made {name}! Power boost for {recipe['value']}s!")
+        elif recipe['effect'] == 'speed_boost':
+            p.stamina = p.max_stamina
+            self.hud.add_notification(f"Grandma made {name}! Stamina fully restored!")
+        elif recipe['effect'] == 'shield':
+            p.hp = min(p.hp + recipe['value'], p.max_hp)
+            p.invincible_timer = max(p.invincible_timer, 3.0)
+            self.hud.add_notification(f"Grandma made {name}! Shield + {recipe['value']} HP!")
+
+    def _evil_grandma_drain(self, stat_name):
+        """Evil Grandma takes back a stat level, refunding cookies."""
+        p = self.player
+        current = p.stat_levels[stat_name]
+        if current <= 0:
+            self.hud.add_notification(f"{stat_name.title()} already at base level! Nothing to take!")
+            return
+        refund = current  # Refunds same cost as upgrade
+        p.stat_levels[stat_name] = current - 1
+        p.cookies += refund
+        play_sfx('hit')
+        # Reverse stat bonuses
+        if stat_name == 'defense':
+            p.max_hp = max(100, p.max_hp - 20)
+            p.hp = min(p.hp, p.max_hp)
+        elif stat_name == 'stamina':
+            p.max_stamina = max(100, p.max_stamina - 25)
+            p.stamina = min(p.stamina, p.max_stamina)
+        self.hud.add_notification(f"Evil Grandma drained {stat_name.title()}! Got {refund} cookies back...")
+
+    def _buy_house_item(self, item_type):
+        """Buy a house furniture item from Cookie Shop."""
+        p = self.player
+        if not p.has_house:
+            cost = HOUSE_COST
+            if p.rupees < cost:
+                self.hud.add_notification(f"Need {cost} rupees for a house! (have {p.rupees})")
+                return
+            p.rupees -= cost
+            p.has_house = True
+            play_sfx('shrine_complete')
+            self.hud.add_notification("House purchased! Find it near the castle!")
+            return
+        self.hud.add_notification("You already own a house!")
+
+    def _buy_anvil(self):
+        """Buy an anvil from Cookie Shop for the house."""
+        p = self.player
+        if not p.has_house:
+            self.hud.add_notification("You need a house first!")
+            return
+        if p.has_anvil:
+            self.hud.add_notification("You already have an anvil!")
+            return
+        cost = 30
+        if p.rupees < cost:
+            self.hud.add_notification(f"Need {cost} rupees for anvil! (have {p.rupees})")
+            return
+        p.rupees -= cost
+        p.has_anvil = True
+        play_sfx('shrine_complete')
+        self.hud.add_notification("Anvil purchased! Use it in your house!")
+
+    def _anvil_craft(self, recipe_index):
+        """Craft a weapon at the anvil using rupees."""
+        if recipe_index >= len(ANVIL_RECIPES):
+            return
+        recipe = ANVIL_RECIPES[recipe_index]
+        p = self.player
+        if p.rupees < recipe['cost']:
+            self.hud.add_notification(f"Need {recipe['cost']} rupees! (have {p.rupees})")
+            return
+        wtype = recipe['weapon']
+        if wtype in p.available_weapons:
+            self.hud.add_notification(f"You already have {WEAPON_DATA[wtype]['name']}!")
+            return
+        p.rupees -= recipe['cost']
+        p.available_weapons.append(wtype)
+        play_sfx('shrine_complete')
+        self.hud.add_notification(f"Forged {WEAPON_DATA[wtype]['name']}!")
+
     def _use_ability(self):
-        \"\"\"Activate the currently selected ability with F key.\"\"\"
+        """Activate the currently selected ability with F key."""
         if not self.player.abilities:
             self.hud.add_notification("No abilities unlocked!")
             return
         ability = self.player.abilities[self.player.selected_ability]
         p = self.player
 
-        if ability == AbilityType.TELEKINESIS:
-            # Pull nearest block or push nearest enemy away
+        if ability == AbilityType.ULTRAHAND:
+            # Ultrahand: grab and move blocks/push enemies
             if self.state == GameState.SHRINE and self.active_shrine:
-                # In shrine: move closest block toward player
                 best_bl = None
                 best_d = 999
                 for bl in self.active_shrine.blocks:
@@ -2989,11 +3699,10 @@ class Game:
                     best_bl['x'] = max(-10, min(10, best_bl['x']))
                     best_bl['z'] = max(-10, min(10, best_bl['z']))
                     play_sfx('hit')
-                    self.hud.add_notification("Telekinesis!")
+                    self.hud.add_notification("Ultrahand!")
                 else:
                     self.hud.add_notification("No block in range!")
             else:
-                # Overworld: push nearest mob away
                 targets = self.world.mobs + self.world.bosses
                 best_e = None
                 best_d = 999
@@ -3010,37 +3719,42 @@ class Game:
                     best_e.z += dz * 5
                     self.particles.emit(best_e.x, best_e.y + 1, best_e.z, 8, (100, 180, 255), spread=1, speed=3)
                     play_sfx('hit')
-                    self.hud.add_notification("Telekinesis!")
+                    self.hud.add_notification("Ultrahand!")
                 else:
                     self.hud.add_notification("No target in range!")
 
-        elif ability == AbilityType.FORGE_BOND:
-            # Forge Bond: temporary damage boost (double damage for 5 seconds)
+        elif ability == AbilityType.FUSE:
+            # Fuse: combine held weapon with nearby material for temp damage boost
+            rad = math.radians(p.facing)
+            fx = p.x - math.sin(rad) * 3
+            fz = p.z - math.cos(rad) * 3
+            # Fuse grants temporary double damage
             p.invincible_timer = max(p.invincible_timer, 5.0)
-            self.particles.emit(p.x, p.y + 1, p.z, 15, (255, 200, 50), spread=1.5, speed=4)
+            self.particles.emit(fx, p.y + 1, fz, 15, (255, 150, 50), spread=1.5, speed=4)
+            self.particles.emit(p.x, p.y + 1, p.z, 10, (255, 200, 50), spread=1, speed=3)
             play_sfx('shrine_complete')
-            self.hud.add_notification("Forge Bond! Invincible for 5 seconds!")
+            self.hud.add_notification("Fuse! Weapon powered up for 5 seconds!")
 
-        elif ability == AbilityType.PHASE_RISE:
-            # Phase Rise: launch upward (super jump)
+        elif ability == AbilityType.ASCEND:
+            # Ascend: launch upward through ceilings
             p.vy = JUMP_VEL * 2.5
             p.on_ground = False
             self.particles.emit(p.x, p.y, p.z, 12, (180, 255, 180), spread=1, speed=5)
             play_sfx('jump')
-            self.hud.add_notification("Phase Rise!")
+            self.hud.add_notification("Ascend!")
 
-        elif ability == AbilityType.TIME_REWIND:
-            # Time Rewind: heal to full and reset cooldowns
+        elif ability == AbilityType.RECALL:
+            # Recall: rewind time, heal to full and reset cooldowns
             p.hp = p.max_hp
             p.stamina = p.max_stamina
             p.left_cooldown = 0
             p.right_cooldown = 0
             self.particles.emit(p.x, p.y + 1, p.z, 20, (150, 100, 255), spread=2, speed=3)
             play_sfx('shrine_complete')
-            self.hud.add_notification("Time Rewind! Fully restored!")
+            self.hud.add_notification("Recall! Fully restored!")
 
     def _render_castle(self):
-        \"\"\"Render underground castle spawn room.\"\"\"
+        """Render underground castle spawn room."""
         glClearColor(0.05, 0.04, 0.08, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -3234,6 +3948,13 @@ class Game:
             if not self.player.alive:
                 self.state = GameState.GAME_OVER
                 play_sfx('death')
+
+        elif self.state == GameState.CUTSCENE:
+            self.cutscene_timer += self.dt
+            self.hud.update(self.dt)
+            if self.cutscene_timer >= 8.0:
+                self.state = GameState.PLAYING
+
         else:
             self.hud.update(self.dt)
 
@@ -3325,6 +4046,12 @@ class Game:
             self.hud.draw_title_screen()
             return
 
+        if self.state == GameState.CUTSCENE:
+            glClearColor(0.0, 0.0, 0.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            self.hud.draw_cutscene(self.cutscene_timer)
+            return
+
         if self.state == GameState.SHRINE:
             self._render_shrine()
             return
@@ -3348,6 +4075,8 @@ class Game:
         self.world.draw_mobs(self.player.x, self.player.z)
         self.world.draw_bosses(self.player.x, self.player.z)
         self.world.draw_cookie_monster(self.player.x, self.player.z)
+        self.world.draw_npcs(self.player.x, self.player.z)
+        self.world.draw_house(self.player.x, self.player.z)
 
         # Draw player
         self.player.draw()
@@ -3363,6 +4092,16 @@ class Game:
             self.hud.draw_inventory(self.player)
         elif self.state == GameState.COOKIE_SHOP:
             self.hud.draw_cookie_shop(self.player)
+        elif self.state == GameState.GRANDMA_KITCHEN:
+            self.hud.draw_grandma_kitchen(self.player)
+        elif self.state == GameState.EVIL_GRANDMA:
+            self.hud.draw_evil_grandma(self.player)
+        elif self.state == GameState.ANVIL_CRAFT:
+            self.hud.draw_anvil_craft(self.player)
+        elif self.state == GameState.HOUSE:
+            self.hud.draw_house(self.player)
+        elif self.state == GameState.CUTSCENE:
+            self.hud.draw_cutscene(self.cutscene_timer)
         elif self.state == GameState.GAME_OVER:
             self.hud.draw_game_over()
         elif self.state == GameState.VICTORY:
