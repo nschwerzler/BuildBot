@@ -1591,6 +1591,7 @@ class Player(Entity):
         self.has_house = False
         self.house_items = []  # list of item names placed in house
         self.has_anvil = False
+        self.has_tablet = False  # Purah Pad - obtained on descent from Sky Island
 
         # Loadouts
         self.loadout1 = Loadout(WeaponType.SWORD, WeaponType.SHIELD)
@@ -3221,14 +3222,24 @@ class Game:
         # Sky shrine positions (relative to sky island center at 100*TILE_SIZE)
         sky_cx = 100 * TILE_SIZE
         sky_cz = 100 * TILE_SIZE
-        self.sky_shrines = [
-            {'x': sky_cx + 15, 'z': sky_cz, 'ability': AbilityType.ULTRAHAND, 'completed': False, 'name': 'Shrine of Ultrahand'},
-            {'x': sky_cx - 15, 'z': sky_cz, 'ability': AbilityType.FUSE, 'completed': False, 'name': 'Shrine of Fuse'},
-            {'x': sky_cx, 'z': sky_cz + 15, 'ability': AbilityType.ASCEND, 'completed': False, 'name': 'Shrine of Ascend'},
-            {'x': sky_cx, 'z': sky_cz - 15, 'ability': AbilityType.RECALL, 'completed': False, 'name': 'Shrine of Recall'},
+        # Sky shrines are real Shrine objects so they are playable
+        self.sky_shrines_data = [
+            {'shrine_type': ShrineType.GRASP_TRIAL, 'ability': AbilityType.ULTRAHAND, 'ox': 40, 'oz': 0, 'name': 'Shrine of Ultrahand'},
+            {'shrine_type': ShrineType.FORGE_TRIAL, 'ability': AbilityType.FUSE, 'ox': -40, 'oz': 0, 'name': 'Shrine of Fuse'},
+            {'shrine_type': ShrineType.RISING_TRIAL, 'ability': AbilityType.ASCEND, 'ox': 0, 'oz': 40, 'name': 'Shrine of Ascend'},
+            {'shrine_type': ShrineType.TIMEFLOW_TRIAL, 'ability': AbilityType.RECALL, 'ox': 0, 'oz': -40, 'name': 'Shrine of Recall'},
         ]
-        self.sky_cookie_monster_x = sky_cx + 8
-        self.sky_cookie_monster_z = sky_cz + 8
+        self.sky_shrines = []
+        for sd in self.sky_shrines_data:
+            s = Shrine(sd['shrine_type'], 0, 0, sd['name'])
+            s.wx = sky_cx + sd['ox']
+            s.wz = sky_cz + sd['oz']
+            s.completed = False
+            s._sky_ability = sd['ability']
+            s._sky_name = sd['name']
+            self.sky_shrines.append(s)
+        self.sky_cookie_monster_x = sky_cx + 20
+        self.sky_cookie_monster_z = sky_cz + 20
 
         # Initialize sounds
         init_sounds()
@@ -3356,7 +3367,7 @@ class Game:
                 pygame.event.set_grab(False)
                 pygame.mouse.set_visible(True)
                 play_sfx('menu')
-            elif event.key == pygame.K_TAB:
+            elif event.key == pygame.K_TAB or event.key == pygame.K_i:
                 self.state = GameState.INVENTORY
                 self.selected_weapon_index = -1
                 play_sfx('menu')
@@ -3390,7 +3401,7 @@ class Game:
             elif event.key == pygame.K_e:
                 if self.active_shrine and self.active_shrine.check_completion():
                     self._complete_shrine()
-            elif event.key == pygame.K_TAB:
+            elif event.key == pygame.K_TAB or event.key == pygame.K_i:
                 self.state = GameState.INVENTORY
                 self.selected_weapon_index = -1
             elif event.key == pygame.K_f:
@@ -3410,7 +3421,7 @@ class Game:
                 self.running = False
 
         elif self.state == GameState.INVENTORY:
-            if event.key == pygame.K_TAB or event.key == pygame.K_ESCAPE:
+            if event.key in (pygame.K_TAB, pygame.K_ESCAPE, pygame.K_i):
                 self.state = GameState.PLAYING if not self.active_shrine else GameState.SHRINE
                 pygame.event.set_grab(True)
                 pygame.mouse.set_visible(False)
@@ -3567,18 +3578,10 @@ class Game:
         # Sky Island shrine interaction
         if self.on_sky_island:
             for shrine in self.sky_shrines:
-                if not shrine['completed'] and dist2d(self.player.x, self.player.z, shrine['x'], shrine['z']) < INTERACT_RANGE:
-                    shrine['completed'] = True
-                    self.sky_island_shrines_done += 1
-                    ability = shrine['ability']
-                    if ability not in self.player.abilities:
-                        self.player.abilities.append(ability)
-                    play_sfx('shrine_complete')
-                    self.particles.emit(shrine['x'], 80, shrine['z'], 30, (100, 200, 255), spread=3, speed=5)
-                    self.hud.add_notification(f"{shrine['name']} complete! Gained {ability.value}!")
-                    # Check if all shrines done
-                    if self.sky_island_shrines_done >= 4:
-                        self.hud.add_notification("All shrines complete! You may descend to the surface.")
+                if not shrine.completed and dist2d(self.player.x, self.player.z, shrine.wx, shrine.wz) < INTERACT_RANGE:
+                    # Enter the shrine as a playable level
+                    self._sky_shrine_being_played = shrine
+                    self._enter_shrine(shrine)
                     return
             # Sky Cookie Monster
             if dist2d(self.player.x, self.player.z, self.sky_cookie_monster_x, self.sky_cookie_monster_z) < INTERACT_RANGE:
@@ -3596,8 +3599,10 @@ class Game:
                     wy = walkable_y(self.player.x, self.player.z, self.world.seed)
                     self.player.y = (wy if wy is not None else 0) + 0.5
                     self.player.vy = 0
+                    self.player.has_tablet = True
                     play_sfx('shrine_complete')
                     self.hud.add_notification("You descend from the Great Sky Island to Hyrule!")
+                    self.hud.add_notification("You received the Purah Pad! Press [I] for inventory.")
                 else:
                     remaining = 4 - self.sky_island_shrines_done
                     self.hud.add_notification(f"Complete {remaining} more shrine(s) before descending!")
@@ -3661,8 +3666,11 @@ class Game:
             self.active_shrine.active = False
             self.player.x = self.shrine_player_x
             self.player.z = self.shrine_player_z
-            wy = walkable_y(self.player.x, self.player.z, self.world.seed)
-            self.player.y = wy if wy is not None else 0
+            if self.on_sky_island:
+                self.player.y = 78.5
+            else:
+                wy = walkable_y(self.player.x, self.player.z, self.world.seed)
+                self.player.y = wy if wy is not None else 0
             self.active_shrine = None
             self.state = GameState.PLAYING
 
@@ -3809,18 +3817,28 @@ class Game:
             self.player.cookies += 1
             play_sfx('shrine_complete')
             self.hud.add_notification(f"Cookie obtained! ({self.player.cookies} total)")
-            self.hud.add_notification("Visit Cookie Monster (West) to trade cookies for stats!")
 
-            # Unlock abilities based on shrine count
-            if self.player.crown_shards == 2 and AbilityType.FUSE not in self.player.abilities:
-                self.player.abilities.append(AbilityType.FUSE)
-                self.hud.add_notification("Ability unlocked: Fuse!")
-            elif self.player.crown_shards == 4 and AbilityType.ASCEND not in self.player.abilities:
-                self.player.abilities.append(AbilityType.ASCEND)
-                self.hud.add_notification("Ability unlocked: Ascend!")
-            elif self.player.crown_shards == 8 and AbilityType.RECALL not in self.player.abilities:
-                self.player.abilities.append(AbilityType.RECALL)
-                self.hud.add_notification("Ability unlocked: Recall!")
+            # Check if this is a sky shrine - award the specific ability
+            if hasattr(self.active_shrine, '_sky_ability'):
+                ability = self.active_shrine._sky_ability
+                if ability not in self.player.abilities:
+                    self.player.abilities.append(ability)
+                self.sky_island_shrines_done += 1
+                self.hud.add_notification(f"{self.active_shrine._sky_name} complete! Gained {ability.value}!")
+                if self.sky_island_shrines_done >= 4:
+                    self.hud.add_notification("All shrines complete! You may descend to the surface.")
+            else:
+                self.hud.add_notification("Visit Cookie Monster (West) to trade cookies for stats!")
+                # Unlock abilities based on shrine count (overworld shrines)
+                if self.player.crown_shards == 2 and AbilityType.FUSE not in self.player.abilities:
+                    self.player.abilities.append(AbilityType.FUSE)
+                    self.hud.add_notification("Ability unlocked: Fuse!")
+                elif self.player.crown_shards == 4 and AbilityType.ASCEND not in self.player.abilities:
+                    self.player.abilities.append(AbilityType.ASCEND)
+                    self.hud.add_notification("Ability unlocked: Ascend!")
+                elif self.player.crown_shards == 8 and AbilityType.RECALL not in self.player.abilities:
+                    self.player.abilities.append(AbilityType.RECALL)
+                    self.hud.add_notification("Ability unlocked: Recall!")
 
             self._exit_shrine()
 
@@ -4162,8 +4180,14 @@ class Game:
 
     def _render_sky_island(self):
         """Render the Great Sky Island floating above clouds."""
-        glClearColor(0.4, 0.65, 0.95, 1.0)  # Bright sky
+        glClearColor(0.55, 0.78, 1.0, 1.0)  # Bright ethereal sky
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        # Enable fog for sky feel
+        glEnable(GL_FOG)
+        glFogfv(GL_FOG_COLOR, [0.55, 0.78, 1.0, 1.0])
+        glFogi(GL_FOG_MODE, GL_LINEAR)
+        glFogf(GL_FOG_START, 80.0)
+        glFogf(GL_FOG_END, 250.0)
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
@@ -4178,43 +4202,62 @@ class Game:
         sky_cz = 100 * TILE_SIZE
 
         # Floating island platform (stone slab)
-        # Main platform
-        draw_cube(sky_cx, 77.0, sky_cz, 25, 1.5, 25, (100, 130, 90))
+        # Main platform (big island)
+        draw_cube(sky_cx, 77.0, sky_cz, 60, 1.5, 60, (100, 130, 90))
         # Grass top
-        draw_cube(sky_cx, 78.6, sky_cz, 25, 0.1, 25, (80, 160, 60))
+        draw_cube(sky_cx, 78.6, sky_cz, 60, 0.1, 60, (80, 160, 60))
         # Rocky underside details
-        for i in range(6):
-            angle = i * 60
-            rx = sky_cx + math.cos(math.radians(angle)) * 18
-            rz = sky_cz + math.sin(math.radians(angle)) * 18
-            draw_cube(rx, 74.5, rz, 3, 2, 3, (90, 85, 75))
-
-        # Cloud layer below (decorative)
         for i in range(12):
-            cx = sky_cx + math.cos(math.radians(i * 30 + t * 3)) * 40
-            cz = sky_cz + math.sin(math.radians(i * 30 + t * 2)) * 40
-            cy = 65 + math.sin(t * 0.5 + i) * 2
-            cloud_sz = 4 + math.sin(i * 1.3) * 2
-            draw_sphere(cx, cy, cz, cloud_sz, (240, 240, 250))
+            angle = i * 30
+            rx = sky_cx + math.cos(math.radians(angle)) * 45
+            rz = sky_cz + math.sin(math.radians(angle)) * 45
+            draw_cube(rx, 74.5, rz, 5, 3, 5, (90, 85, 75))
+        # Extra rock formations underneath
+        for i in range(8):
+            angle = i * 45 + 15
+            rx = sky_cx + math.cos(math.radians(angle)) * 30
+            rz = sky_cz + math.sin(math.radians(angle)) * 30
+            draw_cube(rx, 73.0, rz, 4, 4, 4, (80, 75, 65))
 
-        # Draw sky shrines
+        # Cloud layer below (decorative - lots of clouds for sky feel)
+        for i in range(30):
+            cx = sky_cx + math.cos(math.radians(i * 12 + t * 3)) * (60 + i * 3)
+            cz = sky_cz + math.sin(math.radians(i * 12 + t * 2)) * (60 + i * 3)
+            cy = 60 + math.sin(t * 0.5 + i) * 3
+            cloud_sz = 5 + math.sin(i * 1.3) * 3
+            draw_sphere(cx, cy, cz, cloud_sz, (240, 240, 250))
+        # Second cloud layer (lower, distant)
+        for i in range(20):
+            cx = sky_cx + math.cos(math.radians(i * 18 + t * 1.5 + 90)) * (100 + i * 5)
+            cz = sky_cz + math.sin(math.radians(i * 18 + t * 1.0 + 90)) * (100 + i * 5)
+            cy = 45 + math.sin(t * 0.3 + i * 0.5) * 4
+            cloud_sz = 8 + math.sin(i * 0.9) * 4
+            draw_sphere(cx, cy, cz, cloud_sz, (220, 225, 240))
+        # Wispy high clouds above
+        for i in range(10):
+            cx = sky_cx + math.cos(math.radians(i * 36 + t * 0.8)) * (50 + i * 8)
+            cz = sky_cz + math.sin(math.radians(i * 36 + t * 0.6)) * (50 + i * 8)
+            cy = 100 + math.sin(t * 0.2 + i) * 5
+            draw_sphere(cx, cy, cz, 6 + i * 0.5, (200, 210, 240))
+
+        # Draw sky shrines (bigger, more visible)
         for shrine in self.sky_shrines:
-            sx, sz = shrine['x'], shrine['z']
-            if shrine['completed']:
+            sx, sz = shrine.wx, shrine.wz
+            if shrine.completed:
                 # Completed shrine (dimmed)
-                draw_cube(sx, 79.5, sz, 1.5, 1.5, 1.5, (60, 80, 60))
-                draw_sphere(sx, 82, sz, 0.5, (100, 150, 100))
+                draw_cube(sx, 79.5, sz, 3, 3, 3, (60, 80, 60))
+                draw_sphere(sx, 84, sz, 1.0, (100, 150, 100))
             else:
-                # Active shrine (glowing)
+                # Active shrine (glowing, large)
                 glow = 0.5 + 0.5 * math.sin(t * 3)
                 shrine_color = (int(80 + glow * 60), int(150 + glow * 50), int(200 + glow * 55))
-                draw_cube(sx, 79.5, sz, 1.5, 1.5, 1.5, shrine_color)
-                draw_sphere(sx, 82.0 + math.sin(t * 2) * 0.3, sz, 0.6, (150, 220, 255))
-                # Pillar accent
-                draw_cube(sx - 1.8, 80, sz - 1.8, 0.2, 2, 0.2, (120, 160, 200))
-                draw_cube(sx + 1.8, 80, sz - 1.8, 0.2, 2, 0.2, (120, 160, 200))
-                draw_cube(sx - 1.8, 80, sz + 1.8, 0.2, 2, 0.2, (120, 160, 200))
-                draw_cube(sx + 1.8, 80, sz + 1.8, 0.2, 2, 0.2, (120, 160, 200))
+                draw_cube(sx, 79.5, sz, 3, 3, 3, shrine_color)
+                draw_sphere(sx, 84.0 + math.sin(t * 2) * 0.5, sz, 1.2, (150, 220, 255))
+                # Pillar accents (larger)
+                draw_cube(sx - 3.5, 80, sz - 3.5, 0.4, 4, 0.4, (120, 160, 200))
+                draw_cube(sx + 3.5, 80, sz - 3.5, 0.4, 4, 0.4, (120, 160, 200))
+                draw_cube(sx - 3.5, 80, sz + 3.5, 0.4, 4, 0.4, (120, 160, 200))
+                draw_cube(sx + 3.5, 80, sz + 3.5, 0.4, 4, 0.4, (120, 160, 200))
 
         # Cookie Monster NPC on sky island
         cmx, cmz = self.sky_cookie_monster_x, self.sky_cookie_monster_z
@@ -4226,11 +4269,17 @@ class Game:
         draw_sphere(cmx - 0.2, 81.0, cmz + 0.48, 0.08, (0, 0, 0))
         draw_sphere(cmx + 0.2, 81.0, cmz + 0.48, 0.08, (0, 0, 0))
 
-        # Decorative trees on island
-        for i, (tx, tz) in enumerate([(sky_cx + 10, sky_cz + 8), (sky_cx - 12, sky_cz - 5),
-                                       (sky_cx + 5, sky_cz - 12), (sky_cx - 8, sky_cz + 10)]):
-            draw_cylinder(tx, 78.5, tz, 0.3, 3, (100, 70, 40))
-            draw_sphere(tx, 82.5, tz, 2, (40, 140 + i * 10, 50))
+        # Decorative trees on island (spread across bigger island)
+        tree_positions = [
+            (sky_cx + 15, sky_cz + 12), (sky_cx - 18, sky_cz - 8),
+            (sky_cx + 8, sky_cz - 20), (sky_cx - 12, sky_cz + 18),
+            (sky_cx + 30, sky_cz + 15), (sky_cx - 25, sky_cz - 20),
+            (sky_cx + 20, sky_cz - 30), (sky_cx - 30, sky_cz + 10),
+            (sky_cx + 35, sky_cz - 10), (sky_cx - 10, sky_cz + 35),
+        ]
+        for i, (tx, tz) in enumerate(tree_positions):
+            draw_cylinder(tx, 78.5, tz, 0.4, 4, (100, 70, 40))
+            draw_sphere(tx, 83.5, tz, 2.5, (40, 130 + (i * 7) % 40, 50))
 
         # Central Rauru stone
         draw_cube(sky_cx, 79.5, sky_cz, 1, 1, 1, (180, 170, 150))
@@ -4287,7 +4336,7 @@ class Game:
             elif self.on_sky_island:
                 sky_cx = 100 * TILE_SIZE
                 sky_cz = 100 * TILE_SIZE
-                sky_r = 25.0
+                sky_r = 60.0
                 # Keep player on the floating island
                 dx = self.player.x - sky_cx
                 dz = self.player.z - sky_cz
