@@ -3221,10 +3221,12 @@ class Game:
 
     def _spawn_castle_mobs(self):
         """Spawn Linus guard mobs inside the castle for the intro."""
-        positions = [(-4, 0, 3), (4, 0, 3), (-6, 0, -2), (6, 0, -2)]
+        positions = [(-5, 0, 0), (5, 0, 0), (-7, 0, -4), (7, 0, -4)]
         for px, py, pz in positions:
             mob = Mob(MobType.LINUS, px, py, pz)
-            mob.aggro_range = 8.0
+            mob.aggro_range = 6.0  # Don't all rush at once
+            mob.damage = 5  # Reduced for intro
+            mob.speed = 2.0  # Slower guards
             self.castle_mobs.append(mob)
 
     def _init_gl(self):
@@ -3315,6 +3317,7 @@ class Game:
             if event.key == pygame.K_RETURN:
                 self.state = GameState.PLAYING
                 self.camera.dist = 6.0  # Closer camera for castle interior
+                self.player.invincible_timer = 8.0  # Spawn protection to explore
                 self.hud.add_notification("You and the Princess explore beneath the Castle...")
                 self.hud.add_notification("Defeat the Linus guards. Approach the throne.")
                 play_sfx('menu')
