@@ -4265,13 +4265,12 @@ class Game:
             self._update_movement()
             self.player.update(self.dt, self.world.seed if not self.in_castle else 42)
 
-            # Castle: clamp player to castle floor
+            # Castle: force player to castle floor (terrain height is wrong here)
             if self.in_castle:
-                if self.player.y < 0:
-                    self.player.y = 0
-                    self.player.vy = 0
-                    self.player.on_ground = True
-                    self.player.jump_count = 0
+                self.player.y = 0
+                self.player.vy = 0
+                self.player.on_ground = True
+                self.player.jump_count = 0
 
             # Sky island: clamp player to island platform
             elif self.on_sky_island:
