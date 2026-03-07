@@ -1411,6 +1411,7 @@ class Shrine:
             # Enemy on level 2
             e2 = self._make_weak_mob(MobType.GRUNKLE, 0, 2)
             e2.y = 4.3
+            e2._platform_y = 4.3
             self.enemies.append(e2)
 
         elif st == ShrineType.TIMEFLOW_TRIAL:
@@ -1587,12 +1588,14 @@ class Shrine:
                 glVertex3f(x - 1, 0, z + 1)
         glEnd()
 
-        # Walls
+        # Walls - taller for vertical shrines
+        wall_h = 14 if self.shrine_type == ShrineType.RISING_TRIAL else 2
+        wall_cy = wall_h
         for x in range(-12, 13, 2):
-            draw_cube(x, 2, -12, 1, 2, 0.3, wall_color)
-            draw_cube(x, 2, 12, 1, 2, 0.3, wall_color)
-            draw_cube(-12, 2, x, 0.3, 2, 1, wall_color)
-            draw_cube(12, 2, x, 0.3, 2, 1, wall_color)
+            draw_cube(x, wall_cy, -12, 1, wall_h, 0.3, wall_color)
+            draw_cube(x, wall_cy, 12, 1, wall_h, 0.3, wall_color)
+            draw_cube(-12, wall_cy, x, 0.3, wall_h, 1, wall_color)
+            draw_cube(12, wall_cy, x, 0.3, wall_h, 1, wall_color)
 
         # Shrine-specific decorations
         st = self.shrine_type
@@ -3740,7 +3743,8 @@ class Game:
                 opened_chest = False
                 if self.active_shrine:
                     for ch in self.active_shrine.chests:
-                        if not ch['opened'] and dist2d(self.player.x, self.player.z, ch['x'], ch['z']) < 2.0:
+                        chest_y = ch.get('y', 0.0)
+                        if not ch['opened'] and dist2d(self.player.x, self.player.z, ch['x'], ch['z']) < 2.0 and abs(self.player.y - chest_y) < 2.0:
                             ch['opened'] = True
                             opened_chest = True
                             play_sfx('shrine_complete')
@@ -4834,7 +4838,10 @@ class Game:
                                     enemy.z = max(-10, min(10, enemy.z))
                             continue
                         enemy.update(self.dt, self.player.x, self.player.y, self.player.z)
-                        if enemy.can_attack() and dist2d(enemy.x, enemy.z, self.player.x, self.player.z) < ATTACK_RANGE * 1.5:
+                        # Keep enemies on their platforms
+                        if hasattr(enemy, '_platform_y') and enemy.y < enemy._platform_y:
+                            enemy.y = enemy._platform_y
+                        if enemy.can_attack() and dist2d(enemy.x, enemy.z, self.player.x, self.player.z) < ATTACK_RANGE * 1.5 and abs(enemy.y - self.player.y) < 3.0:
                             dmg = enemy.do_attack()
                             self.player.take_damage(dmg)
 
