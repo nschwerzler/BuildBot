@@ -3002,15 +3002,29 @@ class HUD:
             self._draw_text_centered("The castle TREMBLES!", SCREEN_H // 2 - 60 + shake_x, self.font_title, (255, 100, 100))
             self._draw_text_centered("Gardon Mok: \"You cannot stop what has begun!\"", SCREEN_H // 2 + 10, self.font_large, (200, 150, 200))
         elif progress < 0.8:
-            # Phase 4: Princess falls into the chasm
+            # Phase 4: Princess falls into the pit
             overlay.fill((0, 0, 0, 240))
             self.surface.blit(overlay, (0, 0))
-            fall_y = int((progress - 0.6) / 0.2 * SCREEN_H)
-            self._draw_text_centered("The Princess falls into the abyss!", SCREEN_H // 2 - 40, self.font_title, (200, 180, 255))
-            # Princess falling animation
-            princess_y = min(SCREEN_H // 2 + fall_y, SCREEN_H - 50)
-            self._draw_text_centered("O", princess_y, self.font_large, (255, 200, 220))
-            self._draw_text_centered("You reach out... but she vanishes in a flash of light.", SCREEN_H // 2 + 60, self.font_med, (180, 160, 200))
+            fall_progress = (progress - 0.6) / 0.2
+            fall_y = int(fall_progress * SCREEN_H)
+            # Draw the pit/chasm
+            pit_cx, pit_cy = SCREEN_W // 2, SCREEN_H // 2 + 80
+            pit_w, pit_h = 200, 60
+            pygame.draw.ellipse(self.surface, (20, 0, 30), (pit_cx - pit_w // 2, pit_cy - pit_h // 2, pit_w, pit_h))
+            pygame.draw.ellipse(self.surface, (60, 10, 80), (pit_cx - pit_w // 2, pit_cy - pit_h // 2, pit_w, pit_h), 3)
+            # Gloom tendrils rising from pit
+            for i in range(6):
+                tx = pit_cx + int(math.sin(timer * 3 + i * 1.1) * (pit_w // 2 - 10))
+                ty = pit_cy - int(abs(math.sin(timer * 2 + i * 0.7)) * 30)
+                self._draw_text("~", tx, ty, self.font_med, (80, 20, 100))
+            self._draw_text_centered("The Princess falls into the pit!", SCREEN_H // 2 - 80, self.font_title, (200, 180, 255))
+            # Princess falling into the pit
+            princess_y = min(SCREEN_H // 2 - 20 + fall_y, pit_cy - 10)
+            princess_alpha = max(0, 255 - int(fall_progress * 300))
+            self._draw_text_centered("O", princess_y, self.font_large, (255, 200, 220, max(princess_alpha, 30)))
+            if fall_progress > 0.3:
+                self._draw_text_centered("|\n/\\", princess_y + 20, self.font_small, (255, 180, 200, max(princess_alpha, 20)))
+            self._draw_text_centered("He Na Man reaches out... but she falls into the darkness!", SCREEN_H // 2 + 140, self.font_med, (180, 160, 200))
         else:
             # Phase 5: Teleported to Sky Island
             sky_alpha = int((progress - 0.8) / 0.2 * 255)
@@ -3190,7 +3204,7 @@ class Game:
         self.gardon_mok_defeated = False
         self.gardon_talk_timer = 0.0
         self.gardon_talk_lines = [
-            "Gardon Mok: So... Link and his princess have come.",
+            "Gardon Mok: So... He Na Man and his princess have come.",
             "Gardon Mok: You think that rusted blade can harm ME?",
             "Gardon Mok: Rauru placed his trust in the wrong hero!",
             "Gardon Mok: Now... FEEL THE GLOOM!",
