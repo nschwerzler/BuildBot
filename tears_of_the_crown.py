@@ -155,6 +155,7 @@ class MobType(Enum):
     DOOM_GRASP = "Doom Grasp"
     THUNDERMANE = "Thundermane"
     LINUS = "Linus"
+    LESSE = "Lesse"
 
 class BossType(Enum):
     FROST_SERPENT = "Frost Serpent"
@@ -641,6 +642,11 @@ MOB_DATA = {
         'color': (200, 180, 100), 'size': 0.9, 'aggro_range': 15.0,
         'desc': 'Blanket-wielding wanderer who steals your warmth'
     },
+    MobType.LESSE: {
+        'hp': 30, 'damage': 0, 'speed': 1.5, 'xp': 5,
+        'color': (255, 230, 180), 'size': 0.7, 'aggro_range': 0.0,
+        'desc': 'Extremely fat chicken creature - can be fused!'
+    },
 }
 
 BOSS_DATA = {
@@ -859,6 +865,10 @@ class Mob(Entity):
     def draw(self):
         if not self.alive:
             return
+        # Lesses use special fat chicken rendering
+        if self.mob_type == MobType.LESSE:
+            self._draw_as_lesse()
+            return
         glPushMatrix()
         glTranslatef(self.x, self.y, self.z)
         glRotatef(self.facing, 0, 1, 0)
@@ -918,6 +928,56 @@ class Mob(Entity):
         hw = bar_w * 0.5 * hp_pct
         draw_cube(self.x - bar_w * 0.5 * (1 - hp_pct), bar_y, self.z + 0.01, hw, bar_h, 0.02, (220, 40, 40))
         glEnable(GL_LIGHTING)
+
+    def _draw_as_lesse(self):
+        """Draw this mob as a Lesse - extremely fat chicken creature."""
+        glPushMatrix()
+        glTranslatef(self.x, self.y, self.z)
+        glRotatef(self.facing, 0, 1, 0)
+        color = (255, 80, 80) if self.hurt_timer > 0 else self.color
+        fused = getattr(self, 'fused', False)
+        if fused:
+            color = (255, 120, 50)
+        # Fat round body
+        draw_sphere(0, 0.5, 0, 0.6, color)
+        draw_sphere(0, 0.4, 0, 0.55, tuple(max(0, c - 20) for c in color))
+        # Small head
+        head_c = (255, 240, 200) if not fused else (255, 180, 100)
+        draw_sphere(0, 1.0, 0.15, 0.22, head_c)
+        # Beak
+        draw_cube(0, 0.95, 0.38, 0.06, 0.04, 0.1, (255, 180, 50))
+        # Eyes
+        draw_sphere(-0.08, 1.05, 0.3, 0.04, (0, 0, 0))
+        draw_sphere(0.08, 1.05, 0.3, 0.04, (0, 0, 0))
+        # Tiny wings
+        wing_angle = math.sin(self.anim_time * 5) * 15
+        glPushMatrix()
+        glTranslatef(0.5, 0.5, 0)
+        glRotatef(wing_angle, 0, 0, 1)
+        draw_cube(0.15, 0, 0, 0.2, 0.08, 0.15, tuple(max(0, c - 30) for c in color))
+        glPopMatrix()
+        glPushMatrix()
+        glTranslatef(-0.5, 0.5, 0)
+        glRotatef(-wing_angle, 0, 0, 1)
+        draw_cube(-0.15, 0, 0, 0.2, 0.08, 0.15, tuple(max(0, c - 30) for c in color))
+        glPopMatrix()
+        # Tiny legs
+        draw_cube(0.15, 0.05, 0, 0.05, 0.1, 0.05, (200, 160, 50))
+        draw_cube(-0.15, 0.05, 0, 0.05, 0.1, 0.05, (200, 160, 50))
+        # Tail feathers
+        draw_cube(0, 0.5, -0.45, 0.1, 0.15, 0.1, tuple(max(0, c - 40) for c in color))
+        # Fire effect when fused
+        if fused:
+            t = time.time()
+            for i in range(3):
+                fy = 1.2 + math.sin(t * 8 + i * 2) * 0.2
+                fx = math.sin(t * 5 + i) * 0.15
+                draw_sphere(fx, fy, 0.2, 0.12, (255, int(100 + math.sin(t * 10 + i) * 80), 20))
+        glPopMatrix()
+        # Health bar
+        if self.hp < self.max_hp:
+            self._draw_health_bar()
+        draw_shadow_circle(self.x, self.y + 0.01, self.z, 0.5)
 
 
 class Boss(Entity):
@@ -1269,6 +1329,7 @@ class Shrine:
         self.enemies: List[Mob] = []
         self.blocks = []  # Puzzle blocks
         self.switches = []  # Puzzle switches
+        self.chests = []  # Treasure chests: {'x', 'z', 'opened', 'reward'}
         self.goal_reached = False
         self.timer = 0.0
 
@@ -1276,101 +1337,158 @@ class Shrine:
         wy = walkable_y(self.wx, self.wz, seed)
         return wy if wy is not None else 0.0
 
+    def _make_weak_mob(self, mob_type, x, z):
+        """Create a weaker shrine mob (half HP, lower damage)."""
+        mob = Mob(mob_type, x, 0, z)
+        mob.hp = max(10, mob.hp // 2)
+        mob.max_hp = mob.hp
+        mob.damage = max(3, mob.damage // 2)
+        mob.speed = min(mob.speed, 2.5)
+        return mob
+
     def generate_interior(self):
         """Generate shrine puzzle content when entered."""
         self.enemies.clear()
         self.blocks.clear()
         self.switches.clear()
+        self.chests.clear()
         self.goal_reached = False
         self.timer = 0.0
 
         st = self.shrine_type
-        if st == ShrineType.TRIAL_OF_MIGHT:
-            # Hard combat - 5 mixed enemies in a ring
-            for i in range(5):
-                angle = i / 5 * math.pi * 2
-                mob = Mob(random.choice([MobType.GRUNKLE, MobType.SKARVYN, MobType.CAVE_FIEND]),
-                         math.cos(angle) * 8, 0, math.sin(angle) * 8)
-                self.enemies.append(mob)
-        elif st == ShrineType.ANCIENT_GIFT:
-            self.goal_reached = True  # Free reward!
-        elif st == ShrineType.GRASP_TRIAL:
-            # Telekinesis puzzle - push 3 blocks onto 3 switches, no enemies
-            for i in range(3):
-                self.blocks.append({'x': random.uniform(-4, 4), 'z': random.uniform(2, 6), 'on_switch': False})
-            self.switches.append({'x': -4, 'z': -8, 'activated': False})
-            self.switches.append({'x': 0, 'z': -8, 'activated': False})
-            self.switches.append({'x': 4, 'z': -8, 'activated': False})
-        elif st == ShrineType.RISING_TRIAL:
-            # Vertical climb - kill enemies on platforms
-            for i in range(4):
-                mob = Mob(MobType.SKARVYN, (i - 1.5) * 4, 0, -2 - i * 2)
-                self.enemies.append(mob)
-        elif st == ShrineType.TIMEFLOW_TRIAL:
-            # Time puzzle - kill enemies in order (toughest first)
-            types = [MobType.STONEBEAST, MobType.THUGNOK, MobType.GRUNKLE]
-            for i, mt in enumerate(types):
-                mob = Mob(mt, (i - 1) * 5, 0, -4)
-                self.enemies.append(mob)
+        if st == ShrineType.GRASP_TRIAL:
+            # Ultrahand shrine - push blocks onto switches, find chests
+            # Room has scattered blocks and switches in a maze-like layout
+            self.blocks.append({'x': -6, 'z': 5, 'on_switch': False})
+            self.blocks.append({'x': 4, 'z': 3, 'on_switch': False})
+            self.switches.append({'x': -6, 'z': -7, 'activated': False})
+            self.switches.append({'x': 6, 'z': -7, 'activated': False})
+            # Chest rewards
+            self.chests.append({'x': 8, 'z': 8, 'opened': False, 'reward': 'cookie'})
+            # One weak guard
+            self.enemies.append(self._make_weak_mob(MobType.GRUNKLE, 0, -3))
+            # Fat Lesse chickens wandering around
+            self.enemies.append(self._make_weak_mob(MobType.LESSE, -3, 6))
+            self.enemies.append(self._make_weak_mob(MobType.LESSE, 5, 0))
+
         elif st == ShrineType.FORGE_TRIAL:
-            # Forge trial - push block to switch then kill guardian
-            self.blocks.append({'x': 5, 'z': 5, 'on_switch': False})
+            # Fuse shrine - has Lesses to fuse with, block+switch gate, chest
+            self.blocks.append({'x': 7, 'z': 7, 'on_switch': False})
             self.switches.append({'x': 0, 'z': -8, 'activated': False})
-            mob = Mob(MobType.CAVE_FIEND, 0, 0, 0)
-            self.enemies.append(mob)
-        elif st == ShrineType.WIND_TRIAL:
-            # Wind trial - fast enemies that run around
-            for i in range(4):
-                angle = i / 4 * math.pi * 2
-                mob = Mob(MobType.HUSK_CRAWLER, math.cos(angle) * 7, 0, math.sin(angle) * 7)
-                self.enemies.append(mob)
-        elif st == ShrineType.FIRE_TRIAL:
-            # Fire gauntlet - tough fire enemies
-            for i in range(3):
-                mob = Mob(MobType.DOOM_GRASP, (i - 1) * 5, 0, -3 - i * 2)
-                self.enemies.append(mob)
-        elif st == ShrineType.ICE_TRIAL:
-            # Ice puzzle - blocks and enemies on slippery floor
-            for i in range(2):
-                mob = Mob(MobType.GULPWORM, random.uniform(-6, 6), 0, random.uniform(-6, 6))
-                self.enemies.append(mob)
-            for i in range(3):
-                self.blocks.append({'x': random.uniform(-5, 5), 'z': random.uniform(0, 6), 'on_switch': False})
-            self.switches.append({'x': -5, 'z': -8, 'activated': False})
-            self.switches.append({'x': 5, 'z': -8, 'activated': False})
-        elif st == ShrineType.LIGHTNING_TRIAL:
-            # Lightning - many fast weak enemies
-            for i in range(6):
-                angle = i / 6 * math.pi * 2
-                mob = Mob(MobType.GRUNKLE, math.cos(angle) * 7, 0, math.sin(angle) * 7)
-                self.enemies.append(mob)
-        elif st == ShrineType.SHADOW_TRIAL:
-            # Shadow - strong enemies in darkness
-            for i in range(2):
-                mob = Mob(MobType.THUNDERMANE, (i * 2 - 1) * 4, 0, -5)
-                self.enemies.append(mob)
-        elif st == ShrineType.WATER_TRIAL:
-            # Water trial - blocks across water gaps
-            for i in range(4):
-                self.blocks.append({'x': random.uniform(-6, 6), 'z': random.uniform(-2, 6), 'on_switch': False})
-            self.switches.append({'x': -3, 'z': -8, 'activated': False})
-            self.switches.append({'x': 3, 'z': -8, 'activated': False})
-            mob = Mob(MobType.GULPWORM, 0, 0, 3)
-            self.enemies.append(mob)
-        else:
-            # Fallback generic
+            # Lesses to fuse (they become fire allies!)
+            self.enemies.append(self._make_weak_mob(MobType.LESSE, -4, 4))
+            self.enemies.append(self._make_weak_mob(MobType.LESSE, 4, 4))
+            self.enemies.append(self._make_weak_mob(MobType.LESSE, 0, 6))
+            # One enemy to defeat
+            self.enemies.append(self._make_weak_mob(MobType.CAVE_FIEND, 3, -5))
+            self.chests.append({'x': -8, 'z': -8, 'opened': False, 'reward': 'cookie'})
+            self.chests.append({'x': 8, 'z': 0, 'opened': False, 'reward': 'rupee'})
+
+        elif st == ShrineType.RISING_TRIAL:
+            # Ascend shrine - platforms at different heights, jump puzzles
+            # Enemies on raised platforms (but weak)
+            self.enemies.append(self._make_weak_mob(MobType.SKARVYN, -5, -4))
+            self.enemies.append(self._make_weak_mob(MobType.GRUNKLE, 5, -6))
+            # Blocks to climb on
+            self.blocks.append({'x': -3, 'z': 0, 'on_switch': False})
+            self.blocks.append({'x': 3, 'z': -3, 'on_switch': False})
+            self.switches.append({'x': 0, 'z': -9, 'activated': False})
+            self.chests.append({'x': -9, 'z': 5, 'opened': False, 'reward': 'cookie'})
+            self.chests.append({'x': 9, 'z': -5, 'opened': False, 'reward': 'rupee'})
+            # Lesses for fun
+            self.enemies.append(self._make_weak_mob(MobType.LESSE, 0, 7))
+
+        elif st == ShrineType.TIMEFLOW_TRIAL:
+            # Recall shrine - hit switches in correct order, timed puzzle
+            self.switches.append({'x': -6, 'z': 6, 'activated': False})
+            self.switches.append({'x': 6, 'z': 6, 'activated': False})
+            self.switches.append({'x': 0, 'z': -6, 'activated': False})
+            self.blocks.append({'x': -6, 'z': 0, 'on_switch': False})
+            self.blocks.append({'x': 6, 'z': 0, 'on_switch': False})
+            self.blocks.append({'x': 0, 'z': 3, 'on_switch': False})
+            self.enemies.append(self._make_weak_mob(MobType.HUSK_CRAWLER, 0, 0))
+            self.chests.append({'x': -9, 'z': -9, 'opened': False, 'reward': 'cookie'})
+            self.enemies.append(self._make_weak_mob(MobType.LESSE, 5, 5))
+
+        elif st == ShrineType.TRIAL_OF_MIGHT:
+            # Combat arena - but balanced enemies
             for i in range(3):
                 angle = i / 3 * math.pi * 2
-                mob = Mob(MobType.GRUNKLE, math.cos(angle) * 6, 0, math.sin(angle) * 6)
-                self.enemies.append(mob)
+                self.enemies.append(self._make_weak_mob(
+                    random.choice([MobType.GRUNKLE, MobType.SKARVYN]),
+                    math.cos(angle) * 7, math.sin(angle) * 7))
+            self.chests.append({'x': 0, 'z': 8, 'opened': False, 'reward': 'cookie'})
+
+        elif st == ShrineType.ANCIENT_GIFT:
+            self.goal_reached = True  # Free reward!
+            self.chests.append({'x': 3, 'z': 0, 'opened': False, 'reward': 'cookie'})
+            self.chests.append({'x': -3, 'z': 0, 'opened': False, 'reward': 'rupee'})
+
+        elif st == ShrineType.WIND_TRIAL:
+            # Wind - dodge and push blocks in windy room
+            self.enemies.append(self._make_weak_mob(MobType.HUSK_CRAWLER, -5, 0))
+            self.enemies.append(self._make_weak_mob(MobType.HUSK_CRAWLER, 5, 0))
+            self.blocks.append({'x': 0, 'z': 5, 'on_switch': False})
+            self.switches.append({'x': 0, 'z': -8, 'activated': False})
+            self.chests.append({'x': 8, 'z': 8, 'opened': False, 'reward': 'rupee'})
+
+        elif st == ShrineType.FIRE_TRIAL:
+            # Fire - Lesses that can be fused, dodge fire
+            self.enemies.append(self._make_weak_mob(MobType.GRUNKLE, -4, -3))
+            self.enemies.append(self._make_weak_mob(MobType.LESSE, 3, 5))
+            self.enemies.append(self._make_weak_mob(MobType.LESSE, -3, 5))
+            self.blocks.append({'x': 5, 'z': 5, 'on_switch': False})
+            self.switches.append({'x': -5, 'z': -8, 'activated': False})
+            self.chests.append({'x': -9, 'z': 9, 'opened': False, 'reward': 'cookie'})
+
+        elif st == ShrineType.ICE_TRIAL:
+            # Ice - slippery blocks, weaker enemies
+            self.enemies.append(self._make_weak_mob(MobType.GULPWORM, 0, 3))
+            self.blocks.append({'x': -5, 'z': 4, 'on_switch': False})
+            self.blocks.append({'x': 5, 'z': 4, 'on_switch': False})
+            self.switches.append({'x': -5, 'z': -8, 'activated': False})
+            self.switches.append({'x': 5, 'z': -8, 'activated': False})
+            self.chests.append({'x': 9, 'z': 9, 'opened': False, 'reward': 'rupee'})
+
+        elif st == ShrineType.LIGHTNING_TRIAL:
+            # Lightning - quick weak enemies
+            for i in range(3):
+                angle = i / 3 * math.pi * 2
+                self.enemies.append(self._make_weak_mob(
+                    MobType.GRUNKLE, math.cos(angle) * 6, math.sin(angle) * 6))
+            self.chests.append({'x': 0, 'z': 9, 'opened': False, 'reward': 'cookie'})
+
+        elif st == ShrineType.SHADOW_TRIAL:
+            # Shadow - one strong-ish enemy, dark atmosphere
+            self.enemies.append(self._make_weak_mob(MobType.THUGNOK, 0, -4))
+            self.chests.append({'x': -8, 'z': 8, 'opened': False, 'reward': 'cookie'})
+            self.chests.append({'x': 8, 'z': 8, 'opened': False, 'reward': 'rupee'})
+
+        elif st == ShrineType.WATER_TRIAL:
+            # Water - push blocks across water to switches
+            self.blocks.append({'x': -4, 'z': 5, 'on_switch': False})
+            self.blocks.append({'x': 4, 'z': 5, 'on_switch': False})
+            self.switches.append({'x': -3, 'z': -8, 'activated': False})
+            self.switches.append({'x': 3, 'z': -8, 'activated': False})
+            self.enemies.append(self._make_weak_mob(MobType.GULPWORM, 0, 0))
+            self.chests.append({'x': 0, 'z': 9, 'opened': False, 'reward': 'cookie'})
+
+        else:
+            # Fallback - simple combat
+            for i in range(2):
+                angle = i / 2 * math.pi * 2
+                self.enemies.append(self._make_weak_mob(
+                    MobType.GRUNKLE, math.cos(angle) * 5, math.sin(angle) * 5))
+            self.chests.append({'x': 0, 'z': 8, 'opened': False, 'reward': 'cookie'})
 
     def check_completion(self):
         if self.completed:
             return True
         if self.shrine_type == ShrineType.ANCIENT_GIFT:
             return True
-        # Check enemies dead
-        enemies_dead = len(self.enemies) == 0 or all(not e.alive for e in self.enemies)
+        # Check non-Lesse enemies dead (Lesses are allies)
+        combat_enemies = [e for e in self.enemies if e.mob_type != MobType.LESSE]
+        enemies_dead = len(combat_enemies) == 0 or all(not e.alive for e in combat_enemies)
         # Pure block puzzles (GRASP, WATER, ICE) - blocks on switches
         if self.switches:
             for sw in self.switches:
@@ -1518,9 +1636,80 @@ class Shrine:
             c = (100, 255, 100) if sw.get('activated') else (255, 100, 100)
             draw_cube(sw['x'], 0.05, sw['z'], 0.7, 0.05, 0.7, c)
 
-        # Enemies
+        # Chests
+        for ch in self.chests:
+            if ch['opened']:
+                # Open chest
+                draw_cube(ch['x'], 0.25, ch['z'], 0.4, 0.25, 0.3, (120, 80, 30))
+                # Open lid (tilted back)
+                draw_cube(ch['x'], 0.6, ch['z'] - 0.25, 0.4, 0.05, 0.3, (140, 90, 35))
+            else:
+                # Closed chest (glowing)
+                glow_c = 0.5 + 0.5 * math.sin(t * 3)
+                draw_cube(ch['x'], 0.25, ch['z'], 0.4, 0.25, 0.3, (140, 90, 35))
+                draw_cube(ch['x'], 0.5, ch['z'], 0.42, 0.05, 0.32, (160, 110, 40))
+                # Gold trim glow
+                draw_cube(ch['x'], 0.3, ch['z'] + 0.31, 0.1, 0.1, 0.02,
+                         (int(200 + glow_c * 55), int(180 + glow_c * 55), 50))
+
+        # Enemies (Lesses draw as fat chickens)
         for e in self.enemies:
-            e.draw()
+            if e.mob_type == MobType.LESSE:
+                self._draw_lesse(e)
+            else:
+                e.draw()
+
+    def _draw_lesse(self, lesse):
+        """Draw a Lesse - extremely fat chicken creature."""
+        if not lesse.alive:
+            return
+        glPushMatrix()
+        glTranslatef(lesse.x, lesse.y, lesse.z)
+        glRotatef(lesse.facing, 0, 1, 0)
+        color = (255, 80, 80) if lesse.hurt_timer > 0 else lesse.color
+        fused = getattr(lesse, 'fused', False)
+        if fused:
+            color = (255, 120, 50)  # Orange-red when fused
+        # Fat round body (very wide)
+        draw_sphere(0, 0.5, 0, 0.6, color)
+        draw_sphere(0, 0.4, 0, 0.55, tuple(max(0, c - 20) for c in color))
+        # Small head on top
+        head_c = (255, 240, 200) if not fused else (255, 180, 100)
+        draw_sphere(0, 1.0, 0.15, 0.22, head_c)
+        # Beak
+        draw_cube(0, 0.95, 0.38, 0.06, 0.04, 0.1, (255, 180, 50))
+        # Eyes
+        draw_sphere(-0.08, 1.05, 0.3, 0.04, (0, 0, 0))
+        draw_sphere(0.08, 1.05, 0.3, 0.04, (0, 0, 0))
+        # Tiny wings (flap)
+        wing_angle = math.sin(lesse.anim_time * 5) * 15
+        glPushMatrix()
+        glTranslatef(0.5, 0.5, 0)
+        glRotatef(wing_angle, 0, 0, 1)
+        draw_cube(0.15, 0, 0, 0.2, 0.08, 0.15, tuple(max(0, c - 30) for c in color))
+        glPopMatrix()
+        glPushMatrix()
+        glTranslatef(-0.5, 0.5, 0)
+        glRotatef(-wing_angle, 0, 0, 1)
+        draw_cube(-0.15, 0, 0, 0.2, 0.08, 0.15, tuple(max(0, c - 30) for c in color))
+        glPopMatrix()
+        # Tiny legs
+        draw_cube(0.15, 0.05, 0, 0.05, 0.1, 0.05, (200, 160, 50))
+        draw_cube(-0.15, 0.05, 0, 0.05, 0.1, 0.05, (200, 160, 50))
+        # Tail feathers
+        draw_cube(0, 0.5, -0.45, 0.1, 0.15, 0.1, tuple(max(0, c - 40) for c in color))
+        # Fire effect when fused
+        if fused:
+            t = time.time()
+            for i in range(3):
+                fy = 1.2 + math.sin(t * 8 + i * 2) * 0.2
+                fx = math.sin(t * 5 + i) * 0.15
+                draw_sphere(fx, fy, 0.2, 0.12, (255, int(100 + math.sin(t * 10 + i) * 80), 20))
+        glPopMatrix()
+        # Health bar
+        if lesse.hp < lesse.max_hp:
+            lesse._draw_health_bar()
+        draw_shadow_circle(lesse.x, lesse.y + 0.01, lesse.z, 0.5)
 
 
 # ════════════════════════════════════════════════════════════
@@ -2185,6 +2374,17 @@ class World:
             if ly is not None:
                 self.mobs.append(Mob(MobType.LINUS, lx, ly, lz))
 
+        # Spawn Lesses (fat chickens, friendly, can be fused)
+        for _ in range(10):
+            lx = random.randint(20, 180) * TILE_SIZE
+            lz = random.randint(20, 180) * TILE_SIZE
+            ly = walkable_y(lx, lz, self.seed)
+            if ly is not None:
+                h = get_height(lx, lz, self.seed)
+                biome = get_biome_from_height(h)
+                if biome in (Biome.PLAINS, Biome.FOREST):
+                    self.mobs.append(Mob(MobType.LESSE, lx, ly, lz))
+
         # Generate trees
         for _ in range(400):
             tx = random.randint(5, WORLD_SIZE - 5) * TILE_SIZE
@@ -2335,6 +2535,31 @@ class World:
             if mob.alive:
                 d = dist2d(mob.x, mob.z, player.x, player.z)
                 if d < VIEW_DIST:
+                    # Lesses are peaceful - handle separately
+                    if mob.mob_type == MobType.LESSE:
+                        mob.anim_time += dt
+                        # Fused Lesse shoots fire at nearby enemies
+                        if getattr(mob, 'fused', False):
+                            mob.fuse_timer = getattr(mob, 'fuse_timer', 0) - dt
+                            mob.fire_cooldown = getattr(mob, 'fire_cooldown', 0) - dt
+                            if mob.fuse_timer <= 0:
+                                mob.fused = False
+                            elif mob.fire_cooldown <= 0:
+                                for target in self.mobs:
+                                    if target.alive and target.mob_type != MobType.LESSE and target is not mob:
+                                        td = dist2d(mob.x, mob.z, target.x, target.z)
+                                        if td < 15:
+                                            target.take_damage(8)
+                                            if not target.alive:
+                                                player.xp += target.xp
+                                            mob.fire_cooldown = 1.5
+                                            break
+                        else:
+                            # Wander randomly
+                            if random.random() < 0.01:
+                                mob.x += random.uniform(-0.3, 0.3)
+                                mob.z += random.uniform(-0.3, 0.3)
+                        continue
                     mob.update(dt, player.x, player.y, player.z, self.seed)
                     # Mob attacks player
                     if mob.can_attack() and dist2d(mob.x, mob.z, player.x, player.z) < ATTACK_RANGE * 1.5:
@@ -2359,12 +2584,12 @@ class World:
         if self.evil_grandma:
             self.evil_grandma.update(dt, player.x, player.z)
 
-        # Arrow collision with mobs/bosses
+        # Arrow collision with mobs/bosses (skip Lesses)
         for arrow in player.projectiles:
             if not arrow.alive:
                 continue
             for mob in self.mobs:
-                if mob.alive and dist3d(arrow.x, arrow.y, arrow.z, mob.x, mob.y + mob.size * 0.5, mob.z) < mob.size:
+                if mob.alive and mob.mob_type != MobType.LESSE and dist3d(arrow.x, arrow.y, arrow.z, mob.x, mob.y + mob.size * 0.5, mob.z) < mob.size:
                     mob.take_damage(arrow.damage)
                     arrow.alive = False
                     if not mob.alive:
@@ -3399,7 +3624,25 @@ class Game:
             elif event.key == pygame.K_SPACE:
                 self.player.jump()
             elif event.key == pygame.K_e:
-                if self.active_shrine and self.active_shrine.check_completion():
+                # Check for chest interaction first
+                opened_chest = False
+                if self.active_shrine:
+                    for ch in self.active_shrine.chests:
+                        if not ch['opened'] and dist2d(self.player.x, self.player.z, ch['x'], ch['z']) < 2.0:
+                            ch['opened'] = True
+                            opened_chest = True
+                            play_sfx('shrine_complete')
+                            if ch['reward'] == 'cookie':
+                                self.player.cookies += 2
+                                self.hud.add_notification("Chest opened! Got 2 cookies!")
+                            elif ch['reward'] == 'rupee':
+                                self.player.rupees += 5
+                                self.hud.add_notification("Chest opened! Got 5 rupees!")
+                            else:
+                                self.player.hp = min(self.player.hp + 20, self.player.max_hp)
+                                self.hud.add_notification("Chest opened! Healed 20 HP!")
+                            break
+                if not opened_chest and self.active_shrine and self.active_shrine.check_completion():
                     self._complete_shrine()
             elif event.key == pygame.K_TAB or event.key == pygame.K_i:
                 self.state = GameState.INVENTORY
@@ -4017,16 +4260,36 @@ class Game:
                     self.hud.add_notification("No target in range!")
 
         elif ability == AbilityType.FUSE:
-            # Fuse: combine held weapon with nearby material for temp damage boost
-            rad = math.radians(p.facing)
-            fx = p.x - math.sin(rad) * 3
-            fz = p.z - math.cos(rad) * 3
-            # Fuse grants temporary double damage
-            p.invincible_timer = max(p.invincible_timer, 5.0)
-            self.particles.emit(fx, p.y + 1, fz, 15, (255, 150, 50), spread=1.5, speed=4)
-            self.particles.emit(p.x, p.y + 1, p.z, 10, (255, 200, 50), spread=1, speed=3)
-            play_sfx('shrine_complete')
-            self.hud.add_notification("Fuse! Weapon powered up for 5 seconds!")
+            # Fuse: fuse nearby Lesses to make them shoot fire, or weapon boost
+            fused_lesse = False
+            # Check for nearby Lesse mobs to fuse
+            all_mobs = []
+            if self.state == GameState.SHRINE and self.active_shrine:
+                all_mobs = self.active_shrine.enemies
+            else:
+                all_mobs = self.world.mobs
+            for mob in all_mobs:
+                if mob.alive and mob.mob_type == MobType.LESSE and not getattr(mob, 'fused', False):
+                    d = dist2d(p.x, p.z, mob.x, mob.z)
+                    if d < 5.0:
+                        mob.fused = True
+                        mob.fuse_timer = 30.0  # Fire lasts 30 seconds
+                        mob.fire_cooldown = 0.0
+                        self.particles.emit(mob.x, mob.y + 1, mob.z, 20, (255, 100, 30), spread=2, speed=5)
+                        play_sfx('shrine_complete')
+                        self.hud.add_notification("Fused Lesse! It's shooting fire now!")
+                        fused_lesse = True
+                        break
+            if not fused_lesse:
+                # No Lesse nearby - regular weapon boost
+                rad = math.radians(p.facing)
+                fx = p.x - math.sin(rad) * 3
+                fz = p.z - math.cos(rad) * 3
+                p.invincible_timer = max(p.invincible_timer, 5.0)
+                self.particles.emit(fx, p.y + 1, fz, 15, (255, 150, 50), spread=1.5, speed=4)
+                self.particles.emit(p.x, p.y + 1, p.z, 10, (255, 200, 50), spread=1, speed=3)
+                play_sfx('shrine_complete')
+                self.hud.add_notification("Fuse! Weapon powered up for 5 seconds!")
 
         elif ability == AbilityType.ASCEND:
             # Ascend: launch upward through ceilings
@@ -4402,17 +4665,52 @@ class Game:
             if self.active_shrine:
                 for enemy in self.active_shrine.enemies:
                     if enemy.alive:
+                        # Lesses don't attack the player
+                        if enemy.mob_type == MobType.LESSE:
+                            enemy.anim_time = getattr(enemy, 'anim_time', 0) + self.dt
+                            # Fused Lesse shoots fire at non-Lesse enemies
+                            if getattr(enemy, 'fused', False):
+                                enemy.fuse_timer = getattr(enemy, 'fuse_timer', 0) - self.dt
+                                enemy.fire_cooldown = getattr(enemy, 'fire_cooldown', 0) - self.dt
+                                if enemy.fuse_timer <= 0:
+                                    enemy.fused = False
+                                elif enemy.fire_cooldown <= 0:
+                                    # Find nearest non-Lesse enemy to shoot
+                                    best_target = None
+                                    best_d = 999
+                                    for target in self.active_shrine.enemies:
+                                        if target.alive and target.mob_type != MobType.LESSE:
+                                            d = dist2d(enemy.x, enemy.z, target.x, target.z)
+                                            if d < best_d and d < 15:
+                                                best_d = d
+                                                best_target = target
+                                    if best_target:
+                                        best_target.take_damage(8)
+                                        self.particles.emit(best_target.x, best_target.y + 0.5, best_target.z, 6, (255, 100, 30), spread=0.5, speed=3)
+                                        self.particles.emit(enemy.x, enemy.y + 1.2, enemy.z, 4, (255, 150, 50), spread=0.3, speed=4)
+                                        if not best_target.alive:
+                                            self.player.xp += best_target.xp
+                                            self.particles.emit_death(best_target.x, best_target.y, best_target.z, best_target.color)
+                                        enemy.fire_cooldown = 1.5  # Fire every 1.5s
+                            else:
+                                # Unfused Lesse wanders randomly
+                                if random.random() < 0.02:
+                                    enemy.x += random.uniform(-0.5, 0.5)
+                                    enemy.z += random.uniform(-0.5, 0.5)
+                                    enemy.x = max(-10, min(10, enemy.x))
+                                    enemy.z = max(-10, min(10, enemy.z))
+                            continue
                         enemy.update(self.dt, self.player.x, self.player.y, self.player.z)
                         if enemy.can_attack() and dist2d(enemy.x, enemy.z, self.player.x, self.player.z) < ATTACK_RANGE * 1.5:
                             dmg = enemy.do_attack()
                             self.player.take_damage(dmg)
 
-                # Arrow collisions inside shrine
+                # Arrow collisions inside shrine (skip Lesses)
                 for arrow in self.player.projectiles:
                     if not arrow.alive:
                         continue
                     for enemy in self.active_shrine.enemies:
-                        if enemy.alive and dist3d(arrow.x, arrow.y, arrow.z, enemy.x, enemy.y + enemy.size * 0.5, enemy.z) < enemy.size:
+                        if enemy.alive and enemy.mob_type != MobType.LESSE and dist3d(arrow.x, arrow.y, arrow.z, enemy.x, enemy.y + enemy.size * 0.5, enemy.z) < enemy.size:
                             enemy.take_damage(arrow.damage)
                             arrow.alive = False
                             if not enemy.alive:
