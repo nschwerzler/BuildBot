@@ -3314,6 +3314,7 @@ class Game:
         if self.state == GameState.TITLE:
             if event.key == pygame.K_RETURN:
                 self.state = GameState.PLAYING
+                self.camera.dist = 6.0  # Closer camera for castle interior
                 self.hud.add_notification("You and the Princess explore beneath the Castle...")
                 self.hud.add_notification("Defeat the Linus guards. Approach the throne.")
                 play_sfx('menu')
@@ -3537,6 +3538,7 @@ class Game:
         if self.in_castle:
             if self.player.z > 6.0:
                 self.in_castle = False
+                self.camera.dist = CAM_DIST_DEFAULT
                 self.player.x = 100 * TILE_SIZE
                 wy = walkable_y(self.player.x, 100 * TILE_SIZE, self.world.seed)
                 self.player.y = (wy if wy is not None else 0) + 0.5
@@ -3770,6 +3772,7 @@ class Game:
         self.state = GameState.PLAYING
         self.in_castle = False
         self.on_sky_island = True
+        self.camera.dist = CAM_DIST_DEFAULT
         # Sky island position: high up, center of map area
         self.player.x = 100 * TILE_SIZE
         self.player.y = 80.0  # Way above the clouds
@@ -4404,11 +4407,12 @@ class Game:
             self.player.vx = move_x * speed
             self.player.vz = move_z * speed
 
-        # Clamp to world bounds
-        margin = 5 * TILE_SIZE
-        max_coord = (WORLD_SIZE - 5) * TILE_SIZE
-        self.player.x = max(margin, min(max_coord, self.player.x))
-        self.player.z = max(margin, min(max_coord, self.player.z))
+        # Clamp to world bounds (skip when in castle or sky island - local coords)
+        if not self.in_castle and not self.on_sky_island:
+            margin = 5 * TILE_SIZE
+            max_coord = (WORLD_SIZE - 5) * TILE_SIZE
+            self.player.x = max(margin, min(max_coord, self.player.x))
+            self.player.z = max(margin, min(max_coord, self.player.z))
 
     def _update_movement_shrine(self):
         """Movement inside a shrine (simpler, flat ground)."""
