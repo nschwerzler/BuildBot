@@ -3721,17 +3721,13 @@ class Game:
             gm.y = 0  # Castle floor
             gm.x = max(-9, min(9, gm.x))
             gm.z = max(-9, min(9, gm.z))
-            if gm.can_attack() and dist2d(gm.x, gm.z, p.x, p.z) < ATTACK_RANGE * 2:
-                dmg = gm.do_attack()
-                p.take_damage(dmg)
+            # Gardon Mok doesn't damage player during fight - cinematic moment
+            # Player is meant to hit him once to trigger the cutscene
 
-            # After taking some hits (HP < 300), sword breaks
-            if gm.hp < 300 and not self.sword_broken:
+            # If player hit Gardon Mok at all, trigger the full cutscene
+            if gm.hp < gm.max_hp:
                 self.sword_broken = True
                 self._break_sword()
-
-            # Gardon Mok can't actually be killed - after enough hits, trigger cutscene
-            if gm.hp < 100:
                 self.cutscene_phase = 'sword_break'
                 self._trigger_castle_cutscene()
 
@@ -3767,6 +3763,7 @@ class Game:
         # Strip abilities - player starts fresh on Sky Island
         self.player.abilities = []
         self.player.selected_ability = 0
+        self.camera.dist = CAM_DIST_DEFAULT  # Restore normal camera
         pygame.event.set_grab(False)
         pygame.mouse.set_visible(True)
 
