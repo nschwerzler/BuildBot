@@ -3805,18 +3805,6 @@ class Game:
 
     def _interact(self):
         """Handle E key interaction."""
-        # Castle exit - near the door at z=8 in the underground castle
-        if self.in_castle:
-            if self.player.z > 6.0:
-                self.in_castle = False
-                self.camera.dist = CAM_DIST_DEFAULT
-                self.player.x = 100 * TILE_SIZE
-                wy = walkable_y(self.player.x, 100 * TILE_SIZE, self.world.seed)
-                self.player.y = (wy if wy is not None else 0) + 0.5
-                self.player.z = 100 * TILE_SIZE
-                self.hud.add_notification("You emerge from the underground castle!")
-                play_sfx('shrine_complete')
-                return
 
         # Sky Island shrine interaction
         if self.on_sky_island:
@@ -4356,19 +4344,9 @@ class Game:
             draw_cube(x, 3, -10, 1, 3, 0.5, wall_c)
             draw_cube(-10, 3, x, 0.5, 3, 1, wall_c)
             draw_cube(10, 3, x, 0.5, 3, 1, wall_c)
-        # Back wall with door opening
+        # Back wall (sealed, no exit)
         for x in range(-10, 11, 2):
-            if -2 <= x <= 2:
-                draw_cube(x, 5, 10, 1, 1, 0.5, wall_c)  # Above door
-            else:
-                draw_cube(x, 3, 10, 1, 3, 0.5, wall_c)
-
-        # Door frame (glowing exit)
-        glow = 0.5 + 0.5 * math.sin(t * 2)
-        door_c = (int(80 + glow * 80), int(160 + glow * 60), int(80 + glow * 80))
-        draw_cube(-2, 2, 10, 0.2, 2, 0.3, door_c)
-        draw_cube(2, 2, 10, 0.2, 2, 0.3, door_c)
-        draw_cube(0, 4, 10, 2.2, 0.2, 0.3, door_c)
+            draw_cube(x, 3, 10, 1, 3, 0.5, wall_c)
 
         # Pillars
         for px, pz in [(-6, -6), (6, -6), (-6, 6), (6, 6)]:
@@ -4395,9 +4373,10 @@ class Game:
         draw_cube(-7, 3.5, -9.5, 0.8, 1.5, 0.05, (120, 30, 30))
         draw_cube(7, 3.5, -9.5, 0.8, 1.5, 0.05, (30, 30, 120))
 
-        # "Press E to exit" hint near door (only if Gardon Mok defeated or not yet triggered)
-        if self.player.z > 4 and not self.gardon_mok_triggered:
-            draw_sphere(0, 2 + math.sin(t * 3) * 0.3, 9, 0.3, (100, 255, 100))
+        # Chains on back wall (no escape)
+        for cx in [-3, 3]:
+            for cy in range(1, 5):
+                draw_sphere(cx, cy, 9.5, 0.08, (90, 85, 80))
 
         # Draw Princess NPC
         if self.princess_alive:
