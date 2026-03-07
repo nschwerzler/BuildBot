@@ -3483,17 +3483,27 @@ class HUD:
 # ════════════════════════════════════════════════════════════
 # SAVE / LOAD
 # ════════════════════════════════════════════════════════════
-def save_game(player, world, filepath=SAVE_FILE):
+def save_game(player, world, game=None, filepath=SAVE_FILE):
     data = {
         'player': player.get_save_data(),
         'completed_shrines': [i for i, s in enumerate(world.shrines) if s.completed],
         'defeated_bosses': [i for i, b in enumerate(world.bosses) if not b.alive],
         'collected_pickups': [i for i, p in enumerate(world.pickups) if p[4]],
     }
+    if game:
+        data['game_state'] = {
+            'on_sky_island': game.on_sky_island,
+            'in_castle': game.in_castle,
+            'cutscene_done': game.cutscene_done,
+            'sky_island_shrines_done': game.sky_island_shrines_done,
+            'gardon_mok_defeated': game.gardon_mok_defeated,
+            'princess_alive': game.princess_alive,
+            'completed_sky_shrines': [i for i, s in enumerate(game.sky_shrines) if s.completed],
+        }
     with open(filepath, 'w') as f:
         json.dump(data, f, indent=2)
 
-def load_game(player, world, filepath=SAVE_FILE):
+def load_game(player, world, game=None, filepath=SAVE_FILE):
     if not os.path.exists(filepath):
         return False
     with open(filepath, 'r') as f:
@@ -3509,6 +3519,17 @@ def load_game(player, world, filepath=SAVE_FILE):
     for i in data.get('collected_pickups', []):
         if 0 <= i < len(world.pickups):
             world.pickups[i][4] = True
+    if game:
+        gs = data.get('game_state', {})
+        game.on_sky_island = gs.get('on_sky_island', False)
+        game.in_castle = gs.get('in_castle', False)
+        game.cutscene_done = gs.get('cutscene_done', False)
+        game.sky_island_shrines_done = gs.get('sky_island_shrines_done', 0)
+        game.gardon_mok_defeated = gs.get('gardon_mok_defeated', False)
+        game.princess_alive = gs.get('princess_alive', True)
+        for i in gs.get('completed_sky_shrines', []):
+            if 0 <= i < len(game.sky_shrines):
+                game.sky_shrines[i].completed = True
     return True
 
 
@@ -3592,6 +3613,9 @@ class Game:
             self.sky_shrines.append(s)
         self.sky_cookie_monster_x = sky_cx + 20
         self.sky_cookie_monster_z = sky_cz + 20
+
+        # Auto-save timer (every 60 seconds)
+        self.auto_save_timer = 60.0
 
         # Initialize sounds
         init_sounds()
@@ -3701,13 +3725,13 @@ class Game:
                 pygame.event.set_grab(True)
                 pygame.mouse.set_visible(False)
             elif event.key == pygame.K_l:
-                if load_game(self.player, self.world):
+                if load_game(self.player, self.world, self):
                     self.state = GameState.PLAYING
                     self.hud.add_notification("Game loaded!")
                     play_sfx('shrine_complete')
                     pygame.event.set_grab(True)
                     pygame.mouse.set_visible(False)
-                    self.in_castle = False
+                    self.camera.dist = CAM_DIST_DEFAULT
                 else:
                     self.hud.add_notification("No save file found!")
             elif event.key == pygame.K_ESCAPE:
@@ -3796,7 +3820,7 @@ class Game:
                 pygame.mouse.set_visible(False)
                 play_sfx('menu')
             elif event.key == pygame.K_s:
-                save_game(self.player, self.world)
+                save_game(self.player, self.world, self)
                 self.hud.add_notification("Game saved!")
                 play_sfx('shrine_complete')
             elif event.key == pygame.K_q:
@@ -4775,6 +4799,14 @@ class Game:
                 self.world.update(self.dt, self.player)
             self.particles.update(self.dt)
             self.hud.update(self.dt)
+
+            # Auto-save
+            if not self.in_castle:
+                self.auto_save_timer -= self.dt
+                if self.auto_save_timer <= 0:
+                    save_game(self.player, self.world, self)
+                    self.hud.add_notification("Auto-saved!")
+                    self.auto_save_timer = 60.0
 
             # Castle-specific logic
             if self.in_castle and not self.cutscene_done:
