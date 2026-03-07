@@ -4489,6 +4489,13 @@ class Game:
 
         if self.on_sky_island:
             self._render_sky_island()
+            # Draw overlay UIs on top of sky island scene
+            if self.state == GameState.COOKIE_SHOP:
+                self.hud.draw_cookie_shop(self.player)
+            elif self.state == GameState.INVENTORY:
+                self.hud.draw_inventory(self.player)
+            elif self.state == GameState.PAUSE:
+                self.hud.draw_pause_screen()
             return
 
         # ── 3D World rendering ──
