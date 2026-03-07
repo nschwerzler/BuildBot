@@ -1,0 +1,41 @@
+{
+  "player": {
+    "x": 216.475122813615,
+    "y": 78.0,
+    "z": 181.4780225910269,
+    "hp": 44,
+    "max_hp": 80,
+    "stamina": 100.0,
+    "max_stamina": 100.0,
+    "xp": 115,
+    "level": 2,
+    "crown_shards": 1,
+    "arrows": 30,
+    "loadout1_left": "BROKEN_SWORD",
+    "loadout1_right": "SHIELD",
+    "loadout2_left": "BOW",
+    "loadout2_right": "SHIELD",
+    "available_weapons": [
+      "BROKEN_SWORD",
+      "SHIELD",
+      "BOW"
+    ],
+    "abilities": [
+      "RECALL"
+    ],
+    "cookies": 3,
+    "rupees": 14,
+    "stat_levels": {
+      "attack": 0,
+      "defense": 0,
+      "speed": 0,
+      "stamina": 0
+    },
+    "has_house": false,
+    "house_items": [],
+    "has_anvil": false
+  },
+  "completed_shrines": [],
+  "defeated_bosses": [],
+  "collected_pickups": []
+}

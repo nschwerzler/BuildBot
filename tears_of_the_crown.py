@@ -2904,6 +2904,12 @@ class HUD:
         # Cookies
         self._draw_text(f"Cookies: {player.cookies}", 20, 175, self.font_small, (255, 220, 100))
 
+        # Current ability
+        if player.abilities:
+            ability = player.abilities[player.selected_ability]
+            self._draw_text(f"[F] {ability.value}", 20, 200, self.font_med, (120, 220, 255))
+            self._draw_text(f"Q to cycle | 1-4 to select", 20, 225, self.font_small, (140, 140, 160))
+
         # Minimap
         self._draw_minimap(player, world)
 
@@ -3402,6 +3408,12 @@ class HUD:
             self._draw_text("SHRINE CLEARED! Press E to claim reward", 20, 115, self.font_med, (100, 255, 100))
         else:
             self._draw_text("Solve the puzzle!", 20, 115, self.font_med, (255, 220, 100))
+
+        # Current ability
+        if player.abilities:
+            ability = player.abilities[player.selected_ability]
+            self._draw_text(f"[F] {ability.value}", 20, 145, self.font_med, (120, 220, 255))
+            self._draw_text("Q=cycle | 1-4=select", 20, 170, self.font_small, (140, 140, 160))
 
         self._draw_text("Press ESC to exit shrine", 20, SCREEN_H - 30, self.font_small, (150, 150, 160))
         self._render_to_gl()
@@ -4017,6 +4029,13 @@ class Game:
         self.state = GameState.SHRINE
         play_sfx('shrine_enter')
         self.hud.add_notification(f"Entered: {shrine.shrine_type.value}")
+        # Sky shrines temporarily grant their ability so you can use it inside
+        if hasattr(shrine, '_sky_ability'):
+            ability = shrine._sky_ability
+            if ability not in self.player.abilities:
+                self.player.abilities.append(ability)
+                self.player.selected_ability = len(self.player.abilities) - 1
+                self.hud.add_notification(f"Ability granted: {ability.value}! Press F to use it.")
 
     def _exit_shrine(self):
         """Exit current shrine."""
@@ -4339,6 +4358,8 @@ class Game:
                 best_bl = None
                 best_d = 999
                 for bl in self.active_shrine.blocks:
+                    if bl.get('is_platform'):
+                        continue
                     d = dist2d(p.x, p.z, bl['x'], bl['z'])
                     if d < best_d:
                         best_d = d
