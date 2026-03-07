@@ -135,6 +135,7 @@ class WeaponType(Enum):
     GREAT_SWORD = "Titan Cleaver"
     SHADOW_BOW = "Shadow Stalker Bow"
     INSANE_BLADE = "Blade of Infinite Edge"
+    BROKEN_SWORD = "Decayed Blade"
 
 class AbilityType(Enum):
     ULTRAHAND = "Ultrahand"           # Grab & move objects
@@ -163,6 +164,7 @@ class BossType(Enum):
     CORRUPTED_AUTOMATON = "Corrupted Automaton"
     DARK_SOVEREIGN = "The Dark Sovereign"
     COOKIE_MONSTER = "Cookie Monster"
+    GARDON_MOK = "Gardon Mok"
 
 class ShrineType(Enum):
     TRIAL_OF_MIGHT = "Trial of Might"
@@ -569,6 +571,10 @@ WEAPON_DATA = {
         'name': 'Blade of Infinite Edge', 'damage': 50, 'range': 4.0,
         'cooldown': 0.3, 'type': 'melee', 'color': (255, 50, 255)
     },
+    WeaponType.BROKEN_SWORD: {
+        'name': 'Decayed Blade', 'damage': 1, 'range': ATTACK_RANGE,
+        'cooldown': 0.5, 'type': 'melee', 'color': (100, 80, 70)
+    },
 }
 
 @dataclass
@@ -672,6 +678,11 @@ BOSS_DATA = {
         'hp': 200, 'damage': 15, 'speed': 3.0, 'xp': 300,
         'color': (80, 140, 200), 'size': 2.0,
         'phases': 2, 'desc': 'Furry blue beast that devours all cookies!'
+    },
+    BossType.GARDON_MOK: {
+        'hp': 500, 'damage': 30, 'speed': 3.5, 'xp': 0,
+        'color': (50, 20, 30), 'size': 1.8,
+        'phases': 2, 'desc': 'The Demon Dwarf King, unleashed from his ancient seal'
     },
 }
 
@@ -2688,6 +2699,16 @@ class HUD:
         self._draw_text_centered("Press ESC to Quit", SCREEN_H // 2 + 75, self.font_med, (150, 150, 170))
         self._render_to_gl()
 
+    def draw_dialogue(self, speaker, text):
+        """Draw a dialogue box at the bottom of the screen."""
+        self.surface.fill((0, 0, 0, 0))
+        overlay = pygame.Surface((SCREEN_W, 120), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
+        self.surface.blit(overlay, (0, SCREEN_H - 130))
+        self._draw_text(speaker + ":", 30, SCREEN_H - 120, self.font_large, (255, 200, 100))
+        self._draw_text(text, 30, SCREEN_H - 85, self.font_med, (220, 220, 240))
+        self._render_to_gl()
+
     def draw_victory(self):
         self.surface.fill((0, 0, 0, 180))
         self._draw_text_centered("VICTORY!", SCREEN_H // 4, self.font_title, (255, 220, 100))
@@ -2933,62 +2954,76 @@ class HUD:
         self._render_to_gl()
 
     def draw_cutscene(self, timer):
-        """Draw sword breaking intro cutscene."""
+        """Draw TotK-style cutscene: Gardon Mok rises, sword decays, princess falls."""
         self.surface.fill((0, 0, 0, 0))
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
 
-        progress = min(timer / 8.0, 1.0)  # 8 second cutscene
+        progress = min(timer / 12.0, 1.0)  # 12 second cutscene
 
-        if progress < 0.3:
-            # Phase 1: Dark screen, text appears
-            overlay.fill((0, 0, 0, 240))
+        if progress < 0.2:
+            # Phase 1: Gardon Mok unleashes Gloom
+            overlay.fill((10, 0, 15, 240))
             self.surface.blit(overlay, (0, 0))
-            alpha = int(min(progress / 0.1, 1.0) * 255)
-            self._draw_text_centered("The kingdom was at peace...", SCREEN_H // 2 - 60, self.font_title, (200, 200, 220, alpha))
-            self._draw_text_centered("Until the darkness returned.", SCREEN_H // 2, self.font_large, (200, 150, 150, alpha))
-        elif progress < 0.6:
-            # Phase 2: Sword appears then cracks
+            alpha = int(min(progress / 0.05, 1.0) * 255)
+            self._draw_text_centered("GARDON MOK UNLEASHES THE GLOOM!", SCREEN_H // 2 - 60, self.font_title, (180, 50, 50, alpha))
+            self._draw_text_centered("Dark power surges through the castle...", SCREEN_H // 2 + 10, self.font_large, (150, 100, 180, alpha))
+            # Gloom tendrils
+            for i in range(8):
+                ox = SCREEN_W // 2 + int(math.sin(timer * 4 + i * 0.8) * 150)
+                oy = SCREEN_H // 2 + 60 + int(math.cos(timer * 3 + i) * 40)
+                self._draw_text("~", ox, oy, self.font_med, (80, 20, 100))
+        elif progress < 0.4:
+            # Phase 2: Sword decays
             overlay.fill((5, 0, 0, 220))
             self.surface.blit(overlay, (0, 0))
-            self._draw_text_centered("The Hero drew his sword...", SCREEN_H // 2 - 80, self.font_large, (220, 220, 255))
-            # Draw sword ASCII art
+            self._draw_text_centered("The blade blocks the attack...", SCREEN_H // 2 - 80, self.font_large, (220, 220, 255))
+            # Sword with decay cracks
             sword_lines = [
                 "        /\\",
-                "       /  \\",
-                "      /    \\",
-                "     /      \\",
-                "    /   ||   \\",
+                "       / ~\\",
+                "      / ~  \\",
+                "     /  ~~  \\",
+                "    / ~ || ~ \\",
+                "       ~||~",
                 "        ||",
-                "        ||",
-                "      ══██══",
-                "        ██",
+                "      ==%%==",
+                "        %%",
             ]
             sy = SCREEN_H // 2 - 20
             for line in sword_lines:
-                self._draw_text_centered(line, sy, self.font_small, (180, 180, 220))
+                self._draw_text_centered(line, sy, self.font_small, (120, 80, 60))
                 sy += 18
-        elif progress < 0.85:
-            # Phase 3: Sword shatters
-            overlay.fill((20, 0, 0, 200))
+            self._draw_text_centered("*The ancient blade DECAYS!*", SCREEN_H // 2 + 160, self.font_large, (255, 80, 50))
+        elif progress < 0.6:
+            # Phase 3: Castle shakes, Gardon sends surge
+            overlay.fill((20, 0, 10, 230))
             self.surface.blit(overlay, (0, 0))
-            self._draw_text_centered("*CRACK*", SCREEN_H // 2 - 60, self.font_title, (255, 80, 80))
-            self._draw_text_centered("The ancient blade... SHATTERED!", SCREEN_H // 2 + 20, self.font_large, (255, 150, 100))
-            # Scattered pieces
-            shards = ["  /", "\\", "  |", " /\\", "\\  /", "═", "█"]
-            sx = SCREEN_W // 2 - 100
-            for i, shard in enumerate(shards):
-                ox = sx + (i * 35) + int(math.sin(timer * 3 + i) * 10)
-                oy = SCREEN_H // 2 + 80 + int(math.cos(timer * 2 + i) * 15)
-                self._draw_text(shard, ox, oy, self.font_med, (180, 120, 80))
-        else:
-            # Phase 4: Darkness fades, new quest begins
+            shake_x = int(math.sin(timer * 20) * 5)
+            self._draw_text_centered("The castle TREMBLES!", SCREEN_H // 2 - 60 + shake_x, self.font_title, (255, 100, 100))
+            self._draw_text_centered("Gardon Mok: \"You cannot stop what has begun!\"", SCREEN_H // 2 + 10, self.font_large, (200, 150, 200))
+        elif progress < 0.8:
+            # Phase 4: Princess falls into the chasm
             overlay.fill((0, 0, 0, 240))
             self.surface.blit(overlay, (0, 0))
-            self._draw_text_centered("He is not the man of the sword...", SCREEN_H // 2 - 40, self.font_large, (200, 180, 255))
-            self._draw_text_centered("But perhaps, of the CROWN.", SCREEN_H // 2 + 20, self.font_title, (255, 220, 100))
+            fall_y = int((progress - 0.6) / 0.2 * SCREEN_H)
+            self._draw_text_centered("The Princess falls into the abyss!", SCREEN_H // 2 - 40, self.font_title, (200, 180, 255))
+            # Princess falling animation
+            princess_y = min(SCREEN_H // 2 + fall_y, SCREEN_H - 50)
+            self._draw_text_centered("O", princess_y, self.font_large, (255, 200, 220))
+            self._draw_text_centered("You reach out... but she vanishes in a flash of light.", SCREEN_H // 2 + 60, self.font_med, (180, 160, 200))
+        else:
+            # Phase 5: Teleported to Sky Island
+            sky_alpha = int((progress - 0.8) / 0.2 * 255)
+            overlay.fill((100, 180, 255, min(sky_alpha, 200)))
+            self.surface.blit(overlay, (0, 0))
+            self._draw_text_centered("A mysterious force grabs you...", SCREEN_H // 2 - 60, self.font_large, (255, 255, 255))
+            self._draw_text_centered("You awaken above the clouds.", SCREEN_H // 2, self.font_title, (255, 255, 200))
+            self._draw_text_centered("The Great Sky Island", SCREEN_H // 2 + 60, self.font_large, (200, 230, 255))
 
         self._draw_text_centered("[ENTER/ESC/SPACE] Skip", SCREEN_H - 30, self.font_small, (100, 100, 100))
         self._render_to_gl()
+
+    def draw_shrine_hud(self, shrine, player):
         """Draw HUD when inside a shrine."""
         self.surface.fill((0, 0, 0, 0))
 
@@ -3144,9 +3179,53 @@ class Game:
         # Cutscene
         self.cutscene_timer = 0.0
         self.cutscene_done = False
+        self.cutscene_phase = 'none'  # 'none', 'gardon_talk', 'fight', 'sword_break', 'princess_fall', 'sky_teleport'
+
+        # Castle intro state (TotK-style)
+        self.princess_x = 0.0   # Princess companion position in castle
+        self.princess_z = -2.0
+        self.princess_alive = True
+        self.gardon_mok = None           # Boss entity, spawns when player reaches throne
+        self.gardon_mok_triggered = False # Has Gardon Mok awakened?
+        self.gardon_mok_defeated = False
+        self.gardon_talk_timer = 0.0
+        self.gardon_talk_lines = [
+            "Gardon Mok: So... Link and his princess have come.",
+            "Gardon Mok: You think that rusted blade can harm ME?",
+            "Gardon Mok: Rauru placed his trust in the wrong hero!",
+            "Gardon Mok: Now... FEEL THE GLOOM!",
+        ]
+        self.gardon_talk_index = 0
+        self.sword_broken = False
+        # Castle Linus mob guards
+        self.castle_mobs = []
+        self._spawn_castle_mobs()
+
+        # Sky Island
+        self.on_sky_island = False
+        self.sky_island_shrines_done = 0
+        # Sky shrine positions (relative to sky island center at 100*TILE_SIZE)
+        sky_cx = 100 * TILE_SIZE
+        sky_cz = 100 * TILE_SIZE
+        self.sky_shrines = [
+            {'x': sky_cx + 15, 'z': sky_cz, 'ability': AbilityType.ULTRAHAND, 'completed': False, 'name': 'Shrine of Ultrahand'},
+            {'x': sky_cx - 15, 'z': sky_cz, 'ability': AbilityType.FUSE, 'completed': False, 'name': 'Shrine of Fuse'},
+            {'x': sky_cx, 'z': sky_cz + 15, 'ability': AbilityType.ASCEND, 'completed': False, 'name': 'Shrine of Ascend'},
+            {'x': sky_cx, 'z': sky_cz - 15, 'ability': AbilityType.RECALL, 'completed': False, 'name': 'Shrine of Recall'},
+        ]
+        self.sky_cookie_monster_x = sky_cx + 8
+        self.sky_cookie_monster_z = sky_cz + 8
 
         # Initialize sounds
         init_sounds()
+
+    def _spawn_castle_mobs(self):
+        """Spawn Linus guard mobs inside the castle for the intro."""
+        positions = [(-4, 0, 3), (4, 0, 3), (-6, 0, -2), (6, 0, -2)]
+        for px, py, pz in positions:
+            mob = Mob(MobType.LINUS, px, py, pz)
+            mob.aggro_range = 8.0
+            self.castle_mobs.append(mob)
 
     def _init_gl(self):
         """Initialize OpenGL settings."""
@@ -3234,14 +3313,9 @@ class Game:
     def _handle_keydown(self, event):
         if self.state == GameState.TITLE:
             if event.key == pygame.K_RETURN:
-                if not self.cutscene_done:
-                    self.state = GameState.CUTSCENE
-                    self.cutscene_timer = 0.0
-                    self.cutscene_done = True
-                else:
-                    self.state = GameState.PLAYING
-                self.hud.add_notification("Welcome to the Underground Castle!")
-                self.hud.add_notification("Press E near the exit to leave the castle.")
+                self.state = GameState.PLAYING
+                self.hud.add_notification("You and the Princess explore beneath the Castle...")
+                self.hud.add_notification("Defeat the Linus guards. Approach the throne.")
                 play_sfx('menu')
                 pygame.event.set_grab(True)
                 pygame.mouse.set_visible(False)
@@ -3418,8 +3492,8 @@ class Game:
 
         elif self.state == GameState.CUTSCENE:
             if event.key in (pygame.K_RETURN, pygame.K_ESCAPE, pygame.K_SPACE):
-                self.cutscene_timer = 0
-                self.state = GameState.PLAYING
+                # Skip cutscene - teleport to sky island
+                self._teleport_to_sky_island()
                 play_sfx('menu')
 
         elif self.state == GameState.GAME_OVER:
@@ -3435,14 +3509,21 @@ class Game:
     def _handle_mousedown(self, event):
         if self.state in (GameState.PLAYING, GameState.SHRINE, GameState.BOSS_FIGHT):
             in_shrine = self.state == GameState.SHRINE
+            # Use castle mobs when in castle, otherwise world mobs
+            if self.in_castle:
+                mobs = self.castle_mobs
+                bosses = [self.gardon_mok] if (self.gardon_mok and self.gardon_mok.alive and self.cutscene_phase == 'fight') else []
+            else:
+                mobs = self.world.mobs
+                bosses = self.world.bosses
             if event.button == 1:  # Left click
                 self.player.use_left_hand(
-                    self.world.mobs, self.world.bosses, self.particles,
+                    mobs, bosses, self.particles,
                     in_shrine, self.active_shrine
                 )
             elif event.button == 3:  # Right click
                 self.player.use_right_hand(
-                    self.world.mobs, self.world.bosses, self.particles,
+                    mobs, bosses, self.particles,
                     in_shrine, self.active_shrine
                 )
             elif event.button == 2:  # Middle mouse - start looking
@@ -3463,6 +3544,46 @@ class Game:
                 self.hud.add_notification("You emerge from the underground castle!")
                 play_sfx('shrine_complete')
                 return
+
+        # Sky Island shrine interaction
+        if self.on_sky_island:
+            for shrine in self.sky_shrines:
+                if not shrine['completed'] and dist2d(self.player.x, self.player.z, shrine['x'], shrine['z']) < INTERACT_RANGE:
+                    shrine['completed'] = True
+                    self.sky_island_shrines_done += 1
+                    ability = shrine['ability']
+                    if ability not in self.player.abilities:
+                        self.player.abilities.append(ability)
+                    play_sfx('shrine_complete')
+                    self.particles.emit(shrine['x'], 80, shrine['z'], 30, (100, 200, 255), spread=3, speed=5)
+                    self.hud.add_notification(f"{shrine['name']} complete! Gained {ability.value}!")
+                    # Check if all shrines done
+                    if self.sky_island_shrines_done >= 4:
+                        self.hud.add_notification("All shrines complete! You may descend to the surface.")
+                    return
+            # Sky Cookie Monster
+            if dist2d(self.player.x, self.player.z, self.sky_cookie_monster_x, self.sky_cookie_monster_z) < INTERACT_RANGE:
+                self.state = GameState.COOKIE_SHOP
+                play_sfx('shrine_enter')
+                return
+            # Rauru stone - descend to surface (center of sky island)
+            sky_cx = 100 * TILE_SIZE
+            sky_cz = 100 * TILE_SIZE
+            if dist2d(self.player.x, self.player.z, sky_cx, sky_cz) < INTERACT_RANGE:
+                if self.sky_island_shrines_done >= 4:
+                    self.on_sky_island = False
+                    self.player.x = sky_cx
+                    self.player.z = sky_cz
+                    wy = walkable_y(self.player.x, self.player.z, self.world.seed)
+                    self.player.y = (wy if wy is not None else 0) + 0.5
+                    self.player.vy = 0
+                    play_sfx('shrine_complete')
+                    self.hud.add_notification("You descend from the Great Sky Island to Hyrule!")
+                else:
+                    remaining = 4 - self.sky_island_shrines_done
+                    self.hud.add_notification(f"Complete {remaining} more shrine(s) before descending!")
+                return
+            return
 
         # Check for nearby shrines
         for shrine in self.world.shrines:
@@ -3525,6 +3646,136 @@ class Game:
             self.player.y = wy if wy is not None else 0
             self.active_shrine = None
             self.state = GameState.PLAYING
+
+    def _update_castle_intro(self):
+        """Update castle intro sequence: mobs, princess, Gardon Mok trigger."""
+        p = self.player
+
+        # Princess follows player at a distance
+        if self.princess_alive:
+            dx = p.x - self.princess_x
+            dz = p.z - self.princess_z
+            pdist = math.sqrt(dx*dx + dz*dz)
+            if pdist > 2.5:
+                nx, nz = dx / pdist, dz / pdist
+                self.princess_x += nx * 2.5 * self.dt
+                self.princess_z += nz * 2.5 * self.dt
+
+        # Update castle Linus mobs
+        for mob in self.castle_mobs:
+            if mob.alive:
+                mob.update(self.dt, p.x, p.y, p.z)
+                if mob.can_attack() and dist2d(mob.x, mob.z, p.x, p.z) < ATTACK_RANGE * 1.5:
+                    dmg = mob.do_attack()
+                    p.take_damage(dmg)
+
+        # Melee hits on castle mobs already handled by use_left_hand
+        # but we need to pass castle mobs to combat - handled in _handle_mousedown
+
+        # Trigger Gardon Mok when player approaches throne (z < -4)
+        if not self.gardon_mok_triggered and p.z < -4.0:
+            self.gardon_mok_triggered = True
+            self.cutscene_phase = 'gardon_talk'
+            self.gardon_talk_timer = 0.0
+            self.gardon_talk_index = 0
+            self.hud.add_notification("Something stirs beneath the throne...")
+            play_sfx('boss_roar')
+            # Spawn Gardon Mok at throne
+            self.gardon_mok = Mob(MobType.LINUS, 0, 0, -6)  # Use Linus as base, override
+            self.gardon_mok.hp = 500
+            self.gardon_mok.max_hp = 500
+            self.gardon_mok.damage = 30
+            self.gardon_mok.speed = 3.5
+            self.gardon_mok.size = 1.8
+            self.gardon_mok.color = (50, 20, 30)
+            self.gardon_mok.aggro_range = 20.0
+            self.gardon_mok.xp = 0
+
+        # Gardon Mok talk phase
+        if self.cutscene_phase == 'gardon_talk':
+            self.gardon_talk_timer += self.dt
+            if self.gardon_talk_timer > 2.5:
+                self.gardon_talk_timer = 0.0
+                if self.gardon_talk_index < len(self.gardon_talk_lines):
+                    self.hud.add_notification(self.gardon_talk_lines[self.gardon_talk_index])
+                    self.gardon_talk_index += 1
+                else:
+                    # Done talking, start fight
+                    self.cutscene_phase = 'fight'
+                    self.hud.add_notification("GARDON MOK attacks!")
+                    play_sfx('boss_roar')
+
+        # Gardon Mok fight phase
+        if self.cutscene_phase == 'fight' and self.gardon_mok and self.gardon_mok.alive:
+            gm = self.gardon_mok
+            gm.update(self.dt, p.x, p.y, p.z)
+            if gm.can_attack() and dist2d(gm.x, gm.z, p.x, p.z) < ATTACK_RANGE * 2:
+                dmg = gm.do_attack()
+                p.take_damage(dmg)
+
+            # After taking some hits (HP < 300), sword breaks
+            if gm.hp < 300 and not self.sword_broken:
+                self.sword_broken = True
+                self._break_sword()
+
+            # Gardon Mok can't actually be killed - after enough hits, trigger cutscene
+            if gm.hp < 100:
+                self.cutscene_phase = 'sword_break'
+                self._trigger_castle_cutscene()
+
+        # Keep player inside castle during intro
+        if self.in_castle and not self.cutscene_done:
+            p.x = max(-9, min(9, p.x))
+            p.z = max(-9, min(9, p.z))
+            p.y = max(0, min(5, p.y))
+
+    def _break_sword(self):
+        """Decay the sword - replace with Broken Sword (1 damage)."""
+        p = self.player
+        # Replace SWORD with BROKEN_SWORD in available weapons
+        if WeaponType.SWORD in p.available_weapons:
+            idx = p.available_weapons.index(WeaponType.SWORD)
+            p.available_weapons[idx] = WeaponType.BROKEN_SWORD
+        # Update loadouts
+        if p.loadout1.left == WeaponType.SWORD:
+            p.loadout1.left = WeaponType.BROKEN_SWORD
+        if p.loadout2.left == WeaponType.SWORD:
+            p.loadout2.left = WeaponType.BROKEN_SWORD
+        self.hud.add_notification("Your sword DECAYS from dark power!")
+        self.hud.add_notification("The Decayed Blade deals only 1 damage!")
+        self.particles.emit(p.x, p.y + 1, p.z, 20, (255, 80, 30), spread=2, speed=5)
+        play_sfx('hurt')
+
+    def _trigger_castle_cutscene(self):
+        """Trigger the TotK-style cutscene: Gardon rises, princess falls, sky teleport."""
+        self.cutscene_done = True
+        self.state = GameState.CUTSCENE
+        self.cutscene_timer = 0.0
+        self.princess_alive = False  # Princess falls into the chasm
+        # Strip abilities - player starts fresh on Sky Island
+        self.player.abilities = []
+        self.player.selected_ability = 0
+        pygame.event.set_grab(False)
+        pygame.mouse.set_visible(True)
+
+    def _teleport_to_sky_island(self):
+        """Teleport player to the Sky Island above the clouds."""
+        self.state = GameState.PLAYING
+        self.in_castle = False
+        self.on_sky_island = True
+        # Sky island position: high up, center of map area
+        self.player.x = 100 * TILE_SIZE
+        self.player.y = 80.0  # Way above the clouds
+        self.player.z = 100 * TILE_SIZE
+        self.player.vy = 0
+        self.player.hp = self.player.max_hp
+        self.player.invincible_timer = 5.0
+        self.hud.add_notification("You awaken on the Great Sky Island...")
+        self.hud.add_notification("A voice speaks: Visit the shrines to restore your power.")
+        self.hud.add_notification("Press E near shrines to enter them.")
+        play_sfx('shrine_complete')
+        pygame.event.set_grab(True)
+        pygame.mouse.set_visible(False)
 
     def _complete_shrine(self):
         """Complete the active shrine. Awards cookies!"""
@@ -3839,10 +4090,130 @@ class Game:
         draw_cube(-7, 3.5, -9.5, 0.8, 1.5, 0.05, (120, 30, 30))
         draw_cube(7, 3.5, -9.5, 0.8, 1.5, 0.05, (30, 30, 120))
 
-        # "Press E to exit" hint near door
-        if self.player.z > 4:
-            # Draw a glowing arrow pointing at the door
+        # "Press E to exit" hint near door (only if Gardon Mok defeated or not yet triggered)
+        if self.player.z > 4 and not self.gardon_mok_triggered:
             draw_sphere(0, 2 + math.sin(t * 3) * 0.3, 9, 0.3, (100, 255, 100))
+
+        # Draw Princess NPC
+        if self.princess_alive:
+            glPushMatrix()
+            glTranslatef(self.princess_x, 0, self.princess_z)
+            # Dress (pink)
+            draw_cube(0, 0.8, 0, 0.3, 0.5, 0.25, (255, 180, 200))
+            # Head
+            draw_sphere(0, 1.5, 0, 0.25, (255, 220, 200))
+            # Hair (golden)
+            draw_cube(0, 1.7, -0.1, 0.2, 0.15, 0.2, (255, 220, 100))
+            # Crown
+            draw_cube(0, 1.85, 0, 0.15, 0.1, 0.15, (255, 200, 50))
+            glPopMatrix()
+
+        # Draw castle mobs (Linus guards)
+        for mob in self.castle_mobs:
+            if mob.alive:
+                mob.draw()
+
+        # Draw Gardon Mok
+        if self.gardon_mok_triggered and self.gardon_mok and self.gardon_mok.alive:
+            self.gardon_mok.draw()
+            # Draw gloom aura around Gardon Mok
+            gloom_pulse = 0.5 + 0.5 * math.sin(t * 4)
+            draw_sphere(self.gardon_mok.x, 1.0, self.gardon_mok.z,
+                       1.5 + gloom_pulse * 0.5, (50, 20, 60))
+
+        self.player.draw()
+        self.particles.draw()
+
+        # Reset lighting
+        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3, 0.3, 0.35, 1.0])
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.9, 0.85, 0.8, 1.0])
+        glClearColor(*C_SKY, 1.0)
+
+        self.hud.draw_game_hud(self.player, self.camera, self.state, self.world)
+
+        # Draw Gardon Mok dialogue during talk phase
+        if self.cutscene_phase == 'gardon_talk':
+            line_idx = min(self.gardon_talk_index, len(self.gardon_talk_lines) - 1)
+            self.hud.draw_dialogue("Gardon Mok", self.gardon_talk_lines[line_idx])
+
+    def _render_sky_island(self):
+        """Render the Great Sky Island floating above clouds."""
+        glClearColor(0.4, 0.65, 0.95, 1.0)  # Bright sky
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        self.camera.apply(self.player)
+
+        glLightfv(GL_LIGHT0, GL_POSITION, [0.5, 1.0, 0.3, 0.0])
+        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.4, 0.4, 0.5, 1.0])
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, [1.0, 0.95, 0.9, 1.0])
+
+        t = time.time()
+        sky_cx = 100 * TILE_SIZE
+        sky_cz = 100 * TILE_SIZE
+
+        # Floating island platform (stone slab)
+        # Main platform
+        draw_cube(sky_cx, 77.0, sky_cz, 25, 1.5, 25, (100, 130, 90))
+        # Grass top
+        draw_cube(sky_cx, 78.6, sky_cz, 25, 0.1, 25, (80, 160, 60))
+        # Rocky underside details
+        for i in range(6):
+            angle = i * 60
+            rx = sky_cx + math.cos(math.radians(angle)) * 18
+            rz = sky_cz + math.sin(math.radians(angle)) * 18
+            draw_cube(rx, 74.5, rz, 3, 2, 3, (90, 85, 75))
+
+        # Cloud layer below (decorative)
+        for i in range(12):
+            cx = sky_cx + math.cos(math.radians(i * 30 + t * 3)) * 40
+            cz = sky_cz + math.sin(math.radians(i * 30 + t * 2)) * 40
+            cy = 65 + math.sin(t * 0.5 + i) * 2
+            cloud_sz = 4 + math.sin(i * 1.3) * 2
+            draw_sphere(cx, cy, cz, cloud_sz, (240, 240, 250))
+
+        # Draw sky shrines
+        for shrine in self.sky_shrines:
+            sx, sz = shrine['x'], shrine['z']
+            if shrine['completed']:
+                # Completed shrine (dimmed)
+                draw_cube(sx, 79.5, sz, 1.5, 1.5, 1.5, (60, 80, 60))
+                draw_sphere(sx, 82, sz, 0.5, (100, 150, 100))
+            else:
+                # Active shrine (glowing)
+                glow = 0.5 + 0.5 * math.sin(t * 3)
+                shrine_color = (int(80 + glow * 60), int(150 + glow * 50), int(200 + glow * 55))
+                draw_cube(sx, 79.5, sz, 1.5, 1.5, 1.5, shrine_color)
+                draw_sphere(sx, 82.0 + math.sin(t * 2) * 0.3, sz, 0.6, (150, 220, 255))
+                # Pillar accent
+                draw_cube(sx - 1.8, 80, sz - 1.8, 0.2, 2, 0.2, (120, 160, 200))
+                draw_cube(sx + 1.8, 80, sz - 1.8, 0.2, 2, 0.2, (120, 160, 200))
+                draw_cube(sx - 1.8, 80, sz + 1.8, 0.2, 2, 0.2, (120, 160, 200))
+                draw_cube(sx + 1.8, 80, sz + 1.8, 0.2, 2, 0.2, (120, 160, 200))
+
+        # Cookie Monster NPC on sky island
+        cmx, cmz = self.sky_cookie_monster_x, self.sky_cookie_monster_z
+        draw_sphere(cmx, 79.8, cmz, 0.8, (50, 100, 200))  # Body
+        draw_sphere(cmx, 80.8, cmz, 0.5, (60, 120, 220))   # Head
+        # Eyes
+        draw_sphere(cmx - 0.2, 81.0, cmz + 0.4, 0.15, (255, 255, 255))
+        draw_sphere(cmx + 0.2, 81.0, cmz + 0.4, 0.15, (255, 255, 255))
+        draw_sphere(cmx - 0.2, 81.0, cmz + 0.48, 0.08, (0, 0, 0))
+        draw_sphere(cmx + 0.2, 81.0, cmz + 0.48, 0.08, (0, 0, 0))
+
+        # Decorative trees on island
+        for i, (tx, tz) in enumerate([(sky_cx + 10, sky_cz + 8), (sky_cx - 12, sky_cz - 5),
+                                       (sky_cx + 5, sky_cz - 12), (sky_cx - 8, sky_cz + 10)]):
+            draw_cylinder(tx, 78.5, tz, 0.3, 3, (100, 70, 40))
+            draw_sphere(tx, 82.5, tz, 2, (40, 140 + i * 10, 50))
+
+        # Central Rauru stone
+        draw_cube(sky_cx, 79.5, sky_cz, 1, 1, 1, (180, 170, 150))
+        draw_cube(sky_cx, 81, sky_cz, 0.6, 0.5, 0.6, (200, 190, 160))
+        # Arm symbol on top
+        glow2 = 0.5 + 0.5 * math.sin(t * 2)
+        draw_sphere(sky_cx, 81.8, sky_cz, 0.35, (int(100 + glow2 * 100), int(200 + glow2 * 55), int(100 + glow2 * 100)))
 
         self.player.draw()
         self.particles.draw()
@@ -3879,10 +4250,34 @@ class Game:
         """Update game logic."""
         if self.state in (GameState.PLAYING, GameState.BOSS_FIGHT):
             self._update_movement()
-            self.player.update(self.dt, self.world.seed)
-            self.world.update(self.dt, self.player)
+            self.player.update(self.dt, self.world.seed if not self.in_castle else 42)
+
+            # Sky island: clamp player to island platform
+            if self.on_sky_island:
+                sky_cx = 100 * TILE_SIZE
+                sky_cz = 100 * TILE_SIZE
+                sky_r = 25.0
+                # Keep player on the floating island
+                dx = self.player.x - sky_cx
+                dz = self.player.z - sky_cz
+                d = math.sqrt(dx * dx + dz * dz)
+                if d > sky_r:
+                    self.player.x = sky_cx + dx / d * sky_r
+                    self.player.z = sky_cz + dz / d * sky_r
+                if self.player.y < 78.0:
+                    self.player.y = 78.0
+                    self.player.vy = 0
+                    self.player.on_ground = True
+                    self.player.jump_count = 0
+
+            if not self.in_castle:
+                self.world.update(self.dt, self.player)
             self.particles.update(self.dt)
             self.hud.update(self.dt)
+
+            # Castle-specific logic
+            if self.in_castle and not self.cutscene_done:
+                self._update_castle_intro()
 
             # Check for death
             if not self.player.alive:
@@ -3952,8 +4347,8 @@ class Game:
         elif self.state == GameState.CUTSCENE:
             self.cutscene_timer += self.dt
             self.hud.update(self.dt)
-            if self.cutscene_timer >= 8.0:
-                self.state = GameState.PLAYING
+            if self.cutscene_timer >= 12.0:
+                self._teleport_to_sky_island()
 
         else:
             self.hud.update(self.dt)
@@ -4058,6 +4453,10 @@ class Game:
 
         if self.in_castle:
             self._render_castle()
+            return
+
+        if self.on_sky_island:
+            self._render_sky_island()
             return
 
         # ── 3D World rendering ──
