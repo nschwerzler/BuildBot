@@ -1330,6 +1330,7 @@ class Shrine:
         self.blocks = []  # Puzzle blocks
         self.switches = []  # Puzzle switches
         self.chests = []  # Treasure chests: {'x', 'z', 'opened', 'reward'}
+        self.ascend_spots = []  # Ascend teleport spots for Rising Trial
         self.goal_reached = False
         self.timer = 0.0
 
@@ -1352,6 +1353,7 @@ class Shrine:
         self.blocks.clear()
         self.switches.clear()
         self.chests.clear()
+        self.ascend_spots.clear()
         self.goal_reached = False
         self.timer = 0.0
 
@@ -1385,18 +1387,31 @@ class Shrine:
             self.chests.append({'x': 8, 'z': 0, 'opened': False, 'reward': 'rupee'})
 
         elif st == ShrineType.RISING_TRIAL:
-            # Ascend shrine - platforms at different heights, jump puzzles
-            # Enemies on raised platforms (but weak)
+            # Ascend shrine - multi-level vertical adventure
+            # Level 1 (ground): enemies guard the first ascend spot
             self.enemies.append(self._make_weak_mob(MobType.SKARVYN, -5, -4))
-            self.enemies.append(self._make_weak_mob(MobType.GRUNKLE, 5, -6))
-            # Blocks to climb on
-            self.blocks.append({'x': -3, 'z': 0, 'on_switch': False})
-            self.blocks.append({'x': 3, 'z': -3, 'on_switch': False})
-            self.switches.append({'x': 0, 'z': -9, 'activated': False})
-            self.chests.append({'x': -9, 'z': 5, 'opened': False, 'reward': 'cookie'})
-            self.chests.append({'x': 9, 'z': -5, 'opened': False, 'reward': 'rupee'})
-            # Lesses for fun
             self.enemies.append(self._make_weak_mob(MobType.LESSE, 0, 7))
+            # Ascend spots - glowing green platforms that Ascend teleports you through
+            self.ascend_spots = [
+                {'x': 0, 'z': 0, 'from_y': 0, 'to_y': 4.0, 'label': 'Level 2'},
+                {'x': -6, 'z': -4, 'from_y': 4.0, 'to_y': 8.0, 'label': 'Level 3'},
+                {'x': 5, 'z': -7, 'from_y': 8.0, 'to_y': 12.0, 'label': 'Top'},
+            ]
+            # Platforms at each level (drawn as decoration)
+            # Level 2 platform
+            self.blocks.append({'x': 0, 'z': 0, 'on_switch': False, 'is_platform': True, 'y': 4.0, 'w': 5, 'h': 0.3, 'd': 5})
+            # Level 3 platform
+            self.blocks.append({'x': -6, 'z': -4, 'on_switch': False, 'is_platform': True, 'y': 8.0, 'w': 4, 'h': 0.3, 'd': 4})
+            # Top platform
+            self.blocks.append({'x': 5, 'z': -7, 'on_switch': False, 'is_platform': True, 'y': 12.0, 'w': 3, 'h': 0.3, 'd': 3})
+            # Chest on level 2
+            self.chests.append({'x': 3, 'z': 2, 'opened': False, 'reward': 'cookie', 'y': 4.3})
+            # Chest at top
+            self.chests.append({'x': 5, 'z': -5, 'opened': False, 'reward': 'rupee', 'y': 12.3})
+            # Enemy on level 2
+            e2 = self._make_weak_mob(MobType.GRUNKLE, 0, 2)
+            e2.y = 4.3
+            self.enemies.append(e2)
 
         elif st == ShrineType.TIMEFLOW_TRIAL:
             # Recall shrine - hit switches in correct order, timed puzzle
@@ -1650,15 +1665,46 @@ class Shrine:
                 lz = math.cos(i * 1.3) * 6
                 draw_cube(lx, 0.03, lz, 0.6, 0.03, 0.1, (200, 80, 20))
         elif st == ShrineType.RISING_TRIAL:
-            # Elevated platforms at different heights
-            draw_cube(-6, 0.75, -4, 2, 0.75, 2, (80, 140, 80))
-            draw_cube(6, 1.5, -6, 2, 1.5, 2, (70, 130, 70))
-            draw_cube(0, 2.25, -8, 2, 2.25, 2, (60, 120, 60))
-            # Floating arrows pointing up
-            for i in range(3):
-                ay = 2 + math.sin(t * 3 + i) * 0.5
-                ax = (i - 1) * 5
-                draw_cone(ax, ay, 5, 0.3, 0.6, (120, 255, 120))
+            # Multi-level vertical shrine - draw platforms, ascend spots, ladders
+            # Ground level floor is already drawn
+            # Level 2 platform
+            draw_cube(0, 4.0, 0, 5, 0.3, 5, (70, 140, 70))
+            draw_cube(0, 4.0, 0, 4.8, 0.1, 4.8, (60, 120, 60))
+            # Level 3 platform
+            draw_cube(-6, 8.0, -4, 4, 0.3, 4, (60, 130, 60))
+            draw_cube(-6, 8.0, -4, 3.8, 0.1, 3.8, (50, 110, 50))
+            # Top platform
+            draw_cube(5, 12.0, -7, 3, 0.3, 3, (50, 120, 50))
+            draw_cube(5, 12.0, -7, 2.8, 0.1, 2.8, (40, 100, 40))
+            # Pillars connecting levels
+            draw_cylinder(-4, 0, -4, 0.3, 4, (80, 130, 80))
+            draw_cylinder(4, 0, 4, 0.3, 4, (80, 130, 80))
+            draw_cylinder(-8, 4, -6, 0.3, 4, (70, 120, 70))
+            draw_cylinder(3, 8, -5, 0.3, 4, (60, 110, 60))
+            # Ascend spots - glowing green circles on the floor
+            ascend_spots = getattr(self, 'ascend_spots', [])
+            for spot in ascend_spots:
+                # Only show spots at the player's current level
+                pulse = 0.5 + 0.5 * math.sin(t * 4)
+                spot_y = spot['from_y'] + 0.05
+                # Glowing ring
+                for ring_i in range(8):
+                    a = ring_i / 8 * math.pi * 2 + t * 2
+                    rx = spot['x'] + math.cos(a) * 1.2
+                    rz = spot['z'] + math.sin(a) * 1.2
+                    draw_sphere(rx, spot_y + 0.1, rz, 0.12, (int(80 + pulse * 120), 255, int(80 + pulse * 120)))
+                # Center glow
+                draw_sphere(spot['x'], spot_y + 0.3 + pulse * 0.3, spot['z'], 0.3,
+                           (int(100 + pulse * 100), 255, int(100 + pulse * 100)))
+                # Upward arrow
+                draw_cone(spot['x'], spot_y + 0.8 + pulse * 0.5, spot['z'], 0.25, 0.5,
+                         (int(80 + pulse * 175), 255, int(80 + pulse * 175)))
+            # Floating arrows pointing up along the route
+            for i in range(6):
+                ay = 1.5 + i * 2 + math.sin(t * 3 + i) * 0.3
+                ax = math.sin(i * 1.2) * 3
+                az = math.cos(i * 1.2) * 3 - 3
+                draw_cone(ax, ay, az, 0.15, 0.3, (120, 255, 120))
         elif st == ShrineType.TIMEFLOW_TRIAL:
             # Spinning clock hands and purple gears
             for i in range(3):
@@ -1703,18 +1749,19 @@ class Shrine:
 
         # Chests
         for ch in self.chests:
+            cy = ch.get('y', 0.0)
             if ch['opened']:
                 # Open chest
-                draw_cube(ch['x'], 0.25, ch['z'], 0.4, 0.25, 0.3, (120, 80, 30))
+                draw_cube(ch['x'], cy + 0.25, ch['z'], 0.4, 0.25, 0.3, (120, 80, 30))
                 # Open lid (tilted back)
-                draw_cube(ch['x'], 0.6, ch['z'] - 0.25, 0.4, 0.05, 0.3, (140, 90, 35))
+                draw_cube(ch['x'], cy + 0.6, ch['z'] - 0.25, 0.4, 0.05, 0.3, (140, 90, 35))
             else:
                 # Closed chest (glowing)
                 glow_c = 0.5 + 0.5 * math.sin(t * 3)
-                draw_cube(ch['x'], 0.25, ch['z'], 0.4, 0.25, 0.3, (140, 90, 35))
-                draw_cube(ch['x'], 0.5, ch['z'], 0.42, 0.05, 0.32, (160, 110, 40))
+                draw_cube(ch['x'], cy + 0.25, ch['z'], 0.4, 0.25, 0.3, (140, 90, 35))
+                draw_cube(ch['x'], cy + 0.5, ch['z'], 0.42, 0.05, 0.32, (160, 110, 40))
                 # Gold trim glow
-                draw_cube(ch['x'], 0.3, ch['z'] + 0.31, 0.1, 0.1, 0.02,
+                draw_cube(ch['x'], cy + 0.3, ch['z'] + 0.31, 0.1, 0.1, 0.02,
                          (int(200 + glow_c * 55), int(180 + glow_c * 55), 50))
 
         # Enemies (Lesses draw as fat chickens)
@@ -3712,6 +3759,17 @@ class Game:
             elif event.key == pygame.K_TAB or event.key == pygame.K_i:
                 self.state = GameState.INVENTORY
                 self.selected_weapon_index = -1
+            elif event.key == pygame.K_q:
+                # Cycle ability in shrine
+                if self.player.abilities:
+                    self.player.selected_ability = (self.player.selected_ability + 1) % len(self.player.abilities)
+                    ability = self.player.abilities[self.player.selected_ability]
+                    self.hud.add_notification(f"Ability: {ability.value}")
+            elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4):
+                idx = event.key - pygame.K_1
+                if idx < len(self.player.abilities):
+                    self.player.selected_ability = idx
+                    self.hud.add_notification(f"Ability: {self.player.abilities[idx].value}")
             elif event.key == pygame.K_f:
                 self._use_ability()
 
@@ -4349,12 +4407,36 @@ class Game:
                 self.hud.add_notification("Fuse! Weapon powered up for 5 seconds!")
 
         elif ability == AbilityType.ASCEND:
-            # Ascend: launch upward through ceilings
-            p.vy = JUMP_VEL * 2.5
-            p.on_ground = False
-            self.particles.emit(p.x, p.y, p.z, 12, (180, 255, 180), spread=1, speed=5)
-            play_sfx('jump')
-            self.hud.add_notification("Ascend!")
+            # Ascend: in shrine, check for ascend spots; otherwise super jump
+            if self.state == GameState.SHRINE and self.active_shrine:
+                ascend_spots = getattr(self.active_shrine, 'ascend_spots', [])
+                for spot in ascend_spots:
+                    # Check if player is near an ascend spot at the right Y level
+                    if dist2d(p.x, p.z, spot['x'], spot['z']) < 2.0:
+                        if abs(p.y - spot['from_y']) < 1.5:
+                            # Teleport up!
+                            p.y = spot['to_y'] + 0.5
+                            p.x = spot['x']
+                            p.z = spot['z']
+                            p.vy = 0
+                            p.on_ground = True
+                            self.particles.emit(p.x, p.y, p.z, 20, (120, 255, 120), spread=2, speed=5)
+                            self.particles.emit(p.x, spot['from_y'] + 1, p.z, 15, (180, 255, 180), spread=1.5, speed=4)
+                            play_sfx('shrine_complete')
+                            self.hud.add_notification(f"Ascend! Reached {spot['label']}!")
+                            return
+                # No ascend spot nearby - regular super jump
+                p.vy = JUMP_VEL * 2.5
+                p.on_ground = False
+                self.particles.emit(p.x, p.y, p.z, 12, (180, 255, 180), spread=1, speed=5)
+                play_sfx('jump')
+                self.hud.add_notification("Ascend!")
+            else:
+                p.vy = JUMP_VEL * 2.5
+                p.on_ground = False
+                self.particles.emit(p.x, p.y, p.z, 12, (180, 255, 180), spread=1, speed=5)
+                play_sfx('jump')
+                self.hud.add_notification("Ascend!")
 
         elif ability == AbilityType.RECALL:
             # Recall: rewind time, heal to full and reset cooldowns
@@ -4823,10 +4905,11 @@ class Game:
             self.player.z = max(margin, min(max_coord, self.player.z))
 
     def _update_movement_shrine(self):
-        """Movement inside a shrine (simpler, flat ground)."""
+        """Movement inside a shrine with gravity and platform support."""
         keys = pygame.key.get_pressed()
         fx, fz = self.camera.get_forward()
         rx, rz = self.camera.get_right()
+        p = self.player
 
         move_x, move_z = 0.0, 0.0
         if keys[pygame.K_w]:
@@ -4841,19 +4924,45 @@ class Game:
         length = math.sqrt(move_x * move_x + move_z * move_z)
         if length > 0.01:
             move_x /= length; move_z /= length
-            self.player.facing = math.degrees(math.atan2(-move_x, -move_z))
-            self.player.vx = move_x * WALK_SPEED
-            self.player.vz = move_z * WALK_SPEED
+            p.facing = math.degrees(math.atan2(-move_x, -move_z))
+            p.vx = move_x * WALK_SPEED
+            p.vz = move_z * WALK_SPEED
 
-        # Clamp to shrine bounds
-        self.player.x = max(-11, min(11, self.player.x))
-        self.player.z = max(-11, min(11, self.player.z))
+        # Gravity
+        p.vy -= 30 * self.dt
+        p.y += p.vy * self.dt
 
-        # Push blocks
+        # Find the highest platform the player is standing on
+        floor_y = 0.0  # ground level
         if self.active_shrine:
             for bl in self.active_shrine.blocks:
-                if dist2d(self.player.x, self.player.z, bl['x'], bl['z']) < 1.2:
-                    dx, dz = normalize2d(bl['x'] - self.player.x, bl['z'] - self.player.z)
+                if bl.get('is_platform'):
+                    hw = bl.get('w', 1) / 2.0
+                    hd = bl.get('d', 1) / 2.0
+                    by = bl.get('y', 0)
+                    if (abs(p.x - bl['x']) < hw and abs(p.z - bl['z']) < hd):
+                        plat_top = by + bl.get('h', 0.3)
+                        if p.y <= plat_top + 0.1 and p.y >= by - 1.0:
+                            if plat_top > floor_y:
+                                floor_y = plat_top
+
+        # Land on floor
+        if p.y <= floor_y:
+            p.y = floor_y
+            p.vy = 0
+            p.on_ground = True
+
+        # Clamp to shrine bounds
+        p.x = max(-11, min(11, p.x))
+        p.z = max(-11, min(11, p.z))
+
+        # Push blocks (only non-platform blocks)
+        if self.active_shrine:
+            for bl in self.active_shrine.blocks:
+                if bl.get('is_platform'):
+                    continue
+                if dist2d(p.x, p.z, bl['x'], bl['z']) < 1.2:
+                    dx, dz = normalize2d(bl['x'] - p.x, bl['z'] - p.z)
                     bl['x'] += dx * WALK_SPEED * self.dt * 0.5
                     bl['z'] += dz * WALK_SPEED * self.dt * 0.5
                     bl['x'] = max(-10, min(10, bl['x']))
