@@ -1541,6 +1541,16 @@ class Shrine:
             return (0.3, 0.4, 0.3), (0.25, 0.35, 0.25), (100, 140, 100), (180, 255, 180)
         elif st == ShrineType.ANCIENT_GIFT:
             return (0.4, 0.35, 0.2), (0.35, 0.3, 0.18), (160, 140, 80), (255, 220, 100)
+        elif st == ShrineType.GRASP_TRIAL:
+            return (0.2, 0.3, 0.35), (0.18, 0.28, 0.32), (70, 110, 140), (100, 180, 255)
+        elif st == ShrineType.FORGE_TRIAL:
+            return (0.35, 0.2, 0.1), (0.3, 0.18, 0.08), (120, 70, 40), (255, 150, 50)
+        elif st == ShrineType.RISING_TRIAL:
+            return (0.25, 0.35, 0.25), (0.22, 0.32, 0.22), (90, 130, 90), (120, 255, 120)
+        elif st == ShrineType.TIMEFLOW_TRIAL:
+            return (0.25, 0.2, 0.35), (0.22, 0.18, 0.32), (90, 70, 130), (180, 120, 255)
+        elif st == ShrineType.TRIAL_OF_MIGHT:
+            return (0.35, 0.15, 0.15), (0.3, 0.12, 0.12), (130, 50, 50), (255, 80, 80)
         else:
             return (0.3, 0.35, 0.4), (0.28, 0.32, 0.38), (80, 90, 100), (255, 220, 50)
 
@@ -1615,6 +1625,61 @@ class Shrine:
             for i in range(4):
                 angle = t + i * math.pi / 2
                 draw_sphere(math.cos(angle) * 3, 1.5, math.sin(angle) * 3, 0.3, (255, 200, 50))
+        elif st == ShrineType.GRASP_TRIAL:
+            # Blue glowing pillars and floating hand symbols
+            for px, pz in [(-8, -8), (8, -8), (-8, 8), (8, 8)]:
+                draw_cylinder(px, 0, pz, 0.4, 3.5, (60, 120, 180))
+                bob = math.sin(t * 2 + px) * 0.3
+                draw_sphere(px, 3.8 + bob, pz, 0.35, (100, 180, 255))
+            # Glowing lines on floor showing push paths
+            for i in range(-8, 9, 4):
+                draw_cube(i, 0.02, 0, 0.1, 0.02, 10, (60, 130, 200))
+        elif st == ShrineType.FORGE_TRIAL:
+            # Anvils and forge fires
+            draw_cube(-7, 0.5, -7, 0.8, 0.5, 0.6, (80, 80, 90))
+            draw_cube(7, 0.5, -7, 0.8, 0.5, 0.6, (80, 80, 90))
+            for i in range(4):
+                fx = math.sin(t * 3 + i * 1.5) * 0.3
+                draw_sphere(-7 + fx, 1.5 + math.sin(t * 4 + i) * 0.2, -7, 0.25,
+                           (255, int(120 + math.sin(t * 5 + i) * 60), 20))
+                draw_sphere(7 + fx, 1.5 + math.sin(t * 4 + i + 1) * 0.2, -7, 0.25,
+                           (255, int(120 + math.sin(t * 5 + i + 1) * 60), 20))
+            # Lava cracks on floor
+            for i in range(6):
+                lx = math.sin(i * 1.1) * 8
+                lz = math.cos(i * 1.3) * 6
+                draw_cube(lx, 0.03, lz, 0.6, 0.03, 0.1, (200, 80, 20))
+        elif st == ShrineType.RISING_TRIAL:
+            # Elevated platforms at different heights
+            draw_cube(-6, 0.75, -4, 2, 0.75, 2, (80, 140, 80))
+            draw_cube(6, 1.5, -6, 2, 1.5, 2, (70, 130, 70))
+            draw_cube(0, 2.25, -8, 2, 2.25, 2, (60, 120, 60))
+            # Floating arrows pointing up
+            for i in range(3):
+                ay = 2 + math.sin(t * 3 + i) * 0.5
+                ax = (i - 1) * 5
+                draw_cone(ax, ay, 5, 0.3, 0.6, (120, 255, 120))
+        elif st == ShrineType.TIMEFLOW_TRIAL:
+            # Spinning clock hands and purple gears
+            for i in range(3):
+                angle = t * (1.5 + i * 0.5) + i * 2.1
+                gx = math.cos(angle) * 6
+                gz = math.sin(angle) * 6
+                draw_sphere(gx, 1.5, gz, 0.4, (150, 100, 220))
+            # Central hourglass shape
+            draw_cone(0, 0, 0, 1.0, 1.5, (180, 120, 255))
+            draw_cone(0, 3.0, 0, 1.0, -1.5, (180, 120, 255))
+        elif st == ShrineType.TRIAL_OF_MIGHT:
+            # Arena columns and weapon racks
+            for angle_i in range(6):
+                a = angle_i / 6 * math.pi * 2
+                px = math.cos(a) * 9
+                pz = math.sin(a) * 9
+                draw_cylinder(px, 0, pz, 0.35, 4, (140, 60, 60))
+            # Blood-red floor ring
+            for i in range(12):
+                a = i / 12 * math.pi * 2
+                draw_cube(math.cos(a) * 7, 0.03, math.sin(a) * 7, 0.5, 0.03, 0.5, (180, 40, 40))
 
         # Goal marker (cookie!)
         if self.check_completion() and not self.completed:
@@ -4207,7 +4272,7 @@ class Game:
         p = self.player
 
         if ability == AbilityType.ULTRAHAND:
-            # Ultrahand: grab and move blocks/push enemies
+            # Ultrahand: grab and move blocks in the direction player faces
             if self.state == GameState.SHRINE and self.active_shrine:
                 best_bl = None
                 best_d = 999
@@ -4217,11 +4282,15 @@ class Game:
                         best_d = d
                         best_bl = bl
                 if best_bl and best_d < 10:
-                    dx, dz = normalize2d(p.x - best_bl['x'], p.z - best_bl['z'])
-                    best_bl['x'] += dx * 2
-                    best_bl['z'] += dz * 2
+                    # Push block in the direction player is facing
+                    rad = math.radians(p.facing)
+                    push_x = -math.sin(rad) * 3
+                    push_z = -math.cos(rad) * 3
+                    best_bl['x'] += push_x
+                    best_bl['z'] += push_z
                     best_bl['x'] = max(-10, min(10, best_bl['x']))
                     best_bl['z'] = max(-10, min(10, best_bl['z']))
+                    self.particles.emit(best_bl['x'], 1, best_bl['z'], 8, (100, 180, 255), spread=1, speed=3)
                     play_sfx('hit')
                     self.hud.add_notification("Ultrahand!")
                 else:
