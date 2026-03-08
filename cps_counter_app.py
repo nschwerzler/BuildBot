@@ -56,10 +56,14 @@ class CPSCounterApp:
 
     def _play_click_beep(self) -> None:
         # Async alias beep keeps feedback snappy without blocking click polling.
-        winsound.PlaySound(
-            "SystemAsterisk",
-            winsound.SND_ALIAS | winsound.SND_ASYNC | winsound.SND_NOSTOP,
-        )
+        try:
+            winsound.PlaySound(
+                "SystemAsterisk",
+                winsound.SND_ALIAS | winsound.SND_ASYNC | winsound.SND_NOSTOP,
+            )
+        except RuntimeError:
+            # Ignore transient/unsupported sound errors to keep click tracking stable.
+            pass
 
     def _refresh_ui(self) -> None:
         elapsed = max(1e-9, time.perf_counter() - self.start_time)
