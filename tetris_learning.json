@@ -1,0 +1,41 @@
+{
+  "games_watched": 2,
+  "total_clears": 11,
+  "total_pieces": 41,
+  "clear_events": [
+    {
+      "lines": 1,
+      "height": 16,
+      "holes": 21,
+      "piece_num": 12
+    },
+    {
+      "lines": 4,
+      "height": 19,
+      "holes": 49,
+      "piece_num": 41
+    },
+    {
+      "lines": 1,
+      "height": 15,
+      "holes": 30,
+      "piece_num": 43
+    },
+    {
+      "lines": 5,
+      "height": 18,
+      "holes": 35,
+      "piece_num": 45
+    }
+  ],
+  "clears_by_height": {
+    "15": 6,
+    "10": 5
+  },
+  "best_clear_streak": 5,
+  "avg_height_at_clear": 17.0,
+  "insights": [
+    "Tetris at height 19",
+    "Clears happen most at height 15-19"
+  ]
+}
