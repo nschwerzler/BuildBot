@@ -1,246 +1,151 @@
-"""Tetris AI Bot v3 - Line-clear focused AI with fixed calibration
-Plays Tetris N-Blox on freetetris.org
+"""Tetris Bot v6 - Watch Mode with Iframe-Based Detection.
 
-WORKFLOW: Player (d0g3) handles all menu buttons - Play, New Game, level select.
-Bot waits for the game to be running, then takes over piece placement.
-AI heavily prioritizes completing full rows for points.
+Opens freetetris.org, clicks Play to start game,
+detects board from IFRAME screenshots (not full page),
+then watches and learns from gameplay.
 """
 import time
 import math
 import json
 import os
+import io
+import sys
 from playwright.sync_api import sync_playwright
 from PIL import Image
-import io
 
 BOARD_COLS = 10
 BOARD_ROWS = 20
-CALIBRATION_FILE = os.path.join(os.path.dirname(__file__), 'tetris_calibration.json')
+LEARNING_FILE = os.path.join(os.path.dirname(__file__), "tetris_learning.json")
+DEBUG_IMG = os.path.join(os.path.dirname(__file__), "tetris_debug.png")
 
-# Piece shapes: each piece has list of rotations, each rotation is list of (row, col) offsets
-PIECES = {
-    'I': [[(0,0),(0,1),(0,2),(0,3)], [(0,0),(1,0),(2,0),(3,0)]],
-    'O': [[(0,0),(0,1),(1,0),(1,1)]],
-    'T': [[(0,0),(0,1),(0,2),(1,1)], [(0,0),(1,0),(1,1),(2,0)],
-           [(0,1),(1,0),(1,1),(1,2)], [(0,0),(1,0),(1,-1),(2,0)]],
-    'S': [[(0,1),(0,2),(1,0),(1,1)], [(0,0),(1,0),(1,1),(2,1)]],
-    'Z': [[(0,0),(0,1),(1,1),(1,2)], [(0,1),(1,0),(1,1),(2,0)]],
-    'J': [[(0,0),(1,0),(1,1),(1,2)], [(0,0),(0,1),(1,0),(2,0)],
-           [(0,0),(0,1),(0,2),(1,2)], [(0,0),(1,0),(2,0),(2,-1)]],
-    'L': [[(0,2),(1,0),(1,1),(1,2)], [(0,0),(1,0),(2,0),(2,1)],
-           [(0,0),(0,1),(0,2),(1,0)], [(0,0),(0,1),(1,1),(2,1)]],
+# Board empty cell color (confirmed from pixel analysis)
+EMPTY_CELL_COLOR = (198, 216, 242)
+PAGE_BG_COLOR = (220, 238, 255)
+
+# Known board proportions within iframe (728x600):
+# Board is left ~55%, cells ~39x23px
+FALLBACK_BOARD = {
+    "left_frac": 0.015,
+    "right_frac": 0.55,
+    "top_frac": 0.01,
+    "bottom_frac": 0.78,
 }
 
 
-# ── BOARD READING ──────────────────────────────────────────────
-
-def is_filled_cell(r, g, b, bg_color):
-    """Check if pixel is a filled block vs empty background.
-    N-Blox background is pale blue ~(198,216,242). Pieces are vivid colors
-    that differ by 80+ RGB distance from background.
-    """
-    br, bg_c, bb = bg_color
-    dist = math.sqrt((r - br)**2 + (g - bg_c)**2 + (b - bb)**2)
-    return dist > 50
+def color_distance(c1, c2):
+    return math.sqrt(sum((a - b) ** 2 for a, b in zip(c1, c2)))
 
 
-def calibrate_board(page):
-    """Calibrate board using fixed proportions - edge scanning fails on N-Blox
-    because there are no high-contrast borders (everything is blue-tinted).
-    
-    Known layout from debug analysis:
-    - Iframe at approx (78,125), size 728x600
-    - Board occupies left 55% of iframe width
-    - Board occupies top 78% of iframe height
-    """
-    
-    if os.path.exists(CALIBRATION_FILE):
-        with open(CALIBRATION_FILE) as f:
-            cal = json.load(f)
-            print(f"Loaded calibration: board at ({cal['x1']},{cal['y1']}) to ({cal['x2']},{cal['y2']})")
-            return cal
-    
-    print("Calibrating board position (fixed proportions)...")
-    iframe_el = page.query_selector('#gameIFrame')
-    if not iframe_el:
-        return None
-    
-    box = iframe_el.bounding_box()
-    if not box:
-        return None
-    
-    ix, iy = int(box['x']), int(box['y'])
-    iw, ih = int(box['width']), int(box['height'])
-    print(f"Iframe at ({ix},{iy}) size {iw}x{ih}")
-    
-    # Fixed proportions derived from pixel analysis of the game
-    board_left = ix + int(iw * 0.01)
-    board_right = ix + int(iw * 0.545)
-    board_top = iy + int(ih * 0.008)
-    board_bottom = iy + int(ih * 0.775)
-    
-    # Sample background color from center of board (should be empty at start)
-    screenshot = page.screenshot()
-    img = Image.open(io.BytesIO(screenshot))
-    img.save(os.path.join(os.path.dirname(__file__), 'tetris_debug.png'))
-    
-    bg_x = (board_left + board_right) // 2
-    bg_y = board_top + 20
-    bg_color = list(img.getpixel((bg_x, bg_y))[:3])
-    
-    cell_w = (board_right - board_left) / BOARD_COLS
-    cell_h = (board_bottom - board_top) / BOARD_ROWS
-    
-    cal = {
-        'x1': board_left, 'y1': board_top,
-        'x2': board_right, 'y2': board_bottom,
-        'bg_color': bg_color,
-        'iframe_x': ix, 'iframe_y': iy,
-        'iframe_w': iw, 'iframe_h': ih
-    }
-    
-    print(f"Board: ({board_left},{board_top}) to ({board_right},{board_bottom})")
-    print(f"Cell size: {cell_w:.1f} x {cell_h:.1f} px")
-    print(f"Background color: {bg_color}")
-    
-    with open(CALIBRATION_FILE, 'w') as f:
-        json.dump(cal, f, indent=2)
-    
-    return cal
+def is_empty_cell(r, g, b):
+    return color_distance((r, g, b), EMPTY_CELL_COLOR) < 30
 
 
-def read_board(page, cal):
-    """Read board state from a fresh screenshot using calibration data"""
-    screenshot = page.screenshot()
-    img = Image.open(io.BytesIO(screenshot))
-    
-    x1, y1 = cal['x1'], cal['y1']
-    x2, y2 = cal['x2'], cal['y2']
-    bg_color = tuple(cal['bg_color'])
-    
-    cell_w = (x2 - x1) / BOARD_COLS
-    cell_h = (y2 - y1) / BOARD_ROWS
-    
-    board = [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
-    colors = [[None] * BOARD_COLS for _ in range(BOARD_ROWS)]
-    
-    for row in range(BOARD_ROWS):
-        for col in range(BOARD_COLS):
-            # Multi-sample: center + 2 offsets for reliability
-            cx = int(x1 + col * cell_w + cell_w * 0.5)
-            cy = int(y1 + row * cell_h + cell_h * 0.5)
-            
-            filled_count = 0
-            best_color = None
-            for dx, dy in [(0, 0), (int(cell_w * 0.2), 0), (0, int(cell_h * 0.2))]:
-                px, py = cx + dx, cy + dy
-                if 0 <= px < img.width and 0 <= py < img.height:
-                    r, g, b = img.getpixel((px, py))[:3]
-                    if is_filled_cell(r, g, b, bg_color):
-                        filled_count += 1
-                        if best_color is None:
-                            best_color = (r, g, b)
-            
-            if filled_count >= 2:  # majority vote
-                board[row][col] = 1
-                colors[row][col] = best_color
-    
-    return board, colors
+def is_filled_cell(r, g, b):
+    if is_empty_cell(r, g, b):
+        return False
+    if color_distance((r, g, b), PAGE_BG_COLOR) < 15:
+        return False
+    if (r + g + b) / 3 < 140:
+        return False
+    return color_distance((r, g, b), EMPTY_CELL_COLOR) > 50
 
 
-def separate_falling_piece(board, colors, prev_board):
-    """Separate falling piece from locked-down blocks.
-    
-    Strategy: compare with previous board. Cells that are new and 
-    in the top portion are likely the falling piece. If no prev_board,
-    assume top 4 rows contain the falling piece.
-    """
-    piece_cells = []
-    static_board = [row[:] for row in board]
-    
-    if prev_board:
-        # New cells that weren't in the previous board = falling piece
-        for row in range(BOARD_ROWS):
-            for col in range(BOARD_COLS):
-                if board[row][col] and not prev_board[row][col]:
-                    piece_cells.append((row, col))
-        
-        # Sanity: falling piece should be 4 cells
-        if len(piece_cells) == 4:
-            for r, c in piece_cells:
-                static_board[r][c] = 0
-            return piece_cells, static_board
-    
-    # Fallback: look at top portion of board for exactly 4 connected cells
-    # Find the highest filled row
-    top_row = BOARD_ROWS
-    for row in range(BOARD_ROWS):
-        for col in range(BOARD_COLS):
-            if board[row][col]:
-                top_row = row
-                break
-        if top_row < BOARD_ROWS:
-            break
-    
-    # If we can find 4 cells near the top with the same color, that's the piece
-    if colors:
-        for row in range(min(top_row, BOARD_ROWS - 4), min(top_row + 5, BOARD_ROWS)):
-            for col in range(BOARD_COLS):
-                if board[row][col] and colors[row][col]:
-                    target_color = colors[row][col]
-                    group = [(row, col)]
-                    # BFS for same-color neighbors
-                    visited = {(row, col)}
-                    queue = [(row, col)]
-                    while queue:
-                        cr, cc = queue.pop(0)
-                        for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
-                            nr, nc = cr+dr, cc+dc
-                            if (nr,nc) not in visited and 0 <= nr < BOARD_ROWS and 0 <= nc < BOARD_COLS:
-                                if board[nr][nc] and colors[nr][nc]:
-                                    cdist = math.sqrt(sum((a-b)**2 for a,b in zip(colors[nr][nc], target_color)))
-                                    if cdist < 50:
-                                        visited.add((nr, nc))
-                                        group.append((nr, nc))
-                                        queue.append((nr, nc))
-                    
-                    if len(group) == 4:
-                        # Likely the falling piece
-                        for r, c in group:
-                            static_board[r][c] = 0
-                        return group, static_board
-    
-    # Last fallback: top 4 rows
-    for row in range(6):
-        for col in range(BOARD_COLS):
-            if board[row][col]:
-                piece_cells.append((row, col))
-    
-    if len(piece_cells) >= 4:
-        piece_cells = piece_cells[:4]
-        for r, c in piece_cells:
-            static_board[r][c] = 0
-    
-    return piece_cells, static_board
-
-
-def identify_piece_type(cells):
-    """Identify piece type from cell positions"""
-    if len(cells) != 4:
-        return None
-    
-    min_r = min(r for r, c in cells)
-    min_c = min(c for r, c in cells)
-    normalized = tuple(sorted((r - min_r, c - min_c) for r, c in cells))
-    
-    for piece_type, rotations in PIECES.items():
-        for shape in rotations:
-            if tuple(sorted(shape)) == normalized:
-                return piece_type
+def get_game_frame(page):
+    for f in page.frames:
+        if f.name == "gameIFrame":
+            return f
+    el = page.query_selector("#gameIFrame")
+    if el:
+        return el.content_frame()
     return None
 
 
-# ── AI EVALUATION ──────────────────────────────────────────────
+def get_iframe_element(page):
+    return page.query_selector("#gameIFrame")
+
+
+def screenshot_iframe(iframe_el):
+    data = iframe_el.screenshot()
+    return Image.open(io.BytesIO(data))
+
+
+def find_board_in_iframe(img):
+    """Find board by scanning for empty-cell colored pixels in left 65% of iframe."""
+    w, h = img.size
+    max_x = int(w * 0.65)
+
+    empty_xs = []
+    empty_ys = []
+    step = 4
+
+    for y in range(0, h, step):
+        for x in range(0, max_x, step):
+            r, g, b = img.getpixel((x, y))[:3]
+            if is_empty_cell(r, g, b):
+                empty_xs.append(x)
+                empty_ys.append(y)
+
+    if len(empty_xs) < 50:
+        return None
+
+    empty_xs.sort()
+    empty_ys.sort()
+
+    trim = max(1, len(empty_xs) // 20)
+    left = empty_xs[trim]
+    right = empty_xs[-trim]
+    top = empty_ys[trim]
+    bottom = empty_ys[-trim]
+
+    width = right - left
+    height = bottom - top
+
+    if width < 100 or height < 200:
+        return None
+
+    cell_w = width / BOARD_COLS
+    cell_h = height / BOARD_ROWS
+    if cell_w < 15 or cell_w > 80 or cell_h < 10 or cell_h > 50:
+        return None
+
+    return (left, top, right, bottom)
+
+
+def find_board_fallback(img):
+    w, h = img.size
+    fb = FALLBACK_BOARD
+    return (int(w * fb["left_frac"]), int(h * fb["top_frac"]),
+            int(w * fb["right_frac"]), int(h * fb["bottom_frac"]))
+
+
+def read_board(iframe_el, bounds):
+    img = screenshot_iframe(iframe_el)
+    x1, y1, x2, y2 = bounds
+    cell_w = (x2 - x1) / BOARD_COLS
+    cell_h = (y2 - y1) / BOARD_ROWS
+
+    board = [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
+
+    for row in range(BOARD_ROWS):
+        for col in range(BOARD_COLS):
+            cx = int(x1 + col * cell_w + cell_w * 0.5)
+            cy = int(y1 + row * cell_h + cell_h * 0.5)
+
+            filled_count = 0
+            offsets = [(0, 0), (int(cell_w * 0.2), 0),
+                       (0, int(cell_h * 0.2)), (-int(cell_w * 0.2), 0)]
+            for dx, dy in offsets:
+                px, py = cx + dx, cy + dy
+                if 0 <= px < img.width and 0 <= py < img.height:
+                    r, g, b = img.getpixel((px, py))[:3]
+                    if is_filled_cell(r, g, b):
+                        filled_count += 1
+
+            if filled_count >= 2:
+                board[row][col] = 1
+
+    return board
+
 
 def get_column_heights(board):
     heights = []
@@ -257,273 +162,400 @@ def get_column_heights(board):
 def count_holes(board):
     holes = 0
     for col in range(BOARD_COLS):
-        found_block = False
+        found = False
         for row in range(BOARD_ROWS):
             if board[row][col]:
-                found_block = True
-            elif found_block:
+                found = True
+            elif found:
                 holes += 1
     return holes
 
 
-def get_bumpiness(heights):
-    return sum(abs(heights[i] - heights[i+1]) for i in range(len(heights) - 1))
+def count_filled(board):
+    return sum(sum(row) for row in board)
 
 
-def simulate_drop(board, shape, col_offset):
-    """Drop a piece shape at col_offset and return resulting board, or None if invalid"""
-    for dr, dc in shape:
-        c = col_offset + dc
-        if c < 0 or c >= BOARD_COLS:
-            return None
-    
-    # Find landing row
-    land_row = -1
-    for test_row in range(BOARD_ROWS):
-        ok = True
-        for dr, dc in shape:
-            r, c = test_row + dr, col_offset + dc
-            if r >= BOARD_ROWS or (0 <= r < BOARD_ROWS and board[r][c]):
-                ok = False
-                break
-        if not ok:
-            land_row = test_row - 1
-            break
-    else:
-        land_row = BOARD_ROWS - 1 - max(dr for dr, dc in shape)
-    
-    if land_row < 0:
-        return None
-    
-    new_board = [row[:] for row in board]
-    for dr, dc in shape:
-        r, c = land_row + dr, col_offset + dc
-        if r < 0 or r >= BOARD_ROWS or c < 0 or c >= BOARD_COLS:
-            return None
-        new_board[r][c] = 1
-    return new_board
+def detect_changes(old_board, new_board):
+    new_cells = []
+    removed = []
+    for row in range(BOARD_ROWS):
+        for col in range(BOARD_COLS):
+            if new_board[row][col] and not old_board[row][col]:
+                new_cells.append((row, col))
+            elif old_board[row][col] and not new_board[row][col]:
+                removed.append((row, col))
+    return new_cells, removed
 
 
-def evaluate_board(board):
-    heights = get_column_heights(board)
-    holes = count_holes(board)
-    bumpiness = get_bumpiness(heights)
-    agg_height = sum(heights)
-    max_height = max(heights) if heights else 0
-    
-    # Count complete lines
-    complete = sum(1 for row in range(BOARD_ROWS) if all(board[row]))
-    
-    # Weights heavily favoring line clears and penalizing holes
-    return (
-        -0.510066 * agg_height
-        + 10.0 * complete          # HUGE bonus for clearing lines
-        - 0.75 * holes             # holes are terrible
-        - 0.184483 * bumpiness
-    )
+def load_learning():
+    if os.path.exists(LEARNING_FILE):
+        with open(LEARNING_FILE) as f:
+            return json.load(f)
+    return {
+        "games_watched": 0,
+        "total_clears": 0,
+        "total_pieces": 0,
+        "clear_events": [],
+        "clears_by_height": {},
+        "best_clear_streak": 0,
+        "avg_height_at_clear": 0.0,
+        "insights": [],
+    }
 
 
-def find_best_move(board, piece_type):
-    """Find best (rotation_index, target_column) for piece placement"""
-    if piece_type not in PIECES:
-        return 0, 4
-    
-    rotations = PIECES[piece_type]
-    best_score = float('-inf')
-    best_rot = 0
-    best_col = 4
-    
-    for rot_idx, shape in enumerate(rotations):
-        min_dc = min(dc for _, dc in shape)
-        max_dc = max(dc for _, dc in shape)
-        
-        for col in range(-min_dc, BOARD_COLS - max_dc):
-            result = simulate_drop(board, shape, col)
-            if result is None:
-                continue
-            
-            # Clear lines for evaluation
-            cleared = [row for row in result if not all(row)]
-            lines = BOARD_ROWS - len(cleared)
-            while len(cleared) < BOARD_ROWS:
-                cleared.insert(0, [0] * BOARD_COLS)
-            
-            score = evaluate_board(cleared)
-            if score > best_score:
-                best_score = score
-                best_rot = rot_idx
-                best_col = col
-    
-    return best_rot, best_col
+def save_learning(data):
+    if len(data.get("clear_events", [])) > 50:
+        data["clear_events"] = data["clear_events"][-50:]
+    with open(LEARNING_FILE, "w") as f:
+        json.dump(data, f, indent=2)
 
 
-# ── MOVE EXECUTION ─────────────────────────────────────────────
-
-def execute_move(page, target_rot, target_col, spawn_col=4):
-    """Send key presses to rotate and position piece, then hard drop.
-    N-Blox spawns pieces at approximately column 4 (center).
-    """
-    # First rotate
-    for _ in range(target_rot):
-        page.keyboard.press('ArrowUp')
-        time.sleep(0.025)
-    
-    # Then move horizontally
-    diff = target_col - spawn_col
-    key = 'ArrowRight' if diff > 0 else 'ArrowLeft'
-    for _ in range(abs(diff)):
-        page.keyboard.press(key)
-        time.sleep(0.025)
-    
-    # Hard drop (space)
-    page.keyboard.press(' ')
-    time.sleep(0.04)
+def check_game_state(game_frame):
+    try:
+        return game_frame.evaluate("""() => {
+            const info = {playing: false, state: null};
+            if (typeof window.mBPSApp !== 'undefined' && window.mBPSApp.mStateMachine) {
+                info.state = window.mBPSApp.mStateMachine.mCurrentState;
+                info.prev_state = window.mBPSApp.mStateMachine.mPreviousState;
+            }
+            return info;
+        }""")
+    except Exception:
+        return {"playing": False, "state": None}
 
 
-# ── MAIN GAME LOOP ─────────────────────────────────────────────
+def click_play_button(page, iframe_el, game_frame):
+    """Click the Play button on the Cocos Creator canvas."""
+    bbox = iframe_el.bounding_box()
+    if not bbox:
+        return False
 
-def play_tetris():
-    print("=== TETRIS AI BOT v2 ===")
-    print("Now with calibration + board diff tracking!")
-    
+    iw = bbox["width"]
+    ih = bbox["height"]
+
+    # Play button is centered horizontally, upper-middle area
+    positions = [
+        (iw * 0.5, ih * 0.42),
+        (iw * 0.5, ih * 0.45),
+        (iw * 0.5, ih * 0.38),
+        (iw * 0.5, ih * 0.48),
+        (iw * 0.5, ih * 0.35),
+    ]
+
+    for px, py in positions:
+        try:
+            iframe_el.click(position={"x": px, "y": py})
+            print(f"  Clicked ({px:.0f}, {py:.0f})")
+            sys.stdout.flush()
+            time.sleep(1.5)
+
+            if game_frame:
+                state = check_game_state(game_frame)
+                s = state.get("state")
+                if s is not None and s != 7:
+                    print(f"  State changed: {s}")
+                    sys.stdout.flush()
+                    return True
+        except Exception as e:
+            print(f"  Click err: {e}")
+            sys.stdout.flush()
+
+    return False
+
+
+def watch_tetris():
+    print("=" * 60)
+    print("  TETRIS WATCH BOT v6 - Auto Start + Iframe Detection")
+    print("=" * 60)
+    sys.stdout.flush()
+
+    learning = load_learning()
+    print(f"\n  Brain: {learning['games_watched']} games, "
+          f"{learning['total_clears']} clears\n")
+    sys.stdout.flush()
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
-        context = browser.new_context(viewport={'width': 900, 'height': 750})
-        page = context.new_page()
-        
-        print("Opening freetetris.org...")
-        page.goto('https://www.freetetris.org/', wait_until='domcontentloaded')
+        ctx = browser.new_context(viewport={"width": 900, "height": 750})
+        page = ctx.new_page()
+
+        print("  Opening freetetris.org...")
+        sys.stdout.flush()
+        page.goto("https://www.freetetris.org/", wait_until="domcontentloaded")
         time.sleep(5)
-        
-        # Focus game iframe
-        try:
-            page.click('#gameIFrame', timeout=5000)
-            time.sleep(0.5)
-        except Exception:
-            print("Could not click game iframe")
-        
-        # Calibrate board position
-        cal = calibrate_board(page)
-        if not cal:
-            print("FATAL: Could not calibrate board. Exiting.")
+
+        iframe_el = get_iframe_element(page)
+        if not iframe_el:
+            print("  ERROR: No iframe found!")
             browser.close()
             return
-        
-        # Debug: read and print initial board to verify calibration
-        print("\n--- DEBUG: Reading initial board ---")
-        board, colors = read_board(page, cal)
-        filled = sum(sum(row) for row in board)
-        print(f"Total filled cells: {filled} / {BOARD_ROWS * BOARD_COLS}")
-        # Print visual board
-        for row in range(BOARD_ROWS):
-            line = ""
-            for col in range(BOARD_COLS):
-                line += "#" if board[row][col] else "."
-            print(f"  {row:2d} |{line}|")
-        print()
-        
-        # Player handles menu buttons (Play, New Game, level select)
-        # Bot just waits for the game to be running
-        print("\n>>> Waiting for YOU to start the game (click Play, pick level, etc.)...")
-        print(">>> Bot takes over once pieces start falling.\n")
-        
-        # Focus iframe for keyboard input
+
         try:
-            page.click('#gameIFrame', timeout=3000)
+            iframe_el.click()
         except Exception:
             pass
-        time.sleep(0.5)
-        
-        print("--- BOT v2 READY ---")
-        print("Controls: Close browser or Ctrl+C to stop\n")
-        
-        move_count = 0
-        lines_total = 0
+        time.sleep(2)
+
+        game_frame = get_game_frame(page)
+
+        # Initial screenshot
+        img = screenshot_iframe(iframe_el)
+        img.save(DEBUG_IMG)
+        print(f"  Iframe size: {img.size}")
+        sys.stdout.flush()
+
+        # Color samples across iframe
+        w, h = img.size
+        for frac in [0.1, 0.25, 0.4, 0.5, 0.6, 0.75]:
+            x = int(w * frac)
+            c = img.getpixel((x, h // 2))[:3]
+            print(f"    x={x} ({frac:.0%}): RGB{c} empty={is_empty_cell(*c)}")
+        sys.stdout.flush()
+
+        # Click Play
+        print("\n  Clicking Play button...")
+        sys.stdout.flush()
+        click_play_button(page, iframe_el, game_frame)
+        time.sleep(3)
+
+        # Scan for board
+        print("\n  Scanning for board...")
+        sys.stdout.flush()
+
+        board_bounds = None
+        for attempt in range(60):
+            time.sleep(1)
+            try:
+                img = screenshot_iframe(iframe_el)
+            except Exception:
+                continue
+
+            if attempt == 0:
+                img.save(DEBUG_IMG)
+                print(f"  Post-click iframe: {img.size}")
+                for frac in [0.1, 0.25, 0.4, 0.5, 0.6]:
+                    x = int(img.width * frac)
+                    c = img.getpixel((x, img.height // 2))[:3]
+                    print(f"    x={x}: RGB{c} empty={is_empty_cell(*c)}")
+                sys.stdout.flush()
+
+            bounds = find_board_in_iframe(img)
+            if bounds:
+                x1, y1, x2, y2 = bounds
+                cell_w = (x2 - x1) / BOARD_COLS
+                cell_h = (y2 - y1) / BOARD_ROWS
+
+                empty_count = 0
+                for row in range(BOARD_ROWS):
+                    for col in range(BOARD_COLS):
+                        cx = int(x1 + col * cell_w + cell_w * 0.5)
+                        cy = int(y1 + row * cell_h + cell_h * 0.5)
+                        if 0 <= cx < img.width and 0 <= cy < img.height:
+                            r, g, b = img.getpixel((cx, cy))[:3]
+                            if is_empty_cell(r, g, b):
+                                empty_count += 1
+
+                if empty_count > 100:
+                    board_bounds = bounds
+                    print(f"\n  BOARD FOUND! ({x1},{y1})-({x2},{y2})")
+                    print(f"    Cell: {cell_w:.1f}x{cell_h:.1f}px")
+                    print(f"    Empty: {empty_count}/200")
+                    sys.stdout.flush()
+                    break
+                elif attempt % 5 == 0:
+                    print(f"  ... region found, {empty_count} empty (need >100)")
+                    sys.stdout.flush()
+            elif attempt % 5 == 0:
+                print(f"  ... scanning (attempt {attempt})")
+                sys.stdout.flush()
+
+        if not board_bounds:
+            print("  Using fallback proportions...")
+            board_bounds = find_board_fallback(img)
+            x1, y1, x2, y2 = board_bounds
+            print(f"  Fallback: ({x1},{y1})-({x2},{y2})")
+            sys.stdout.flush()
+
+        # Debug image with grid overlay
+        from PIL import ImageDraw
+        debug_img = screenshot_iframe(iframe_el)
+        draw = ImageDraw.Draw(debug_img)
+        x1, y1, x2, y2 = board_bounds
+        draw.rectangle([x1, y1, x2, y2], outline="red", width=2)
+        cell_w = (x2 - x1) / BOARD_COLS
+        cell_h = (y2 - y1) / BOARD_ROWS
+        for col in range(BOARD_COLS + 1):
+            gx = int(x1 + col * cell_w)
+            draw.line([(gx, y1), (gx, y2)], fill="red", width=1)
+        for row in range(BOARD_ROWS + 1):
+            gy = int(y1 + row * cell_h)
+            draw.line([(x1, gy), (x2, gy)], fill="red", width=1)
+        debug_img.save(DEBUG_IMG)
+        print(f"  Debug image saved: {DEBUG_IMG}")
+        sys.stdout.flush()
+
+        # Watch game
+        print("\n" + "=" * 60)
+        print("  WATCHING! Play Tetris - I'm learning.")
+        print("=" * 60 + "\n")
+        sys.stdout.flush()
+
         prev_board = None
-        consecutive_fails = 0
-        last_board_hash = None
-        
+        prev_filled = 0
+        game_active = False
+        pieces_this_game = 0
+        clears_this_game = 0
+        clear_streak = 0
+        max_clear_streak = 0
+        last_board_str = None
+        stale_count = 0
+        save_counter = 0
+
         try:
             while True:
-                # Read current board state
-                board, colors = read_board(page, cal)
-                
-                # Hash the board to detect if anything changed
-                board_hash = str(board)
-                if board_hash == last_board_hash:
-                    consecutive_fails += 1
-                    if consecutive_fails > 30:
-                        print("Board unchanged... waiting for game to start or next piece...")
-                        consecutive_fails = 0
-                        # Re-focus the iframe in case focus was lost
+                try:
+                    board = read_board(iframe_el, board_bounds)
+                except Exception:
+                    time.sleep(0.5)
+                    continue
+
+                filled = count_filled(board)
+                board_str = str(board)
+
+                if board_str == last_board_str:
+                    stale_count += 1
+                    if stale_count > 200:
+                        stale_count = 0
                         try:
-                            page.click('#gameIFrame', timeout=1000)
+                            img = screenshot_iframe(iframe_el)
+                            nb = find_board_in_iframe(img)
+                            if nb:
+                                board_bounds = nb
+                                print("  (Re-calibrated)")
+                                sys.stdout.flush()
                         except Exception:
                             pass
-                    time.sleep(0.1)
-                    continue
-                
-                consecutive_fails = 0
-                last_board_hash = board_hash
-                
-                # Separate falling piece from static board
-                piece_cells, static_board = separate_falling_piece(board, colors, prev_board)
-                piece_type = identify_piece_type(piece_cells)
-                
-                if piece_type:
-                    # Find optimal placement
-                    target_rot, target_col = find_best_move(static_board, piece_type)
-                    
-                    # Execute move
-                    execute_move(page, target_rot, target_col)
-                    move_count += 1
-                    
-                    # Wait for piece to lock
-                    time.sleep(0.12)
-                    
-                    # Read new board to track state
-                    new_board, _ = read_board(page, cal)
-                    
-                    # Count cleared lines
-                    old_filled = sum(sum(row) for row in static_board)
-                    new_filled = sum(sum(row) for row in new_board)
-                    if new_filled < old_filled:
-                        cleared = (old_filled + 4 - new_filled) // BOARD_COLS
-                        if cleared > 0:
-                            lines_total += cleared
-                            print(f"  CLEARED {cleared} line(s)! Total: {lines_total}")
-                    
-                    prev_board = new_board
-                    
-                    if move_count % 1 == 0:
-                        heights = get_column_heights(new_board)
-                        print(f"Move {move_count} | {piece_type} -> col {target_col} rot {target_rot} | Height: {max(heights)} | Lines: {lines_total}")
-                else:
-                    # No piece detected - wait for next piece
-                    prev_board = board
                     time.sleep(0.08)
-                    
-                    # Check for game over (top rows packed)
-                    top_fill = sum(board[0]) + sum(board[1])
-                    if top_fill > 8:
-                        print(f"GAME OVER after {move_count} moves, {lines_total} lines!")
-                        # Don't auto-restart - player handles buttons
-                        time.sleep(3)
-                        prev_board = None
-                        move_count = 0
-                        lines_total = 0
-                
-                time.sleep(0.03)
-        
+                    continue
+
+                stale_count = 0
+                last_board_str = board_str
+
+                if not game_active and 0 < filled < 20:
+                    game_active = True
+                    pieces_this_game = 0
+                    clears_this_game = 0
+                    clear_streak = 0
+                    max_clear_streak = 0
+                    learning["games_watched"] += 1
+                    print(f"  >>> GAME STARTED (#{learning['games_watched']})")
+                    sys.stdout.flush()
+
+                if prev_board is not None and game_active:
+                    new_cells, removed_cells = detect_changes(prev_board, board)
+                    heights = get_column_heights(board)
+                    holes = count_holes(board)
+                    max_h = max(heights) if heights else 0
+
+                    if 2 <= len(new_cells) <= 8 and len(removed_cells) == 0:
+                        pieces_this_game += 1
+                        learning["total_pieces"] += 1
+
+                        if pieces_this_game % 5 == 0:
+                            print(f"  Piece #{pieces_this_game:3d} | "
+                                  f"H:{max_h:2d} | "
+                                  f"Holes:{holes:2d} | "
+                                  f"Clears:{clears_this_game}")
+                            sys.stdout.flush()
+
+                    if len(removed_cells) >= BOARD_COLS:
+                        lines = len(removed_cells) // BOARD_COLS
+                        if lines > 0:
+                            clears_this_game += lines
+                            learning["total_clears"] += lines
+                            clear_streak += lines
+                            if clear_streak > max_clear_streak:
+                                max_clear_streak = clear_streak
+                            if clear_streak > learning["best_clear_streak"]:
+                                learning["best_clear_streak"] = clear_streak
+
+                            prev_heights = get_column_heights(prev_board)
+                            prev_max_h = max(prev_heights) if prev_heights else 0
+                            prev_holes = count_holes(prev_board)
+
+                            h_bucket = str((prev_max_h // 5) * 5)
+                            learning["clears_by_height"][h_bucket] = \
+                                learning["clears_by_height"].get(h_bucket, 0) + lines
+
+                            event = {
+                                "lines": lines,
+                                "height": prev_max_h,
+                                "holes": prev_holes,
+                                "piece_num": pieces_this_game,
+                            }
+                            learning["clear_events"].append(event)
+
+                            n = len(learning["clear_events"])
+                            learning["avg_height_at_clear"] = (
+                                learning["avg_height_at_clear"] * (n - 1) + prev_max_h
+                            ) / n
+
+                            label = {1: "SINGLE", 2: "DOUBLE", 3: "TRIPLE",
+                                     4: "TETRIS!!"}.get(lines, f"{lines}x")
+                            print(f"  {'*' * lines} LINE CLEAR: {label}! "
+                                  f"(game:{clears_this_game} total:{learning['total_clears']})")
+                            sys.stdout.flush()
+                    elif len(new_cells) > 0:
+                        clear_streak = 0
+
+                    if filled == 0 and prev_filled > 20:
+                        game_active = False
+                        print(f"\n  >>> GAME OVER!")
+                        print(f"      Pieces: {pieces_this_game}")
+                        print(f"      Clears: {clears_this_game}")
+                        print(f"      Streak: {max_clear_streak}")
+                        print(f"      Total clears: {learning['total_clears']}")
+
+                        if learning["total_clears"] > 0:
+                            print(f"  INSIGHTS:")
+                            print(f"      Avg height at clear: "
+                                  f"{learning['avg_height_at_clear']:.1f}")
+                            if learning["clears_by_height"]:
+                                best = max(learning["clears_by_height"],
+                                           key=lambda k: learning["clears_by_height"][k])
+                                print(f"      Most clears at height ~{best}")
+
+                        save_learning(learning)
+                        print(f"  Brain saved!\n")
+                        sys.stdout.flush()
+
+                prev_board = [row[:] for row in board]
+                prev_filled = filled
+
+                save_counter += 1
+                if save_counter >= 200:
+                    save_counter = 0
+                    save_learning(learning)
+
+                time.sleep(0.05)
+
         except KeyboardInterrupt:
-            print(f"\nBot stopped! {move_count} moves, {lines_total} lines cleared")
+            pass
         except Exception as e:
-            print(f"\nError: {e}")
+            print(f"\n  Error: {e}")
             import traceback
             traceback.print_exc()
+            sys.stdout.flush()
         finally:
-            browser.close()
+            save_learning(learning)
+            print(f"\n  Session ended. Games: {learning['games_watched']}, "
+                  f"Clears: {learning['total_clears']}")
+            sys.stdout.flush()
+            try:
+                browser.close()
+            except Exception:
+                pass
 
 
-if __name__ == '__main__':
-    play_tetris()
+if __name__ == "__main__":
+    watch_tetris()
