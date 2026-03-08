@@ -15,10 +15,16 @@ from tkinter import messagebox
 
 from PIL import ImageGrab, ImageTk
 
+try:
+    from rapidocr_onnxruntime import RapidOCR
+except Exception:  # pragma: no cover
+    RapidOCR = None
+
 
 BASE_DIR = Path(__file__).resolve().parent
 OUT_DIR = BASE_DIR / "shared_frames"
 LOG_FILE = BASE_DIR / "session_log.jsonl"
+OCR_LOG_FILE = BASE_DIR / "live_text.log"
 
 
 class DesktopSharePreviewApp:
@@ -48,6 +54,12 @@ class DesktopSharePreviewApp:
         tk.Entry(controls, textvariable=self.auto_interval_var, width=5).pack(side=tk.LEFT)
         self.auto_btn = tk.Button(controls, text="Start Auto Share", command=self.toggle_auto_share)
         self.auto_btn.pack(side=tk.LEFT, padx=8)
+
+        self.ocr_enabled = False
+        self.ocr_engine = RapidOCR() if RapidOCR else None
+        self.ocr_btn = tk.Button(controls, text="Enable OCR", command=self.toggle_ocr)
+        self.ocr_btn.pack(side=tk.LEFT, padx=(10, 4))
+        tk.Button(controls, text="Open OCR Log", command=self.open_ocr_log).pack(side=tk.LEFT)
 
         self.preview_running = True
         self.auto_share_running = False
@@ -90,7 +102,30 @@ class DesktopSharePreviewApp:
         path = OUT_DIR / f"desktop_share_{stamp}.png"
         self.current_image.save(path)
         self.log_event("share_frame", {"file": str(path), "source": source})
+        self.run_ocr(path)
         return path
+
+    def run_ocr(self, image_path: Path) -> None:
+        if not self.ocr_enabled or self.ocr_engine is None:
+            return
+
+        try:
+            with image_path.open("rb") as f:
+                img_bytes = f.read()
+            ocr_result, _ = self.ocr_engine(img_bytes)
+            if not ocr_result:
+                return
+
+            texts = [item[1] for item in ocr_result if len(item) > 1 and item[1].strip()]
+            if not texts:
+                return
+
+            line = " | ".join(texts)
+            with OCR_LOG_FILE.open("a", encoding="utf-8") as logf:
+                logf.write(f"{datetime.now().isoformat()} {image_path.name}: {line}\n")
+            self.log_event("ocr_text", {"file": str(image_path), "text_count": len(texts)})
+        except Exception as exc:
+            self.log_event("ocr_error", {"file": str(image_path), "error": str(exc)})
 
     def share_frame(self) -> None:
         path = self.save_current_frame("manual")
@@ -149,6 +184,20 @@ class DesktopSharePreviewApp:
             self.status_var.set(f"Auto-shared: {path.name}")
 
         self.auto_job_id = self.root.after(interval_ms, lambda: self.schedule_auto_share(interval_ms))
+
+    def toggle_ocr(self) -> None:
+        if self.ocr_engine is None:
+            messagebox.showerror("OCR unavailable", "rapidocr-onnxruntime is not available in this environment.")
+            return
+
+        self.ocr_enabled = not self.ocr_enabled
+        state = "enabled" if self.ocr_enabled else "disabled"
+        self.ocr_btn.configure(text="Disable OCR" if self.ocr_enabled else "Enable OCR")
+        self.status_var.set(f"OCR {state}. Text logs go to live_text.log")
+        self.log_event("toggle_ocr", {"state": state})
+
+    def open_ocr_log(self) -> None:
+        self.root.after(10, lambda: messagebox.showinfo("OCR log", str(OCR_LOG_FILE)))
 
 
 def main() -> None:

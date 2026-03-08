@@ -26,6 +26,8 @@ D:/BuildBot/.venv/Scripts/python.exe D:/BuildBot/assistant_session/desktop_share
 - `Share Frame` saves a single image into `assistant_session/shared_frames/`.
 - `Auto-share (sec)` + `Start Auto Share` saves frames repeatedly at your chosen interval.
 - Minimum auto-share interval is `0.5` seconds.
+- `Enable OCR` reads text from each shared frame.
+- OCR output is appended to `assistant_session/live_text.log`.
 
 ## What This Does
 
