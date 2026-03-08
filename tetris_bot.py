@@ -224,36 +224,47 @@ def find_best_move(board, piece_type):
     return best
 
 
-def detect_piece(old_board, new_board):
-    """Find new cells that appeared since last board."""
-    new_cells = []
+def detect_piece_single(board):
+    """Find an active tetromino in the board (single snapshot, no diff).
+    Scans from top down for groups of exactly 4 connected filled cells
+    that match a known tetromino shape AND float above the stack."""
+    # Collect all filled cells
+    all_filled = []
     for row in range(BOARD_ROWS):
         for col in range(BOARD_COLS):
-            if new_board[row][col] and not old_board[row][col]:
-                new_cells.append((row, col))
-    if len(new_cells) < 4:
-        return None, new_cells
-    # Try to find a group of exactly 4 connected new cells
-    groups = find_connected_groups(new_cells)
+            if board[row][col]:
+                all_filled.append((row, col))
+    if len(all_filled) < 4:
+        return None, []
+
+    groups = find_connected_groups(all_filled)
+    # Sort groups by their topmost row (ascending = highest first)
+    groups.sort(key=lambda g: min(r for r, c in g))
+
     for group in groups:
-        if len(group) == 4:
-            min_r = min(r for r, c in group)
-            min_c = min(c for r, c in group)
-            normalized = tuple(sorted((r - min_r, c - min_c) for r, c in group))
-            for ptype, rotations in PIECES.items():
-                for cells in rotations:
-                    if tuple(sorted(cells)) == normalized:
-                        return ptype, list(group)
-    # If exactly 4 new cells total, try matching them directly
-    if len(new_cells) == 4:
-        min_r = min(r for r, c in new_cells)
-        min_c = min(c for r, c in new_cells)
-        normalized = tuple(sorted((r - min_r, c - min_c) for r, c in new_cells))
+        if len(group) != 4:
+            continue
+        min_r = min(r for r, c in group)
+        min_c = min(c for r, c in group)
+        normalized = tuple(sorted((r - min_r, c - min_c) for r, c in group))
         for ptype, rotations in PIECES.items():
             for cells in rotations:
                 if tuple(sorted(cells)) == normalized:
-                    return ptype, new_cells
-    return None, new_cells
+                    # Check that this group has empty space below it
+                    # (i.e., it's not resting on the bottom or other pieces)
+                    max_r = max(r for r, c in group)
+                    if max_r < BOARD_ROWS - 1:
+                        below_empty = False
+                        for r, c in group:
+                            if r == max_r and (r + 1 < BOARD_ROWS):
+                                if not board[r + 1][c]:
+                                    below_empty = True
+                        if below_empty:
+                            return ptype, list(group)
+                    # If near top (row < 4), accept it even without gap below
+                    if min_r < 4:
+                        return ptype, list(group)
+    return None, []
 
 
 def find_connected_groups(cells):
@@ -411,12 +422,12 @@ def play_tetris():
         print("=" * 60 + "\n")
         sys.stdout.flush()
 
-        # Take initial board snapshot
+        # Take initial board snapshot (for line clear tracking)
         try:
             img = screenshot_iframe(page, iframe_el)
-            prev_board = read_board(img, board_bounds) if img else [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
+            settled_board = read_board(img, board_bounds) if img else [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
         except Exception:
-            prev_board = [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
+            settled_board = [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
 
         pieces_played = 0
         total_clears = 0
@@ -457,10 +468,10 @@ def play_tetris():
                 if elapsed < 0.6:
                     continue
 
-                # === Detect new piece via diff ===
-                piece_type, new_cells = detect_piece(prev_board, board)
+                # === Detect piece in single snapshot ===
+                piece_type, new_cells = detect_piece_single(board)
 
-                if piece_type and piece_type != "?":
+                if piece_type:
                     no_piece_count = 0
                     pieces_played += 1
 
@@ -506,13 +517,13 @@ def play_tetris():
                                     print(f"   *** {label}! "
                                           f"(total: {total_clears})")
                                     sys.stdout.flush()
-                                prev_board = post_board
+                                settled_board = post_board
                             else:
-                                prev_board = clean_board
+                                settled_board = clean_board
                         else:
-                            prev_board = clean_board
+                            settled_board = clean_board
                     except Exception:
-                        prev_board = clean_board
+                        settled_board = clean_board
 
                     # Save periodically
                     if pieces_played % 20 == 0:
@@ -521,8 +532,6 @@ def play_tetris():
                         save_learning(learning)
                 else:
                     no_piece_count += 1
-                    # Update prev_board to current so we track changes
-                    prev_board = [r[:] for r in board]
 
                     if no_piece_count % 20 == 0 and no_piece_count > 0:
                         print(f"  ... waiting for piece "
