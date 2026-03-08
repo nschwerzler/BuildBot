@@ -61,14 +61,21 @@ def is_filled_cell(r, g, b):
         return False
     if color_distance((r, g, b), PAGE_BG_COLOR) < 15:
         return False
-    if (r + g + b) / 3 < 140:
+    if (r + g + b) / 3 < 30:
         return False
-    return color_distance((r, g, b), EMPTY_CELL_COLOR) > 50
+    return color_distance((r, g, b), EMPTY_CELL_COLOR) > 35
 
 
-def screenshot_iframe(iframe_el):
-    data = iframe_el.screenshot()
-    return Image.open(io.BytesIO(data))
+def screenshot_iframe(page, iframe_el):
+    """Take a FULL PAGE screenshot and crop to iframe region.
+    This avoids the flicker/seizure caused by iframe_el.screenshot()."""
+    box = iframe_el.bounding_box()
+    if not box:
+        return None
+    data = page.screenshot(type="png")
+    full = Image.open(io.BytesIO(data))
+    x, y, w, h = int(box['x']), int(box['y']), int(box['width']), int(box['height'])
+    return full.crop((x, y, x + w, y + h))
 
 
 def find_board_in_iframe(img):
@@ -218,36 +225,74 @@ def find_best_move(board, piece_type):
 
 
 def detect_piece(old_board, new_board):
-    """Find new cells in top 6 rows that appeared since last board."""
+    """Find new cells that appeared since last board."""
     new_cells = []
-    for row in range(6):
+    for row in range(BOARD_ROWS):
         for col in range(BOARD_COLS):
             if new_board[row][col] and not old_board[row][col]:
                 new_cells.append((row, col))
-    if len(new_cells) != 4:
+    if len(new_cells) < 4:
         return None, new_cells
-    min_r = min(r for r, c in new_cells)
-    min_c = min(c for r, c in new_cells)
-    normalized = tuple(sorted((r - min_r, c - min_c) for r, c in new_cells))
-    for ptype, rotations in PIECES.items():
-        for cells in rotations:
-            if tuple(sorted(cells)) == normalized:
-                return ptype, new_cells
-    return "?", new_cells
+    # Try to find a group of exactly 4 connected new cells
+    groups = find_connected_groups(new_cells)
+    for group in groups:
+        if len(group) == 4:
+            min_r = min(r for r, c in group)
+            min_c = min(c for r, c in group)
+            normalized = tuple(sorted((r - min_r, c - min_c) for r, c in group))
+            for ptype, rotations in PIECES.items():
+                for cells in rotations:
+                    if tuple(sorted(cells)) == normalized:
+                        return ptype, list(group)
+    # If exactly 4 new cells total, try matching them directly
+    if len(new_cells) == 4:
+        min_r = min(r for r, c in new_cells)
+        min_c = min(c for r, c in new_cells)
+        normalized = tuple(sorted((r - min_r, c - min_c) for r, c in new_cells))
+        for ptype, rotations in PIECES.items():
+            for cells in rotations:
+                if tuple(sorted(cells)) == normalized:
+                    return ptype, new_cells
+    return None, new_cells
 
 
-def execute_move(page, rotation, target_col, spawn_col):
-    """Send key presses with deliberate timing."""
+def find_connected_groups(cells):
+    """Find groups of connected cells (4-connected)."""
+    cell_set = set(cells)
+    visited = set()
+    groups = []
+    for cell in cells:
+        if cell in visited:
+            continue
+        group = []
+        stack = [cell]
+        while stack:
+            c = stack.pop()
+            if c in visited:
+                continue
+            visited.add(c)
+            group.append(c)
+            r, col = c
+            for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nb = (r+dr, col+dc)
+                if nb in cell_set and nb not in visited:
+                    stack.append(nb)
+        groups.append(group)
+    return groups
+
+
+def execute_move(frame, rotation, target_col, spawn_col):
+    """Send key presses to the IFRAME content frame (not page)."""
     for _ in range(rotation):
-        page.keyboard.press("ArrowUp")
-        time.sleep(0.10)
+        frame.press("body", "ArrowUp")
+        time.sleep(0.08)
     diff = target_col - spawn_col
     key = "ArrowRight" if diff > 0 else "ArrowLeft"
     for _ in range(abs(diff)):
-        page.keyboard.press(key)
-        time.sleep(0.10)
+        frame.press("body", key)
+        time.sleep(0.08)
     time.sleep(0.05)
-    page.keyboard.press("Space")
+    frame.press("body", "Space")
 
 
 def load_learning():
@@ -268,7 +313,7 @@ def save_learning(data):
 
 def play_tetris():
     print("=" * 60)
-    print("  TETRIS BOT v10 - SLOW SCREENSHOT (no seizure)")
+    print("  TETRIS BOT v10 - PAGE SCREENSHOT + IFRAME KEYS")
     print("=" * 60)
     sys.stdout.flush()
 
@@ -311,7 +356,9 @@ def play_tetris():
             if not iframe_el:
                 continue
             try:
-                img = screenshot_iframe(iframe_el)
+                img = screenshot_iframe(page, iframe_el)
+                if img is None:
+                    continue
             except Exception:
                 continue
             bounds = find_board_in_iframe(img)
@@ -351,6 +398,14 @@ def play_tetris():
             pass
         time.sleep(0.5)
 
+        # Get the iframe's content frame for sending keys
+        game_frame = iframe_el.content_frame()
+        if not game_frame:
+            print("  ERROR: Can't access iframe content frame!")
+            browser.close()
+            return
+        print("  Got iframe content frame for key input")
+
         print("\n" + "=" * 60)
         print("  PLAYING TETRIS!")
         print("=" * 60 + "\n")
@@ -358,19 +413,20 @@ def play_tetris():
 
         # Take initial board snapshot
         try:
-            img = screenshot_iframe(iframe_el)
-            prev_board = read_board(img, board_bounds)
+            img = screenshot_iframe(page, iframe_el)
+            prev_board = read_board(img, board_bounds) if img else [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
         except Exception:
             prev_board = [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
 
         pieces_played = 0
         total_clears = 0
         no_piece_count = 0
+        last_action_time = time.time()
 
         try:
             while True:
-                # === STEP 1: Wait, then take ONE screenshot ===
-                time.sleep(1.2)
+                # === Poll interval: 0.4s (page screenshot = no seizure) ===
+                time.sleep(0.4)
 
                 iframe_el = page.query_selector("#gameIFrame")
                 if not iframe_el:
@@ -378,35 +434,42 @@ def play_tetris():
                     break
 
                 try:
-                    img = screenshot_iframe(iframe_el)
+                    img = screenshot_iframe(page, iframe_el)
+                    if img is None:
+                        iframe_el = page.query_selector("#gameIFrame")
+                        continue
                     board = read_board(img, board_bounds)
                 except Exception as e:
                     print(f"  screenshot error: {e}")
                     sys.stdout.flush()
-                    time.sleep(2)
                     continue
 
                 filled = count_filled(board)
 
-                # === STEP 2: Game over checks ===
+                # === Game over check ===
                 top_filled = sum(board[0])
                 if top_filled >= 8 and pieces_played > 5:
                     print(f"\n  GAME OVER (topped out)!")
                     break
 
-                # === STEP 3: Detect new piece ===
+                # Don't act too fast after last move (let piece land)
+                elapsed = time.time() - last_action_time
+                if elapsed < 0.6:
+                    continue
+
+                # === Detect new piece via diff ===
                 piece_type, new_cells = detect_piece(prev_board, board)
 
-                if piece_type and piece_type != "?" and len(new_cells) == 4:
+                if piece_type and piece_type != "?":
                     no_piece_count = 0
                     pieces_played += 1
 
-                    # Board without the new piece
+                    # Board without the active piece
                     clean_board = [r[:] for r in board]
                     for r, c in new_cells:
                         clean_board[r][c] = 0
 
-                    # === STEP 4: AI decides best move ===
+                    # === AI decides best move ===
                     rot, col, score = find_best_move(clean_board, piece_type)
                     spawn_col = round(sum(c for _, c in new_cells) / len(new_cells))
 
@@ -420,30 +483,32 @@ def play_tetris():
                           f"(score:{score:.1f})")
                     sys.stdout.flush()
 
-                    # === STEP 5: Execute the move ===
-                    execute_move(page, rot, col, spawn_col)
+                    # === Execute the move via iframe frame ===
+                    execute_move(game_frame, rot, col, spawn_col)
+                    last_action_time = time.time()
 
-                    # Wait for piece to land + settle
-                    time.sleep(1.0)
-
-                    # === STEP 6: Post-drop screenshot for line clear detection ===
+                    # Wait for piece to land, then snapshot clean board
+                    time.sleep(0.5)
                     try:
                         iframe_el = page.query_selector("#gameIFrame")
                         if iframe_el:
-                            post_img = screenshot_iframe(iframe_el)
-                            post_board = read_board(post_img, board_bounds)
-                            post_filled = count_filled(post_board)
-                            expected = count_filled(clean_board) + 4
-                            if post_filled < expected - 5:
-                                lines = max(1, (expected - post_filled) // BOARD_COLS)
-                                total_clears += lines
-                                label = {1: "SINGLE", 2: "DOUBLE",
-                                         3: "TRIPLE", 4: "TETRIS!!"}.get(
-                                    lines, f"{lines}x")
-                                print(f"   *** {label}! "
-                                      f"(total: {total_clears})")
-                                sys.stdout.flush()
-                            prev_board = post_board
+                            post_img = screenshot_iframe(page, iframe_el)
+                            post_board = read_board(post_img, board_bounds) if post_img else None
+                            if post_board:
+                                post_filled = count_filled(post_board)
+                                expected = count_filled(clean_board) + 4
+                                if post_filled < expected - 5:
+                                    lines = max(1, (expected - post_filled) // BOARD_COLS)
+                                    total_clears += lines
+                                    label = {1: "SINGLE", 2: "DOUBLE",
+                                             3: "TRIPLE", 4: "TETRIS!!"}.get(
+                                        lines, f"{lines}x")
+                                    print(f"   *** {label}! "
+                                          f"(total: {total_clears})")
+                                    sys.stdout.flush()
+                                prev_board = post_board
+                            else:
+                                prev_board = clean_board
                         else:
                             prev_board = clean_board
                     except Exception:
@@ -456,16 +521,16 @@ def play_tetris():
                         save_learning(learning)
                 else:
                     no_piece_count += 1
+                    # Update prev_board to current so we track changes
                     prev_board = [r[:] for r in board]
 
-                    # Debug: show filled count every 5 empty polls
-                    if no_piece_count % 5 == 0 and no_piece_count > 0:
+                    if no_piece_count % 20 == 0 and no_piece_count > 0:
                         print(f"  ... waiting for piece "
                               f"(filled:{filled} polls:{no_piece_count})")
                         sys.stdout.flush()
 
-                    if no_piece_count > 40 and pieces_played > 0:
-                        print(f"\n  GAME OVER (no new pieces for 48s)!")
+                    if no_piece_count > 120 and pieces_played > 0:
+                        print(f"\n  GAME OVER (no new pieces for 30s)!")
                         break
 
         except KeyboardInterrupt:
