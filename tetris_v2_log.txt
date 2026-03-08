@@ -1,0 +1,107 @@
+﻿=== TETRIS AI BOT v2 ===
+Now with calibration + board diff tracking!
+Opening freetetris.org...
+Calibrating board position...
+Debug screenshot saved. Page: 900x750, iframe at (78,125) size 728x600
+Board: (78,125) to (247,720)
+Cell size: 16.9 x 29.8 px
+Background color: [186, 205, 229]
+
+--- DEBUG: Reading initial board ---
+Total filled cells: 0 / 200
+   0 |..........|
+   1 |..........|
+   2 |..........|
+   3 |..........|
+   4 |..........|
+   5 |..........|
+   6 |..........|
+   7 |..........|
+   8 |..........|
+   9 |..........|
+  10 |..........|
+  11 |..........|
+  12 |..........|
+  13 |..........|
+  14 |..........|
+  15 |..........|
+  16 |..........|
+  17 |..........|
+  18 |..........|
+  19 |..........|
+
+Clicking game to focus and start...
+
+--- BOT v2 PLAYING ---
+Controls: Close browser or Ctrl+C to stop
+
+Board unchanged for 20 reads. Trying to unpause/restart...
+Calibrating board position...
+Debug screenshot saved. Page: 900x750, iframe at (78,125) size 728x600
+Board: (78,125) to (478,199)
+Cell size: 40.0 x 3.7 px
+Background color: [219, 236, 254]
+Board unchanged for 20 reads. Trying to unpause/restart...
+Calibrating board position...
+Debug screenshot saved. Page: 900x750, iframe at (78,125) size 728x600
+Board: (78,125) to (478,591)
+Cell size: 40.0 x 23.3 px
+Background color: [219, 236, 254]
+Move 5 | I -> col 3 rot 1 | Height: 18 | Lines: 0
+Move 10 | I -> col 3 rot 1 | Height: 18 | Lines: 0
+Move 15 | L -> col 4 rot 0 | Height: 20 | Lines: 0
+Move 20 | I -> col 0 rot 0 | Height: 20 | Lines: 0
+Move 25 | I -> col 0 rot 0 | Height: 20 | Lines: 0
+GAME OVER after 25 moves, 0 lines!
+Move 5 | I -> col 1 rot 1 | Height: 20 | Lines: 0
+
+Error: Page.screenshot: Target page, context or browser has been closed
+.venv\Scripts\python.exe : Traceback (most recent call last):
+At line:1 char:81
++ ... ration.json }; .venv\Scripts\python.exe -u tetris_bot.py 2>&1 | Out-F ...
++                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last) 
+   ::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "D:\BuildBot\tetris_bot.py", line 508, in play_tetris
+    board, colors = read_board(page, cal)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "D:\BuildBot\tetris_bot.py", line 180, in read_board
+    screenshot = page.screenshot()
+  File 
+"D:\BuildBot\.venv\Lib\site-packages\playwright\sync_api\_generated.py", line 
+9819, in screenshot
+    self._sync(
+    ~~~~~~~~~~^
+        self._impl_obj.screenshot(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<13 lines>...
+        )
+        ^
+    )
+    ^
+  File "D:\BuildBot\.venv\Lib\site-packages\playwright\_impl\_sync_base.py", 
+line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "D:\BuildBot\.venv\Lib\site-packages\playwright\_impl\_page.py", line 
+814, in screenshot
+    encoded_binary = await self._channel.send(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+        "screenshot", self._timeout_settings.timeout, params
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\BuildBot\.venv\Lib\site-packages\playwright\_impl\_connection.py", 
+line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\BuildBot\.venv\Lib\site-packages\playwright\_impl\_connection.py", 
+line 559, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Page.screenshot: Target page, 
+context or browser has been closed

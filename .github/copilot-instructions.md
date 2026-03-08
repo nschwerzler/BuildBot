@@ -95,3 +95,80 @@ winsound.PlaySound(path, winsound.SND_FILENAME)
 ```
 
 Run this as a one-liner via `.venv\Scripts\python.exe -c "..."` in the terminal.
+
+## Tetris Bot (freetetris.org / N-Blox)
+
+### Game Details
+- URL: https://freetetris.org — Tetris N-Blox runs inside iframe `#gameIFrame`
+- Controls: ArrowUp=rotate, ArrowLeft/Right=move, Space=hard drop
+- Page viewport: 900x750, iframe at (78,125) size 728x600
+- **Workflow**: Player (d0g3) handles all menu buttons (Play, New Game, level select). Bot only takes over once pieces are falling.
+
+### Game Engine: Cocos Creator
+- Game uses **Cocos Creator** engine — `cc` object with 185 keys
+- `cc.director.getScene()` returns scene named "Desktop"
+- Custom app object: `window.mBPSApp` with state machine (`mStateMachine`)
+- State machine uses numbered states (not named strings), `mPreviousState=7` at main menu
+- Find game frame via `frame.name == 'gameIFrame'` (NOT URL-based search)
+- Iframe needs load time: wait for `#gameIFrame` selector, sleep 5s, then click
+- Game renders on Cocos Creator canvas — no standard HTML game elements
+
+### Scene Tree (Main Menu State)
+```
+Desktop
+  Canvas [cc.UITransform, cc.Canvas, cc.Widget, x1819288371416691716x]
+    Camera [cc.Camera]
+    AppBGView [cc.UITransform, cc.Sprite]
+    mainMenu-dimmingView
+    mainMenu-rootView
+      logo [cc.Sprite]
+      menu > content > panelContent (4 children):
+        [0] play — Play button
+        [1] level — level selector
+        [2] highScoresViewContainer — high scores
+        [3] iconButtons — options, help, moreGames
+```
+
+### Custom Component on Canvas
+- `x1819288371416691716x` — main game controller component
+- Props: `requireIFrame`, `gameContentBasePath`, `gameDataFilePath` (obfuscated strings)
+- Has `mBPSApp`, `mResourceMgr`, `mDidAddKeyEventHandlersOnFocus`
+
+### Key JS Functions
+- `getGameDiv()` — returns game div element
+- `getGameCanvas()` — returns game canvas element
+- `gameLoadingSceneIsReady()` — check if loading is done
+
+### Reading Game State via JS
+- Use `game_frame.evaluate()` with Playwright to access JS objects
+- Walk scene via `cc.director.getScene()` → `node.children` → `node._components`
+- Scene tree changes when game starts — mainMenu nodes deactivate, board nodes appear
+- **After player clicks Play**: re-scan scene tree to find board/piece data nodes
+- Can potentially read board array, current piece type, and score directly from JS
+
+### Pixel Analysis (fallback approach)
+- Board empty cell: RGB(198,216,242), brightness ~218
+- Grid lines: ~brightness 192-200
+- Background outside board: RGB(220,237,255), brightness ~237
+- **NO high-contrast borders** — everything is blue-tinted, brightness-based edge detection fails
+- Info panel dark border at x~498-538, brightness ~130
+- Board: 10 cols × 20 rows, left ~55% of iframe, cell ~39×23px
+- Piece colors differ from background by 100+ RGB distance
+- DON'T use brightness threshold scanning — use fixed proportions or JS state reading
+
+### AI Strategy
+- 1 row clear = points — prioritize line clears
+- Holes are worst — heavily penalize
+- Keep surface flat (low bumpiness), don't stack too high
+
+### Bot Files
+- `tetris_bot.py` — Main Playwright bot with calibration + AI
+- `tetris_inspect.py` / `tetris_inspect2.py` / `tetris_inspect3.py` — JS inspector scripts
+- `tetris_calibration.json` — Auto-generated cached calibration
+- `tetris_debug.png` — Debug screenshot
+
+### Tech Stack
+- Python 3.13.7, `.venv` at D:\BuildBot
+- Playwright Python v1.58.0 with Chromium
+- Pillow (PIL) v12.1.1 for screenshots
+- Key press speed: ~25ms intervals
