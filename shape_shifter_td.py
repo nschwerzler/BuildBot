@@ -1080,9 +1080,11 @@ def update_player(dt):
     if p["hp"] < p["max_hp"] and p["hp"] > 0:
         p["hp"] = min(p["max_hp"], p["hp"] + regen_rate * dt)
 
+_circle_angle = 0.0  # rotating angle for circle-fire mode
+
 def do_shoot():
-    """Fire projectiles toward mouse cursor. Count = atk_multi."""
-    global shake
+    """Fire projectiles. If SHOOT_CD==0 (auto-fire), fire in a rotating circle pattern."""
+    global shake, _circle_angle
     p = player
     if p["scd"] > 0: return
     p["scd"] = SHOOT_CD
@@ -1096,7 +1098,22 @@ def do_shoot():
     berserk_mult = 2.0 if berserk_timer > 0 else 1.0
     bullet_dmg = int((SHOOT_DMG + might_bonus) * shoot_mult * berserk_mult)
     stats["shots_fired"] += atk_multi
-    # Fire atk_multi bullets in a spread
+    # Circle-fire mode when cooldown is 0
+    if SHOOT_CD == 0:
+        num_dirs = max(8, atk_multi * 8)
+        _circle_angle += 0.15
+        for bi in range(num_dirs):
+            ba = _circle_angle + (2 * math.pi * bi / num_dirs)
+            projectiles.append({
+                "x": p["x"] + math.cos(ba) * 18,
+                "y": p["y"] + math.sin(ba) * 18,
+                "vx": math.cos(ba) * SHOOT_SPD, "vy": math.sin(ba) * SHOOT_SPD,
+                "dmg": bullet_dmg, "r": 5, "col": C_PLAYER, "life": 0.8,
+                "pierce": False, "hit": set(), "src": "player",
+            })
+        shake = max(shake, 0.5)
+        return
+    # Normal mode: fire atk_multi bullets in a spread
     count = atk_multi
     spread = 0.12  # angle offset between shots
     for bi in range(count):
