@@ -1323,7 +1323,7 @@ def update_clones(dt):
                 spawn_parts(nearest["x"], nearest["y"], C_CLONE, 3, 50, 0.2)
             # Shoot at enemy
             elif nd < 220 and c["scd"] <= 0:
-                c["scd"] = SHOOT_CD * 1.5
+                c["scd"] = 0.25
                 a = math.atan2(nearest["y"]-c["y"], nearest["x"]-c["x"])
                 projectiles.append({
                     "x": c["x"]+math.cos(a)*18, "y": c["y"]+math.sin(a)*18,
