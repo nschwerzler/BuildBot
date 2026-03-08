@@ -2,6 +2,7 @@ import ctypes
 import threading
 import time
 import tkinter as tk
+import winsound
 from tkinter import ttk
 
 VK_LBUTTON = 0x01
@@ -49,8 +50,16 @@ class CPSCounterApp:
             down = bool(user32.GetAsyncKeyState(VK_LBUTTON) & 0x8000)
             if down and not prev_down:
                 self.total_clicks += 1
+                self._play_click_beep()
             prev_down = down
             time.sleep(0.001)
+
+    def _play_click_beep(self) -> None:
+        # Async alias beep keeps feedback snappy without blocking click polling.
+        winsound.PlaySound(
+            "SystemAsterisk",
+            winsound.SND_ALIAS | winsound.SND_ASYNC | winsound.SND_NOSTOP,
+        )
 
     def _refresh_ui(self) -> None:
         elapsed = max(1e-9, time.perf_counter() - self.start_time)
