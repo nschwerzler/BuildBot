@@ -33,6 +33,9 @@ MAX_CLONES = 2
 P_HP = 120
 P_SPEED = 230           # px / sec
 BASE_HP_MAX = 600
+
+# Event-based movement state (works with PostMessage)
+_move_keys = {"w": False, "a": False, "s": False, "d": False}
 SAVE_FILE = "shape_shifter_td_save.json"
 GAME_SAVE_FILE = "shape_shifter_td_gamesave.json"
 
@@ -1042,10 +1045,10 @@ def update_player(dt):
     # Movement
     keys = pygame.key.get_pressed()
     dx, dy = 0, 0
-    if keys[pygame.K_w] or keys[pygame.K_UP]:    dy -= 1
-    if keys[pygame.K_s] or keys[pygame.K_DOWN]:  dy += 1
-    if keys[pygame.K_a] or keys[pygame.K_LEFT]:  dx -= 1
-    if keys[pygame.K_d] or keys[pygame.K_RIGHT]: dx += 1
+    if keys[pygame.K_w] or keys[pygame.K_UP] or _move_keys["w"]:    dy -= 1
+    if keys[pygame.K_s] or keys[pygame.K_DOWN] or _move_keys["s"]:  dy += 1
+    if keys[pygame.K_a] or keys[pygame.K_LEFT] or _move_keys["a"]:  dx -= 1
+    if keys[pygame.K_d] or keys[pygame.K_RIGHT] or _move_keys["d"]: dx += 1
     if dx != 0 or dy != 0:
         ndx, ndy = nrm(dx, dy)
         spd = p["spd"] * (1.5 if berserk_timer > 0 else 1.0)
@@ -2531,7 +2534,16 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
+            if event.key in (pygame.K_w, pygame.K_UP): _move_keys["w"] = True
+            if event.key in (pygame.K_s, pygame.K_DOWN): _move_keys["s"] = True
+            if event.key in (pygame.K_a, pygame.K_LEFT): _move_keys["a"] = True
+            if event.key in (pygame.K_d, pygame.K_RIGHT): _move_keys["d"] = True
             handle_key(event.key)
+        if event.type == pygame.KEYUP:
+            if event.key in (pygame.K_w, pygame.K_UP): _move_keys["w"] = False
+            if event.key in (pygame.K_s, pygame.K_DOWN): _move_keys["s"] = False
+            if event.key in (pygame.K_a, pygame.K_LEFT): _move_keys["a"] = False
+            if event.key in (pygame.K_d, pygame.K_RIGHT): _move_keys["d"] = False
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if state == "play" and not shop_open:
                 do_shoot()
