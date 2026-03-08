@@ -1,8 +1,8 @@
-"""Tetris Bot v9 - PLAY MODE with JS-based vision.
+"""Tetris Bot v10 - PLAY MODE with slow-paced screenshots.
 
-Uses JavaScript canvas pixel reading instead of Playwright screenshots
-during gameplay to eliminate visual seizure/flickering. Screenshots are
-only used for initial one-time board detection.
+Takes exactly ONE screenshot per piece cycle (~2s apart).
+This eliminates the seizure caused by rapid screenshot spam.
+Flow: screenshot -> detect piece -> AI decide -> execute keys -> wait -> repeat
 """
 import time
 import math
@@ -16,12 +16,10 @@ from PIL import Image
 BOARD_COLS = 10
 BOARD_ROWS = 20
 LEARNING_FILE = os.path.join(os.path.dirname(__file__), "tetris_learning.json")
-DEBUG_IMG = os.path.join(os.path.dirname(__file__), "tetris_debug.png")
 
 EMPTY_CELL_COLOR = (198, 216, 242)
 PAGE_BG_COLOR = (220, 238, 255)
 
-# Piece definitions: rotation variants as (row, col) offsets from top-left
 PIECES = {
     "I": [[(0,0),(0,1),(0,2),(0,3)],
           [(0,0),(1,0),(2,0),(3,0)]],
@@ -44,68 +42,10 @@ PIECES = {
           [(0,0),(0,1),(1,1),(2,1)]],
 }
 
-# AI scoring weights
 W_LINES = 10.0
 W_HOLES = -0.75
 W_BUMP = -0.18
 W_HEIGHT = -0.5
-
-# JavaScript: read board pixels from WebGL canvas via offscreen 2D copy.
-# Uses requestAnimationFrame to ensure the WebGL buffer has valid data.
-# Returns a 20x10 array of 0/1 values (empty/filled).
-JS_READ_BOARD = """(params) => new Promise(resolve => {
-    requestAnimationFrame(() => {
-        try {
-            const canvas = document.querySelector('canvas');
-            if (!canvas) { resolve(null); return; }
-            const off = document.createElement('canvas');
-            off.width = canvas.width;
-            off.height = canvas.height;
-            const ctx = off.getContext('2d');
-            ctx.drawImage(canvas, 0, 0);
-            const imgData = ctx.getImageData(0, 0, off.width, off.height);
-            const d = imgData.data;
-            const w = imgData.width;
-            const h = imgData.height;
-            const rect = canvas.getBoundingClientRect();
-            const sx = canvas.width / rect.width;
-            const sy = canvas.height / rect.height;
-            const ox = rect.left;
-            const oy = rect.top;
-            const {x1, y1, cellW, cellH, cols, rows} = params;
-            const dxOff = Math.round(cellW * 0.2);
-            const dyOff = Math.round(cellH * 0.2);
-            const board = [];
-            for (let row = 0; row < rows; row++) {
-                const rowArr = [];
-                for (let col = 0; col < cols; col++) {
-                    const bcx = x1 + col * cellW + cellW * 0.5;
-                    const bcy = y1 + row * cellH + cellH * 0.5;
-                    const samples = [[0,0],[dxOff,0],[0,dyOff],[-dxOff,0]];
-                    let hits = 0;
-                    for (const [sdx, sdy] of samples) {
-                        const px = Math.round((bcx + sdx - ox) * sx);
-                        const py = Math.round((bcy + sdy - oy) * sy);
-                        if (px < 0 || px >= w || py < 0 || py >= h) continue;
-                        const i = (py * w + px) * 4;
-                        const r = d[i], g = d[i+1], b = d[i+2];
-                        const eD = (r-198)*(r-198)+(g-216)*(g-216)+(b-242)*(b-242);
-                        if (eD < 900) continue;
-                        const bgD = (r-220)*(r-220)+(g-238)*(g-238)+(b-255)*(b-255);
-                        if (bgD < 225) continue;
-                        if ((r+g+b)/3 < 140) continue;
-                        if (eD > 2500) hits++;
-                    }
-                    rowArr.push(hits >= 2 ? 1 : 0);
-                }
-                board.push(rowArr);
-            }
-            resolve(board);
-        } catch(e) {
-            resolve(null);
-        }
-    });
-})"""
 
 
 def color_distance(c1, c2):
@@ -126,20 +66,6 @@ def is_filled_cell(r, g, b):
     return color_distance((r, g, b), EMPTY_CELL_COLOR) > 50
 
 
-def get_iframe_element(page):
-    return page.query_selector("#gameIFrame")
-
-
-def get_game_frame(page):
-    for f in page.frames:
-        if f.name == "gameIFrame":
-            return f
-    el = page.query_selector("#gameIFrame")
-    if el:
-        return el.content_frame()
-    return None
-
-
 def screenshot_iframe(iframe_el):
     data = iframe_el.screenshot()
     return Image.open(io.BytesIO(data))
@@ -148,8 +74,7 @@ def screenshot_iframe(iframe_el):
 def find_board_in_iframe(img):
     w, h = img.size
     max_x = int(w * 0.65)
-    empty_xs = []
-    empty_ys = []
+    empty_xs, empty_ys = [], []
     for y in range(0, h, 4):
         for x in range(0, max_x, 4):
             r, g, b = img.getpixel((x, y))[:3]
@@ -172,9 +97,8 @@ def find_board_in_iframe(img):
     return (left, top, right, bottom)
 
 
-def read_board_screenshot(iframe_el, bounds):
-    """Fallback: read board via Playwright screenshot (may cause flicker)."""
-    img = screenshot_iframe(iframe_el)
+def read_board(img, bounds):
+    """Read board state from a screenshot image. No new screenshot taken."""
     x1, y1, x2, y2 = bounds
     cell_w = (x2 - x1) / BOARD_COLS
     cell_h = (y2 - y1) / BOARD_ROWS
@@ -194,34 +118,6 @@ def read_board_screenshot(iframe_el, bounds):
             if filled >= 2:
                 board[row][col] = 1
     return board
-
-
-def read_board_js(game_frame, bounds):
-    """Read board via JS canvas pixel analysis - no visual artifacts."""
-    if not game_frame:
-        return None
-    x1, y1, x2, y2 = bounds
-    cell_w = (x2 - x1) / BOARD_COLS
-    cell_h = (y2 - y1) / BOARD_ROWS
-    try:
-        result = game_frame.evaluate(JS_READ_BOARD, {
-            "x1": x1, "y1": y1,
-            "cellW": cell_w, "cellH": cell_h,
-            "cols": BOARD_COLS, "rows": BOARD_ROWS
-        })
-        return result
-    except Exception:
-        return None
-
-
-def get_board(game_frame, iframe_el, bounds, use_js):
-    """Get board state, preferring JS over screenshots."""
-    if use_js:
-        board = read_board_js(game_frame, bounds)
-        if board is not None:
-            return board, True
-    board = read_board_screenshot(iframe_el, bounds)
-    return board, False
 
 
 def get_column_heights(board):
@@ -354,37 +250,6 @@ def execute_move(page, rotation, target_col, spawn_col):
     page.keyboard.press("Space")
 
 
-def check_game_state(game_frame):
-    try:
-        return game_frame.evaluate("""() => {
-            const info = {state: null};
-            if (typeof window.mBPSApp !== 'undefined' && window.mBPSApp.mStateMachine)
-                info.state = window.mBPSApp.mStateMachine.mCurrentState;
-            return info;
-        }""")
-    except Exception:
-        return {"state": None}
-
-
-def click_play(page, iframe_el, game_frame):
-    bbox = iframe_el.bounding_box()
-    if not bbox:
-        return False
-    iw, ih = bbox["width"], bbox["height"]
-    for px, py in [(iw*0.5, ih*0.42), (iw*0.5, ih*0.45),
-                   (iw*0.5, ih*0.38), (iw*0.5, ih*0.48)]:
-        try:
-            iframe_el.click(position={"x": px, "y": py})
-            time.sleep(1.5)
-            if game_frame:
-                s = check_game_state(game_frame).get("state")
-                if s is not None and s != 7:
-                    return True
-        except Exception:
-            pass
-    return False
-
-
 def load_learning():
     if os.path.exists(LEARNING_FILE):
         with open(LEARNING_FILE) as f:
@@ -403,7 +268,7 @@ def save_learning(data):
 
 def play_tetris():
     print("=" * 60)
-    print("  TETRIS BOT v9 - JS VISION (no seizure)")
+    print("  TETRIS BOT v10 - SLOW SCREENSHOT (no seizure)")
     print("=" * 60)
     sys.stdout.flush()
 
@@ -422,7 +287,7 @@ def play_tetris():
         page.goto("https://www.freetetris.org/", wait_until="domcontentloaded")
         time.sleep(5)
 
-        iframe_el = get_iframe_element(page)
+        iframe_el = page.query_selector("#gameIFrame")
         if not iframe_el:
             print("  ERROR: No iframe!")
             browser.close()
@@ -434,20 +299,17 @@ def play_tetris():
             pass
         time.sleep(2)
 
-        game_frame = get_game_frame(page)
-
-        # Click Play
-        print("  Starting game...")
+        print("  >>> Click PLAY in the game window! <<<")
+        print("  Waiting for board to appear...")
         sys.stdout.flush()
-        click_play(page, iframe_el, game_frame)
-        time.sleep(3)
 
-        # Detect board using ONE screenshot (one-time only)
-        print("  Detecting board...")
-        sys.stdout.flush()
+        # Wait for user to start game + detect board
         board_bounds = None
-        for attempt in range(30):
+        for attempt in range(120):
             time.sleep(1)
+            iframe_el = page.query_selector("#gameIFrame")
+            if not iframe_el:
+                continue
             try:
                 img = screenshot_iframe(iframe_el)
             except Exception:
@@ -468,34 +330,21 @@ def play_tetris():
                                 empty += 1
                 if empty > 100:
                     board_bounds = bounds
-                    print(f"  BOARD: ({x1},{y1})-({x2},{y2}) "
-                          f"cell:{cell_w:.1f}x{cell_h:.1f} empty:{empty}")
+                    print(f"  BOARD found: ({x1},{y1})-({x2},{y2}) "
+                          f"cell:{cell_w:.1f}x{cell_h:.1f}")
                     sys.stdout.flush()
                     break
-            if attempt % 5 == 0:
-                print(f"  ... scanning ({attempt})")
+            if attempt % 10 == 0 and attempt > 0:
+                print(f"  ... still waiting ({attempt}s)")
                 sys.stdout.flush()
 
         if not board_bounds:
-            print("  Board not found!")
+            print("  Board not found after 2min!")
             browser.close()
             return
 
-        # Test JS-based board reading
-        use_js = False
-        game_frame = get_game_frame(page)
-        if game_frame:
-            test = read_board_js(game_frame, board_bounds)
-            if test is not None:
-                use_js = True
-                print("  JS vision: ACTIVE (zero seizure)")
-            else:
-                print("  JS vision: FAILED - using screenshot fallback")
-        else:
-            print("  No game frame - using screenshot fallback")
-        sys.stdout.flush()
-
-        # Focus iframe for keyboard input (one-time click)
+        # Re-fetch iframe element and focus it for keyboard
+        iframe_el = page.query_selector("#gameIFrame")
         try:
             iframe_el.click(position={"x": 200, "y": 300})
         except Exception:
@@ -507,57 +356,57 @@ def play_tetris():
         print("=" * 60 + "\n")
         sys.stdout.flush()
 
-        # Initial board state
-        prev_board, _ = get_board(game_frame, iframe_el, board_bounds, use_js)
-        if not prev_board:
+        # Take initial board snapshot
+        try:
+            img = screenshot_iframe(iframe_el)
+            prev_board = read_board(img, board_bounds)
+        except Exception:
             prev_board = [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
 
         pieces_played = 0
         total_clears = 0
         no_piece_count = 0
-        js_fail_count = 0
 
         try:
             while True:
-                # Wait between reads - no screenshot spam
-                time.sleep(0.6)
+                # === STEP 1: Wait, then take ONE screenshot ===
+                time.sleep(1.2)
 
-                board, js_ok = get_board(game_frame, iframe_el, board_bounds, use_js)
-                if board is None:
-                    time.sleep(1)
+                iframe_el = page.query_selector("#gameIFrame")
+                if not iframe_el:
+                    print("  iframe lost!")
+                    break
+
+                try:
+                    img = screenshot_iframe(iframe_el)
+                    board = read_board(img, board_bounds)
+                except Exception as e:
+                    print(f"  screenshot error: {e}")
+                    sys.stdout.flush()
+                    time.sleep(2)
                     continue
-
-                # Track JS reliability
-                if use_js and not js_ok:
-                    js_fail_count += 1
-                    if js_fail_count > 5:
-                        use_js = False
-                        print("  JS vision disabled - too many failures")
-                        sys.stdout.flush()
-                elif js_ok:
-                    js_fail_count = 0
 
                 filled = count_filled(board)
 
-                # Game over: top row mostly filled
+                # === STEP 2: Game over checks ===
                 top_filled = sum(board[0])
                 if top_filled >= 8 and pieces_played > 5:
                     print(f"\n  GAME OVER (topped out)!")
                     break
 
-                # Detect new piece in top 6 rows
+                # === STEP 3: Detect new piece ===
                 piece_type, new_cells = detect_piece(prev_board, board)
 
                 if piece_type and piece_type != "?" and len(new_cells) == 4:
                     no_piece_count = 0
                     pieces_played += 1
 
-                    # Board without the falling piece
+                    # Board without the new piece
                     clean_board = [r[:] for r in board]
                     for r, c in new_cells:
                         clean_board[r][c] = 0
 
-                    # AI decision
+                    # === STEP 4: AI decides best move ===
                     rot, col, score = find_best_move(clean_board, piece_type)
                     spawn_col = round(sum(c for _, c in new_cells) / len(new_cells))
 
@@ -571,26 +420,33 @@ def play_tetris():
                           f"(score:{score:.1f})")
                     sys.stdout.flush()
 
-                    # Execute the move
+                    # === STEP 5: Execute the move ===
                     execute_move(page, rot, col, spawn_col)
 
-                    # Wait for piece to land + line clear + new piece spawn
-                    time.sleep(0.8)
+                    # Wait for piece to land + settle
+                    time.sleep(1.0)
 
-                    # Read settled board for line clear detection
-                    post, _ = get_board(game_frame, iframe_el, board_bounds, use_js)
-                    if post:
-                        post_filled = count_filled(post)
-                        expected = count_filled(clean_board) + 4
-                        if post_filled < expected - 5:
-                            lines = max(1, (expected - post_filled) // BOARD_COLS)
-                            total_clears += lines
-                            label = {1: "SINGLE", 2: "DOUBLE", 3: "TRIPLE",
-                                     4: "TETRIS!!"}.get(lines, f"{lines}x")
-                            print(f"   *** {label}! (total: {total_clears})")
-                            sys.stdout.flush()
-                        prev_board = post
-                    else:
+                    # === STEP 6: Post-drop screenshot for line clear detection ===
+                    try:
+                        iframe_el = page.query_selector("#gameIFrame")
+                        if iframe_el:
+                            post_img = screenshot_iframe(iframe_el)
+                            post_board = read_board(post_img, board_bounds)
+                            post_filled = count_filled(post_board)
+                            expected = count_filled(clean_board) + 4
+                            if post_filled < expected - 5:
+                                lines = max(1, (expected - post_filled) // BOARD_COLS)
+                                total_clears += lines
+                                label = {1: "SINGLE", 2: "DOUBLE",
+                                         3: "TRIPLE", 4: "TETRIS!!"}.get(
+                                    lines, f"{lines}x")
+                                print(f"   *** {label}! "
+                                      f"(total: {total_clears})")
+                                sys.stdout.flush()
+                            prev_board = post_board
+                        else:
+                            prev_board = clean_board
+                    except Exception:
                         prev_board = clean_board
 
                     # Save periodically
@@ -602,8 +458,14 @@ def play_tetris():
                     no_piece_count += 1
                     prev_board = [r[:] for r in board]
 
-                    if no_piece_count > 25 and pieces_played > 0:
-                        print(f"\n  GAME OVER (no new pieces)!")
+                    # Debug: show filled count every 5 empty polls
+                    if no_piece_count % 5 == 0 and no_piece_count > 0:
+                        print(f"  ... waiting for piece "
+                              f"(filled:{filled} polls:{no_piece_count})")
+                        sys.stdout.flush()
+
+                    if no_piece_count > 40 and pieces_played > 0:
+                        print(f"\n  GAME OVER (no new pieces for 48s)!")
                         break
 
         except KeyboardInterrupt:
@@ -614,10 +476,14 @@ def play_tetris():
             traceback.print_exc()
             sys.stdout.flush()
         finally:
-            print(f"\n  Result: {pieces_played} pieces, {total_clears} clears")
-            learning["games_watched"] = learning.get("games_watched", 0) + 1
-            learning["total_clears"] = learning.get("total_clears", 0) + total_clears
-            learning["total_pieces"] = learning.get("total_pieces", 0) + pieces_played
+            print(f"\n  Result: {pieces_played} pieces, "
+                  f"{total_clears} clears")
+            learning["games_watched"] = (
+                learning.get("games_watched", 0) + 1)
+            learning["total_clears"] = (
+                learning.get("total_clears", 0) + total_clears)
+            learning["total_pieces"] = (
+                learning.get("total_pieces", 0) + pieces_played)
             save_learning(learning)
             print(f"  Saved. Lifetime: {learning['total_clears']} clears")
             sys.stdout.flush()
