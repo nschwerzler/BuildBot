@@ -14,6 +14,18 @@ Default playback speed is set to `2.0x` in `current_task.json`.
 D:/BuildBot/.venv/Scripts/python.exe D:/BuildBot/assistant_session/consent_tracker.py
 ```
 
+## Desktop Preview App
+
+Use this to see exactly what would be shared from your desktop.
+
+```powershell
+D:/BuildBot/.venv/Scripts/python.exe D:/BuildBot/assistant_session/desktop_share_preview.py
+```
+
+- Live preview shows your desktop view.
+- Nothing is shared automatically.
+- `Share Frame` saves a single image into `assistant_session/shared_frames/`.
+
 ## What This Does
 
 - Stores only what you type in.
