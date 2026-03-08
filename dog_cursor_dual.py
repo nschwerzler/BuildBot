@@ -366,14 +366,14 @@ class DogHand:
 
 
 # --- Load cursor images (keep references!) ---
-photo_left = load_cursor_image('dog_cursor_blue.png')
-photo_right = load_cursor_image('dog_cursor.png')
+photo_left = load_cursor_image('dog_cursor_dark.png')
+photo_right = load_cursor_image('dog_cursor_light.png')
 
 # Create the two hands
 left_hand = DogHand("LEFT", CMD_LEFT, photo_left,
-                     screen_w // 3, screen_h // 2, '#5599ff')
+                     screen_w // 3, screen_h // 2, '#8B5E3C')
 right_hand = DogHand("RIGHT", CMD_RIGHT, photo_right,
-                      2 * screen_w // 3, screen_h // 2, '#ffaa33')
+                      2 * screen_w // 3, screen_h // 2, '#D4A76A')
 
 def tick():
     left_hand.update()
@@ -384,8 +384,8 @@ tick()
 
 print(f"=== DUAL DOG CURSORS v1.0 ===")
 print(f"Screen: {screen_w}x{screen_h}")
-print(f"Left hand (blue):  {CMD_LEFT}")
-print(f"Right hand (brown): {CMD_RIGHT}")
+print(f"Left hand (dark brown):  {CMD_LEFT}")
+print(f"Right hand (light brown): {CMD_RIGHT}")
 print(f"Both hands share the real mouse — actions queue sequentially.")
 print(f"Close this terminal to stop.")
 root.mainloop()
