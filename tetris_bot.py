@@ -1,10 +1,9 @@
-"""
-Tetris AI Bot v2 - Direct Playwright control with calibration-based vision
+"""Tetris AI Bot v3 - Line-clear focused AI with fixed calibration
 Plays Tetris N-Blox on freetetris.org
-Learns from mistakes: calibrates board position, validates piece detection
 
-WORKFLOW: Player (d0g3) handles all menu buttons — Play, New Game, level select.
+WORKFLOW: Player (d0g3) handles all menu buttons - Play, New Game, level select.
 Bot waits for the game to be running, then takes over piece placement.
+AI heavily prioritizes completing full rows for points.
 """
 import time
 import math
@@ -33,25 +32,27 @@ PIECES = {
 }
 
 
-def identify_piece_color(r, g, b):
-    """Identify which Tetris piece a color belongs to"""
-    if is_empty_cell(r, g, b):
-        return None
-    # Check if it's dark enough to be a piece
-
-
 # ── BOARD READING ──────────────────────────────────────────────
 
 def is_filled_cell(r, g, b, bg_color):
-    """Check if pixel is a filled block vs empty background"""
-    br, bg, bb = bg_color
-    # If the color differs significantly from background, it's filled
-    dist = math.sqrt((r - br)**2 + (g - bg)**2 + (b - bb)**2)
-    return dist > 60
+    """Check if pixel is a filled block vs empty background.
+    N-Blox background is pale blue ~(198,216,242). Pieces are vivid colors
+    that differ by 80+ RGB distance from background.
+    """
+    br, bg_c, bb = bg_color
+    dist = math.sqrt((r - br)**2 + (g - bg_c)**2 + (b - bb)**2)
+    return dist > 50
 
 
 def calibrate_board(page):
-    """Calibrate board position using N-Blox's known proportional layout."""
+    """Calibrate board using fixed proportions - edge scanning fails on N-Blox
+    because there are no high-contrast borders (everything is blue-tinted).
+    
+    Known layout from debug analysis:
+    - Iframe at approx (78,125), size 728x600
+    - Board occupies left 55% of iframe width
+    - Board occupies top 78% of iframe height
+    """
     
     if os.path.exists(CALIBRATION_FILE):
         with open(CALIBRATION_FILE) as f:
@@ -59,7 +60,7 @@ def calibrate_board(page):
             print(f"Loaded calibration: board at ({cal['x1']},{cal['y1']}) to ({cal['x2']},{cal['y2']})")
             return cal
     
-    print("Calibrating board position...")
+    print("Calibrating board position (fixed proportions)...")
     iframe_el = page.query_selector('#gameIFrame')
     if not iframe_el:
         return None
@@ -68,93 +69,23 @@ def calibrate_board(page):
     if not box:
         return None
     
-    screenshot = page.screenshot()
-    img = Image.open(io.BytesIO(screenshot))
-    w, h = img.size
-    
-    img.save(os.path.join(os.path.dirname(__file__), 'tetris_debug.png'))
-    
     ix, iy = int(box['x']), int(box['y'])
     iw, ih = int(box['width']), int(box['height'])
-    print(f"Debug screenshot saved. Page: {w}x{h}, iframe at ({ix},{iy}) size {iw}x{ih}")
+    print(f"Iframe at ({ix},{iy}) size {iw}x{ih}")
     
-    # N-Blox known layout proportions within the game iframe:
-    # Board occupies roughly left 45% of iframe width, and ~95% of height
-    # with small borders on each side
-    # The board has 10 cols, 20 rows
+    # Fixed proportions derived from pixel analysis of the game
+    board_left = ix + int(iw * 0.01)
+    board_right = ix + int(iw * 0.545)
+    board_top = iy + int(ih * 0.008)
+    board_bottom = iy + int(ih * 0.775)
     
-    # Use pixel sampling to find exact board edges
-    # Strategy: scan a horizontal line in the middle of iframe.
-    # The board interior is lighter than the dark borders.
-    # We want to find the INTERIOR area (excluding dark borders).
+    # Sample background color from center of board (should be empty at start)
+    screenshot = page.screenshot()
+    img = Image.open(io.BytesIO(screenshot))
+    img.save(os.path.join(os.path.dirname(__file__), 'tetris_debug.png'))
     
-    mid_y = iy + ih // 2
-    
-    # Scan horizontal at mid_y through left 55% of iframe
-    scan_end = ix + int(iw * 0.55)
-    
-    # Find transitions: look for first block of light pixels (board interior)
-    in_board = False
-    board_left = None
-    board_right = None
-    
-    # First, sample what "light" looks like in the board area
-    # The board cells are either empty (~200,205,220 light blue) or filled (colored)
-    for x in range(ix, scan_end):
-        if x >= w:
-            break
-        r, g, b = img.getpixel((x, mid_y))[:3]
-        brightness = (r + g + b) / 3
-        
-        if not in_board:
-            # Look for start of board interior (light area after dark border)
-            if brightness > 150:
-                board_left = x
-                in_board = True
-        else:
-            # Look for end of board (dark border on right side)
-            if brightness < 100:
-                board_right = x - 1
-                break
-    
-    if not board_right:
-        board_right = scan_end
-    
-    # Now scan vertical at the center of found board area
-    board_mid_x = (board_left + board_right) // 2 if board_left else ix + iw // 4
-    board_top = None
-    board_bottom = None
-    in_board_v = False
-    
-    for y in range(iy, iy + ih):
-        if y >= h:
-            break
-        r, g, b = img.getpixel((board_mid_x, y))[:3]
-        brightness = (r + g + b) / 3
-        
-        if not in_board_v:
-            if brightness > 150:
-                board_top = y
-                in_board_v = True
-        else:
-            if brightness < 100:
-                board_bottom = y - 1
-                break
-    
-    if not board_bottom:
-        board_bottom = iy + ih - 5
-    
-    # Fallback if detection failed
-    if not board_left or not board_top:
-        print("Edge detection failed. Using proportional estimates.")
-        board_left = ix + int(iw * 0.01)
-        board_right = ix + int(iw * 0.44)
-        board_top = iy + int(ih * 0.01)
-        board_bottom = iy + int(ih * 0.98)
-    
-    # Sample background color from empty area of board
-    bg_x = board_left + (board_right - board_left) // 2
-    bg_y = board_top + 10  # top part likely empty at game start
+    bg_x = (board_left + board_right) // 2
+    bg_y = board_top + 20
     bg_color = list(img.getpixel((bg_x, bg_y))[:3])
     
     cell_w = (board_right - board_left) / BOARD_COLS
@@ -195,14 +126,24 @@ def read_board(page, cal):
     
     for row in range(BOARD_ROWS):
         for col in range(BOARD_COLS):
-            # Sample center of cell
-            px = int(x1 + col * cell_w + cell_w * 0.5)
-            py = int(y1 + row * cell_h + cell_h * 0.5)
+            # Multi-sample: center + 2 offsets for reliability
+            cx = int(x1 + col * cell_w + cell_w * 0.5)
+            cy = int(y1 + row * cell_h + cell_h * 0.5)
             
-            r, g, b = img.getpixel((px, py))[:3]
-            if is_filled_cell(r, g, b, bg_color):
+            filled_count = 0
+            best_color = None
+            for dx, dy in [(0, 0), (int(cell_w * 0.2), 0), (0, int(cell_h * 0.2))]:
+                px, py = cx + dx, cy + dy
+                if 0 <= px < img.width and 0 <= py < img.height:
+                    r, g, b = img.getpixel((px, py))[:3]
+                    if is_filled_cell(r, g, b, bg_color):
+                        filled_count += 1
+                        if best_color is None:
+                            best_color = (r, g, b)
+            
+            if filled_count >= 2:  # majority vote
                 board[row][col] = 1
-                colors[row][col] = (r, g, b)
+                colors[row][col] = best_color
     
     return board, colors
 
@@ -373,11 +314,11 @@ def evaluate_board(board):
     # Count complete lines
     complete = sum(1 for row in range(BOARD_ROWS) if all(board[row]))
     
-    # Well-tuned weights from research
+    # Weights heavily favoring line clears and penalizing holes
     return (
         -0.510066 * agg_height
-        + 0.760666 * complete
-        - 0.35663 * holes
+        + 10.0 * complete          # HUGE bonus for clearing lines
+        - 0.75 * holes             # holes are terrible
         - 0.184483 * bumpiness
     )
 
@@ -407,7 +348,7 @@ def find_best_move(board, piece_type):
             while len(cleared) < BOARD_ROWS:
                 cleared.insert(0, [0] * BOARD_COLS)
             
-            score = evaluate_board(cleared) + lines * 5.0
+            score = evaluate_board(cleared)
             if score > best_score:
                 best_score = score
                 best_rot = rot_idx
@@ -511,25 +452,15 @@ def play_tetris():
                 board_hash = str(board)
                 if board_hash == last_board_hash:
                     consecutive_fails += 1
-                    if consecutive_fails > 20:
-                        # Board hasn't changed — game might be paused/over
-                        print("Board unchanged for 20 reads. Trying to unpause/restart...")
-                        page.keyboard.press('Enter')
-                        time.sleep(1)
-                        page.keyboard.press(' ')
-                        time.sleep(1)
+                    if consecutive_fails > 30:
+                        print("Board unchanged... waiting for game to start or next piece...")
                         consecutive_fails = 0
-                        
-                        # Delete calibration and recalibrate
-                        if os.path.exists(CALIBRATION_FILE):
-                            os.remove(CALIBRATION_FILE)
-                        cal = calibrate_board(page)
-                        if not cal:
-                            print("Recalibration failed!")
-                            time.sleep(3)
-                            continue
-                        prev_board = None
-                    time.sleep(0.08)
+                        # Re-focus the iframe in case focus was lost
+                        try:
+                            page.click('#gameIFrame', timeout=1000)
+                        except Exception:
+                            pass
+                    time.sleep(0.1)
                     continue
                 
                 consecutive_fails = 0
@@ -564,11 +495,11 @@ def play_tetris():
                     
                     prev_board = new_board
                     
-                    if move_count % 5 == 0:
+                    if move_count % 1 == 0:
                         heights = get_column_heights(new_board)
                         print(f"Move {move_count} | {piece_type} -> col {target_col} rot {target_rot} | Height: {max(heights)} | Lines: {lines_total}")
                 else:
-                    # No piece detected — wait for next piece
+                    # No piece detected - wait for next piece
                     prev_board = board
                     time.sleep(0.08)
                     
@@ -576,10 +507,8 @@ def play_tetris():
                     top_fill = sum(board[0]) + sum(board[1])
                     if top_fill > 8:
                         print(f"GAME OVER after {move_count} moves, {lines_total} lines!")
-                        time.sleep(2)
-                        # Try restart
-                        page.keyboard.press('Enter')
-                        time.sleep(2)
+                        # Don't auto-restart - player handles buttons
+                        time.sleep(3)
                         prev_board = None
                         move_count = 0
                         lines_total = 0
