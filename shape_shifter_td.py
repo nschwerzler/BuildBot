@@ -1087,7 +1087,7 @@ _circle_angle = 0.0  # rotating angle for circle-fire mode
 _click_times = []     # timestamps for click-rate detection
 
 def do_shoot():
-    """Fire projectiles. Circle-fire if SHOOT_CD==0 or 30+ clicks/sec."""
+    """Fire projectiles. Circle-fire if 30+ clicks/sec."""
     global shake, _circle_angle
     import time as _time
     now = _time.time()
@@ -1109,8 +1109,8 @@ def do_shoot():
     berserk_mult = 2.0 if berserk_timer > 0 else 1.0
     bullet_dmg = int((SHOOT_DMG + might_bonus) * shoot_mult * berserk_mult)
     stats["shots_fired"] += atk_multi
-    # Circle-fire mode when cooldown is 0 or 30+ clicks/sec
-    if SHOOT_CD == 0 or clicks_per_sec >= 30:
+    # Circle-fire mode when 30+ clicks/sec
+    if clicks_per_sec >= 30:
         num_dirs = max(8, atk_multi * 8)
         _circle_angle += 0.15
         for bi in range(num_dirs):
@@ -1658,6 +1658,10 @@ def update_game(dt):
             if combo_count > stats["max_combo"]:
                 stats["max_combo"] = combo_count
             combo_count = 0
+
+    # Auto-fire: shoot every frame
+    if player["hp"] > 0:
+        do_shoot()
 
     update_waves(dt)
     update_player(dt)
