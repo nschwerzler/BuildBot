@@ -1084,10 +1084,18 @@ def update_player(dt):
         p["hp"] = min(p["max_hp"], p["hp"] + regen_rate * dt)
 
 _circle_angle = 0.0  # rotating angle for circle-fire mode
+_click_times = []     # timestamps for click-rate detection
 
 def do_shoot():
-    """Fire projectiles. If SHOOT_CD==0 (auto-fire), fire in a rotating circle pattern."""
+    """Fire projectiles. Circle-fire if SHOOT_CD==0 or 30+ clicks/sec."""
     global shake, _circle_angle
+    import time as _time
+    now = _time.time()
+    _click_times.append(now)
+    # Keep only last 1 second of clicks
+    while _click_times and _click_times[0] < now - 1.0:
+        _click_times.pop(0)
+    clicks_per_sec = len(_click_times)
     p = player
     if p["scd"] > 0: return
     p["scd"] = SHOOT_CD
@@ -1101,8 +1109,8 @@ def do_shoot():
     berserk_mult = 2.0 if berserk_timer > 0 else 1.0
     bullet_dmg = int((SHOOT_DMG + might_bonus) * shoot_mult * berserk_mult)
     stats["shots_fired"] += atk_multi
-    # Circle-fire mode when cooldown is 0
-    if SHOOT_CD == 0:
+    # Circle-fire mode when cooldown is 0 or 30+ clicks/sec
+    if SHOOT_CD == 0 or clicks_per_sec >= 30:
         num_dirs = max(8, atk_multi * 8)
         _circle_angle += 0.15
         for bi in range(num_dirs):
