@@ -185,12 +185,12 @@ def main():
             mouse_move(hwnd, aim_x, aim_y)
 
             # SHOOT (click)
-            if now - last_shoot >= 0.15:
+            if now - last_shoot >= 0.01:
                 click_at(hwnd, aim_x, aim_y)
                 last_shoot = now; clicks += 1
 
             # MELEE (space)
-            if now - last_melee >= 0.30:
+            if now - last_melee >= 0.01:
                 key_tap(hwnd, VK_SPACE)
                 last_melee = now; melees += 1
 
