@@ -56,14 +56,23 @@ def is_empty_cell(r, g, b):
     return color_distance((r, g, b), EMPTY_CELL_COLOR) < 30
 
 
+# Grid line / border colors to reject
+GRID_LINE_COLOR = (192, 200, 210)
+BORDER_DARK = (130, 140, 150)
+
 def is_filled_cell(r, g, b):
     if is_empty_cell(r, g, b):
         return False
-    if color_distance((r, g, b), PAGE_BG_COLOR) < 15:
+    if color_distance((r, g, b), PAGE_BG_COLOR) < 20:
         return False
-    if (r + g + b) / 3 < 30:
+    if color_distance((r, g, b), GRID_LINE_COLOR) < 25:
         return False
-    return color_distance((r, g, b), EMPTY_CELL_COLOR) > 35
+    if color_distance((r, g, b), BORDER_DARK) < 30:
+        return False
+    if (r + g + b) / 3 < 50:
+        return False
+    # Must be clearly different from empty cell color
+    return color_distance((r, g, b), EMPTY_CELL_COLOR) > 55
 
 
 def screenshot_iframe(page, iframe_el):
@@ -115,14 +124,18 @@ def read_board(img, bounds):
             cx = int(x1 + col * cell_w + cell_w * 0.5)
             cy = int(y1 + row * cell_h + cell_h * 0.5)
             filled = 0
-            for dx, dy in [(0, 0), (int(cell_w * 0.2), 0),
-                           (0, int(cell_h * 0.2)), (-int(cell_w * 0.2), 0)]:
+            # Sample 5 points: center + 4 offsets (stay well inside cell)
+            for dx, dy in [(0, 0),
+                           (int(cell_w * 0.25), 0),
+                           (-int(cell_w * 0.25), 0),
+                           (0, int(cell_h * 0.25)),
+                           (0, -int(cell_h * 0.25))]:
                 px, py = cx + dx, cy + dy
                 if 0 <= px < img.width and 0 <= py < img.height:
                     r, g, b = img.getpixel((px, py))[:3]
                     if is_filled_cell(r, g, b):
                         filled += 1
-            if filled >= 2:
+            if filled >= 3:
                 board[row][col] = 1
     return board
 
@@ -292,18 +305,23 @@ def find_connected_groups(cells):
     return groups
 
 
-def execute_move(frame, rotation, target_col, spawn_col):
-    """Send key presses to the IFRAME content frame (not page)."""
+def execute_move(page, iframe_el, rotation, target_col, spawn_col):
+    """Click iframe for focus, then send keys via page.keyboard."""
+    try:
+        iframe_el.click(position={"x": 200, "y": 300})
+    except Exception:
+        pass
+    time.sleep(0.05)
     for _ in range(rotation):
-        frame.press("body", "ArrowUp")
+        page.keyboard.press("ArrowUp")
         time.sleep(0.08)
     diff = target_col - spawn_col
     key = "ArrowRight" if diff > 0 else "ArrowLeft"
     for _ in range(abs(diff)):
-        frame.press("body", key)
+        page.keyboard.press(key)
         time.sleep(0.08)
     time.sleep(0.05)
-    frame.press("body", "Space")
+    page.keyboard.press(" ")
 
 
 def load_learning():
@@ -409,13 +427,7 @@ def play_tetris():
             pass
         time.sleep(0.5)
 
-        # Get the iframe's content frame for sending keys
-        game_frame = iframe_el.content_frame()
-        if not game_frame:
-            print("  ERROR: Can't access iframe content frame!")
-            browser.close()
-            return
-        print("  Got iframe content frame for key input")
+        print("  Using page.keyboard for key input (iframe focused)")
 
         print("\n" + "=" * 60)
         print("  PLAYING TETRIS!")
@@ -426,6 +438,14 @@ def play_tetris():
         try:
             img = screenshot_iframe(page, iframe_el)
             settled_board = read_board(img, board_bounds) if img else [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
+            init_filled = count_filled(settled_board)
+            print(f"  Initial board: {init_filled} filled cells")
+            if init_filled > 0:
+                for row in range(BOARD_ROWS):
+                    cols = [c for c in range(BOARD_COLS) if settled_board[row][c]]
+                    if cols:
+                        print(f"    row {row:2d}: cols {cols}")
+            sys.stdout.flush()
         except Exception:
             settled_board = [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
 
@@ -494,8 +514,8 @@ def play_tetris():
                           f"(score:{score:.1f})")
                     sys.stdout.flush()
 
-                    # === Execute the move via iframe frame ===
-                    execute_move(game_frame, rot, col, spawn_col)
+                    # === Execute the move ===
+                    execute_move(page, iframe_el, rot, col, spawn_col)
                     last_action_time = time.time()
 
                     # Wait for piece to land, then snapshot clean board
