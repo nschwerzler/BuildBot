@@ -23,8 +23,9 @@ D:/BuildBot/.venv/Scripts/python.exe D:/BuildBot/assistant_session/desktop_share
 ```
 
 - Live preview shows your desktop view.
-- Nothing is shared automatically.
 - `Share Frame` saves a single image into `assistant_session/shared_frames/`.
+- `Auto-share (sec)` + `Start Auto Share` saves frames repeatedly at your chosen interval.
+- Minimum auto-share interval is `0.5` seconds.
 
 ## What This Does
 

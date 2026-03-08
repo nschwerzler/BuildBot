@@ -56,8 +56,7 @@ This is **BuildBot**, a Minecraft-style 3D voxel game built with TypeScript and 
 - `src/world/` — World generation and chunk management  
 - `src/engine/` — Core game engine and renderer
 - `src/graphics/` — Pixel textures and voxel models
-- `*.py` — Standalone Python game scripts
-
+- `*.py` — Standalone Python game scripts (e.g., `voxel_test.py`)
 ## Victory Sound (Bee Jam)
 
 After completing every task AND when d0g3 says "play it", play the xylophone bee jam melody. Generate a WAV and play it via Python `winsound`:
