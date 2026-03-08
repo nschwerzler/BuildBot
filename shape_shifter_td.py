@@ -1659,10 +1659,6 @@ def update_game(dt):
                 stats["max_combo"] = combo_count
             combo_count = 0
 
-    # Auto-fire: shoot every frame
-    if player["hp"] > 0:
-        do_shoot()
-
     update_waves(dt)
     update_player(dt)
     update_enemies(dt)
