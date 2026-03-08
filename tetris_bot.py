@@ -56,23 +56,15 @@ def is_empty_cell(r, g, b):
     return color_distance((r, g, b), EMPTY_CELL_COLOR) < 30
 
 
-# Grid line / border colors to reject
-GRID_LINE_COLOR = (192, 200, 210)
-BORDER_DARK = (130, 140, 150)
-
 def is_filled_cell(r, g, b):
-    if is_empty_cell(r, g, b):
-        return False
-    if color_distance((r, g, b), PAGE_BG_COLOR) < 20:
-        return False
-    if color_distance((r, g, b), GRID_LINE_COLOR) < 25:
-        return False
-    if color_distance((r, g, b), BORDER_DARK) < 30:
-        return False
-    if (r + g + b) / 3 < 50:
-        return False
-    # Must be clearly different from empty cell color
-    return color_distance((r, g, b), EMPTY_CELL_COLOR) > 55
+    """Detect piece cells by saturation. Tetris pieces are highly saturated
+    (max-min > 100): blue, green, red, cyan, yellow, orange, purple.
+    Empty cells, grid lines, borders are all desaturated (max-min < 50)."""
+    mx = max(r, g, b)
+    mn = min(r, g, b)
+    saturation = mx - mn
+    # All piece colors have saturation > 150, all non-pieces < 50
+    return saturation > 80 and mx > 100
 
 
 def screenshot_iframe(page, iframe_el):
@@ -321,7 +313,7 @@ def execute_move(page, iframe_el, rotation, target_col, spawn_col):
         page.keyboard.press(key)
         time.sleep(0.08)
     time.sleep(0.05)
-    page.keyboard.press(" ")
+    page.keyboard.press("Space")
 
 
 def load_learning():
