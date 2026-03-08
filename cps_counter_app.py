@@ -18,12 +18,15 @@ class CPSCounterApp:
         self.start_time = time.perf_counter()
         self.total_clicks = 0
         self.running = True
+        self._pending_beeps = 0
+        self._beep_lock = threading.Lock()
 
         self.total_var = tk.StringVar(value="Total Clicks: 0")
         self.cps_var = tk.StringVar(value="Overall CPS: 0.00")
 
         self._build_ui()
         threading.Thread(target=self._poll_clicks, daemon=True).start()
+        threading.Thread(target=self._beep_worker, daemon=True).start()
         self._refresh_ui()
 
     def _build_ui(self) -> None:
@@ -50,20 +53,38 @@ class CPSCounterApp:
             down = bool(user32.GetAsyncKeyState(VK_LBUTTON) & 0x8000)
             if down and not prev_down:
                 self.total_clicks += 1
-                self._play_click_beep()
+                self._queue_beep()
             prev_down = down
             time.sleep(0.001)
 
-    def _play_click_beep(self) -> None:
-        # Async alias beep keeps feedback snappy without blocking click polling.
-        try:
-            winsound.PlaySound(
-                "SystemAsterisk",
-                winsound.SND_ALIAS | winsound.SND_ASYNC | winsound.SND_NOSTOP,
-            )
-        except RuntimeError:
-            # Ignore transient/unsupported sound errors to keep click tracking stable.
-            pass
+    def _queue_beep(self) -> None:
+        # Cap backlog so sound does not lag behind very high CPS bursts.
+        with self._beep_lock:
+            if self._pending_beeps < 3:
+                self._pending_beeps += 1
+
+    def _beep_worker(self) -> None:
+        while self.running:
+            should_beep = False
+            with self._beep_lock:
+                if self._pending_beeps > 0:
+                    self._pending_beeps -= 1
+                    should_beep = True
+
+            if not should_beep:
+                time.sleep(0.001)
+                continue
+
+            try:
+                winsound.Beep(1400, 12)
+            except RuntimeError:
+                try:
+                    winsound.PlaySound(
+                        "SystemAsterisk",
+                        winsound.SND_ALIAS | winsound.SND_ASYNC | winsound.SND_NOSTOP,
+                    )
+                except RuntimeError:
+                    pass
 
     def _refresh_ui(self) -> None:
         elapsed = max(1e-9, time.perf_counter() - self.start_time)
