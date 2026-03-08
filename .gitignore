@@ -16,3 +16,13 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Assistant session runtime artifacts
+assistant_session/__pycache__/
+assistant_session/shared_frames/*.png
+assistant_session/session_log.jsonl
+assistant_session/current_task.json
