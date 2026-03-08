@@ -1,8 +1,9 @@
-"""Tetris Bot v10 - PLAY MODE with slow-paced screenshots.
+"""Tetris Bot v12 - TOP-SCAN detection + fast play.
 
-Takes exactly ONE screenshot per piece cycle (~2s apart).
-This eliminates the seizure caused by rapid screenshot spam.
-Flow: screenshot -> detect piece -> AI decide -> execute keys -> wait -> repeat
+Detects pieces by scanning top 8 rows for tetromino shapes.
+No diff/settled tracking needed — just find the piece near the top each poll.
+Uses page-level screenshots (no seizure) with saturation-based cell detection.
+Flow: screenshot -> find piece in top rows -> AI decide -> rotate+move+drop
 """
 import time
 import math
@@ -64,7 +65,7 @@ def is_filled_cell(r, g, b):
     mn = min(r, g, b)
     saturation = mx - mn
     # All piece colors have saturation > 150, all non-pieces < 50
-    return saturation > 80 and mx > 100
+    return saturation > 100 and mx > 100
 
 
 def screenshot_iframe(page, iframe_el):
@@ -229,46 +230,41 @@ def find_best_move(board, piece_type):
     return best
 
 
-def detect_piece_single(board):
-    """Find an active tetromino in the board (single snapshot, no diff).
-    Scans from top down for groups of exactly 4 connected filled cells
-    that match a known tetromino shape AND float above the stack."""
-    # Collect all filled cells
-    all_filled = []
-    for row in range(BOARD_ROWS):
-        for col in range(BOARD_COLS):
-            if board[row][col]:
-                all_filled.append((row, col))
+def detect_piece_top(board):
+    """Find the active tetromino on the board.
+    Scans ALL filled cells for groups of exactly 4 matching a tetromino.
+    Prefers the HIGHEST group (most likely the active falling piece).
+    Accepts pieces in the top 12 rows directly, or floating pieces below.
+    """
+    all_filled = [(r, c) for r in range(BOARD_ROWS)
+                  for c in range(BOARD_COLS) if board[r][c]]
     if len(all_filled) < 4:
         return None, []
 
     groups = find_connected_groups(all_filled)
-    # Sort groups by their topmost row (ascending = highest first)
+    # Sort by topmost row (ascending = highest first)
     groups.sort(key=lambda g: min(r for r, c in g))
 
     for group in groups:
         if len(group) != 4:
             continue
         min_r = min(r for r, c in group)
+        max_r = max(r for r, c in group)
         min_c = min(c for r, c in group)
-        normalized = tuple(sorted((r - min_r, c - min_c) for r, c in group))
+        normalized = tuple(sorted((r - min_r, c - min_c)
+                                  for r, c in group))
         for ptype, rotations in PIECES.items():
             for cells in rotations:
                 if tuple(sorted(cells)) == normalized:
-                    # Check that this group has empty space below it
-                    # (i.e., it's not resting on the bottom or other pieces)
-                    max_r = max(r for r, c in group)
-                    if max_r < BOARD_ROWS - 1:
-                        below_empty = False
-                        for r, c in group:
-                            if r == max_r and (r + 1 < BOARD_ROWS):
-                                if not board[r + 1][c]:
-                                    below_empty = True
-                        if below_empty:
-                            return ptype, list(group)
-                    # If near top (row < 4), accept it even without gap below
-                    if min_r < 4:
+                    # Accept if in top 12 rows
+                    if min_r < 12:
                         return ptype, list(group)
+                    # Accept if floating (has empty cell below)
+                    if max_r < BOARD_ROWS - 1:
+                        for r, c in group:
+                            if (r == max_r and r + 1 < BOARD_ROWS
+                                    and not board[r + 1][c]):
+                                return ptype, list(group)
     return None, []
 
 
@@ -297,22 +293,35 @@ def find_connected_groups(cells):
     return groups
 
 
-def execute_move(page, iframe_el, rotation, target_col, spawn_col):
-    """Click iframe for focus, then send keys via page.keyboard."""
+def execute_move(page, iframe_el, piece_type, rotation, target_col):
+    """Move piece to target position using far-left reset for reliability.
+    1. Rotate to target rotation
+    2. Move far left (guaranteed leftmost position)
+    3. Move right to target column
+    4. Hard drop"""
     try:
         iframe_el.click(position={"x": 200, "y": 300})
     except Exception:
         pass
     time.sleep(0.05)
+    # Rotate to target
     for _ in range(rotation):
         page.keyboard.press("ArrowUp")
-        time.sleep(0.08)
-    diff = target_col - spawn_col
-    key = "ArrowRight" if diff > 0 else "ArrowLeft"
-    for _ in range(abs(diff)):
-        page.keyboard.press(key)
-        time.sleep(0.08)
-    time.sleep(0.05)
+        time.sleep(0.06)
+    # Move far left to reset position
+    for _ in range(BOARD_COLS):
+        page.keyboard.press("ArrowLeft")
+        time.sleep(0.03)
+    # Compute leftmost valid col_offset for this rotation
+    target_cells = PIECES[piece_type][rotation]
+    min_dc = min(dc for _, dc in target_cells)
+    leftmost_col = -min_dc
+    # Move right from leftmost to target
+    right_presses = target_col - leftmost_col
+    for _ in range(right_presses):
+        page.keyboard.press("ArrowRight")
+        time.sleep(0.03)
+    time.sleep(0.03)
     page.keyboard.press("Space")
 
 
@@ -334,7 +343,7 @@ def save_learning(data):
 
 def play_tetris():
     print("=" * 60)
-    print("  TETRIS BOT v10 - PAGE SCREENSHOT + IFRAME KEYS")
+    print("  TETRIS BOT v12 - TOP-SCAN + FAST PLAY")
     print("=" * 60)
     sys.stdout.flush()
 
@@ -426,30 +435,27 @@ def play_tetris():
         print("=" * 60 + "\n")
         sys.stdout.flush()
 
-        # Take initial board snapshot (for line clear tracking)
+        # Take initial board snapshot
         try:
             img = screenshot_iframe(page, iframe_el)
-            settled_board = read_board(img, board_bounds) if img else [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
-            init_filled = count_filled(settled_board)
+            init_board = read_board(img, board_bounds) if img else [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
+            init_filled = count_filled(init_board)
             print(f"  Initial board: {init_filled} filled cells")
-            if init_filled > 0:
-                for row in range(BOARD_ROWS):
-                    cols = [c for c in range(BOARD_COLS) if settled_board[row][c]]
-                    if cols:
-                        print(f"    row {row:2d}: cols {cols}")
             sys.stdout.flush()
         except Exception:
-            settled_board = [[0] * BOARD_COLS for _ in range(BOARD_ROWS)]
+            pass
 
         pieces_played = 0
         total_clears = 0
         no_piece_count = 0
         last_action_time = time.time()
+        last_piece_type = None
+        last_piece_row = -1
 
         try:
             while True:
-                # === Poll interval: 0.4s (page screenshot = no seizure) ===
-                time.sleep(0.4)
+                # === Poll interval: 0.15s ===
+                time.sleep(0.15)
 
                 iframe_el = page.query_selector("#gameIFrame")
                 if not iframe_el:
@@ -475,26 +481,33 @@ def play_tetris():
                     print(f"\n  GAME OVER (topped out)!")
                     break
 
-                # Don't act too fast after last move (let piece land)
+                # Don't act too fast after last move
                 elapsed = time.time() - last_action_time
-                if elapsed < 0.6:
+                if elapsed < 0.35:
                     continue
 
-                # === Detect piece in single snapshot ===
-                piece_type, new_cells = detect_piece_single(board)
+                # === Detect piece in top rows ===
+                piece_type, piece_cells = detect_piece_top(board)
 
                 if piece_type:
+                    # Avoid re-detecting the same piece we just played
+                    piece_min_row = min(r for r, c in piece_cells)
+                    if (piece_type == last_piece_type and
+                            piece_min_row == last_piece_row and
+                            elapsed < 1.0):
+                        continue
+
                     no_piece_count = 0
                     pieces_played += 1
 
-                    # Board without the active piece
+                    # Board without the active piece = the stack
                     clean_board = [r[:] for r in board]
-                    for r, c in new_cells:
+                    for r, c in piece_cells:
                         clean_board[r][c] = 0
 
                     # === AI decides best move ===
-                    rot, col, score = find_best_move(clean_board, piece_type)
-                    spawn_col = round(sum(c for _, c in new_cells) / len(new_cells))
+                    rot, col, score = find_best_move(
+                        clean_board, piece_type)
 
                     heights = get_column_heights(clean_board)
                     max_h = max(heights) if heights else 0
@@ -507,35 +520,25 @@ def play_tetris():
                     sys.stdout.flush()
 
                     # === Execute the move ===
-                    execute_move(page, iframe_el, rot, col, spawn_col)
+                    execute_move(page, iframe_el, piece_type, rot, col)
                     last_action_time = time.time()
+                    last_piece_type = piece_type
+                    last_piece_row = piece_min_row
 
-                    # Wait for piece to land, then snapshot clean board
-                    time.sleep(0.5)
-                    try:
-                        iframe_el = page.query_selector("#gameIFrame")
-                        if iframe_el:
-                            post_img = screenshot_iframe(page, iframe_el)
-                            post_board = read_board(post_img, board_bounds) if post_img else None
-                            if post_board:
-                                post_filled = count_filled(post_board)
-                                expected = count_filled(clean_board) + 4
-                                if post_filled < expected - 5:
-                                    lines = max(1, (expected - post_filled) // BOARD_COLS)
-                                    total_clears += lines
-                                    label = {1: "SINGLE", 2: "DOUBLE",
-                                             3: "TRIPLE", 4: "TETRIS!!"}.get(
-                                        lines, f"{lines}x")
-                                    print(f"   *** {label}! "
-                                          f"(total: {total_clears})")
-                                    sys.stdout.flush()
-                                settled_board = post_board
-                            else:
-                                settled_board = clean_board
-                        else:
-                            settled_board = clean_board
-                    except Exception:
-                        settled_board = clean_board
+                    # Estimate line clears via simulation
+                    result = drop_piece(
+                        clean_board, PIECES[piece_type][rot], col)
+                    if result:
+                        _, lines = clear_lines(result)
+                        if lines > 0:
+                            total_clears += lines
+                            label = {1: "SINGLE", 2: "DOUBLE",
+                                     3: "TRIPLE",
+                                     4: "TETRIS!!"}.get(
+                                lines, f"{lines}x")
+                            print(f"   *** {label}! "
+                                  f"(total: {total_clears})")
+                            sys.stdout.flush()
 
                     # Save periodically
                     if pieces_played % 20 == 0:
@@ -545,13 +548,27 @@ def play_tetris():
                 else:
                     no_piece_count += 1
 
-                    if no_piece_count % 20 == 0 and no_piece_count > 0:
-                        print(f"  ... waiting for piece "
-                              f"(filled:{filled} polls:{no_piece_count})")
+                    if no_piece_count % 30 == 0 and no_piece_count > 0:
+                        # Debug: show filled cells detail
+                        top_cells = []
+                        for row in range(6):
+                            for col in range(BOARD_COLS):
+                                if board[row][col]:
+                                    top_cells.append(f"({row},{col})")
+                        all_groups = find_connected_groups(
+                            [(r, c) for r in range(BOARD_ROWS)
+                             for c in range(BOARD_COLS) if board[r][c]])
+                        grp_sizes = sorted(
+                            [len(g) for g in all_groups], reverse=True)
+                        print(f"  ... waiting "
+                              f"(filled:{filled} "
+                              f"groups:{grp_sizes[:5]} "
+                              f"top:{','.join(top_cells) or 'none'} "
+                              f"polls:{no_piece_count})")
                         sys.stdout.flush()
 
-                    if no_piece_count > 120 and pieces_played > 0:
-                        print(f"\n  GAME OVER (no new pieces for 30s)!")
+                    if no_piece_count > 300 and pieces_played > 0:
+                        print(f"\n  GAME OVER (no pieces for 45s)!")
                         break
 
         except KeyboardInterrupt:
